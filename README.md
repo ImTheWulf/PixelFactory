@@ -10,7 +10,7 @@ A modular pixel-art asset production toolkit.
 
 ## Start Here
 
-1. Open `PixelFactory-Docs/GIT_START_HERE.md` for Git/GitHub notes.
+1. Open `docs/reference/GIT_START_HERE.md` for Git/GitHub notes.
 2. Open `PixelFactory-Web/README.md` to run the new browser-based Palette Lab.
 
 
@@ -38,3 +38,9 @@ PF-0008 Workspace Pipeline: latest generations are placed into a temporary works
 ## PF-0012.2
 
 Quick favorite toggle and seed UI cleanup.
+
+
+## Documentation
+
+The canonical documentation lives in `/docs`.
+Do not use `docs/`; it was consolidated into `/docs` during PF-0100.

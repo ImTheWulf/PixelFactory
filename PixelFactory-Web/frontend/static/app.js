@@ -514,7 +514,7 @@ function renderAssets(selectId = null) {
           <input class="asset-export-select" type="checkbox" data-asset-id="${escapeHtml(asset.id)}" ${exportSelection.has(asset.id) ? "checked" : ""}>
           Export
         </label>
-        <button class="asset-card-favorite ${asset.favorite ? "active" : ""}" type="button" data-asset-id="${escapeHtml(asset.id)}" title="${asset.favorite ? "Unfavorite" : "Favorite"}" aria-label="${asset.favorite ? "Unfavorite" : "Favorite"} ${escapeHtml(displayName)}">${asset.favorite ? "★" : "☆"}</button>
+        <button class="asset-card-favorite ${asset.favorite ? "active" : ""}" type="button" data-asset-id="${escapeHtml(asset.id)}" title="${asset.favorite ? "Unfavorite" : "Favorite"}" aria-label="${asset.favorite ? "Unfavorite" : "Favorite"} ${escapeHtml(displayName)}"><span class="asset-favorite-star" aria-hidden="true">${asset.favorite ? "★" : "☆"}</span></button>
         <span class="asset-status-badge ${asset.status === "accepted" ? "accepted" : "incoming"}">${statusLabel}</span>
       </div>
       <div class="asset-title">${escapeHtml(displayName)}</div>
