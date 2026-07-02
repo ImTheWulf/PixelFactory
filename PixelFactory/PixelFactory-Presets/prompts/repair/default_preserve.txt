@@ -1,8 +1,0 @@
-preserve original image composition and style, repair only the obvious problem area,
-improve pixel clarity, cleaner face or hands or prop, no new objects, no new colors,
-no random speckles, maintain same character, same clothing, same background
-
-NEGATIVE:
-major changes, new background, new character, changed clothing, random colored speckles,
-confetti pixels, noisy texture, extra detail, extra objects, extra limbs, deformed hands,
-text, watermark, logo, blur, smooth shading, photorealistic, 3D

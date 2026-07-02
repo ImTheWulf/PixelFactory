@@ -1,6 +1,0 @@
-top-down or front-facing pixel art tile texture, gray cobblestone or brick wall,
-crisp pixels, limited color palette, clean mortar lines, tileable structure,
-no characters, no objects, no text
-
-NEGATIVE:
-person, face, scene perspective, horizon, blurry, smooth shading, noisy speckles, watermark

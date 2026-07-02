@@ -39,7 +39,7 @@ asset_service = AssetService(PROJECT_ROOT)
 workspace_service = WorkspaceService(PROJECT_ROOT)
 export_service = ExportService(PROJECT_ROOT, asset_service)
 
-app = FastAPI(title="Pixel Factory by Wulf", version="0.13-pf0013-export-foundation")
+app = FastAPI(title="Pixel Factory by Wulf", version="0.13-pf0013.2-export-stability")
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
 
@@ -50,7 +50,7 @@ def index() -> str:
 
 @app.get("/api/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "app": "Pixel Factory Web", "version": "0.13", "milestone": "PF-0013 Export Foundation: Godot + Aseprite"}
+    return {"status": "ok", "app": "Pixel Factory Web", "version": "0.13", "milestone": "PF-0013.2 Export route and packaging stability"}
 
 
 def _read_image(data: bytes) -> Image.Image:

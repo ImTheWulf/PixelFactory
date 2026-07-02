@@ -283,3 +283,13 @@ The chat that was lost contained export-foundation planning. The important recov
 - The first export screen existed but was too quiet; it did not prove that exports actually happened.
 - Exporter needs to show accepted asset count, incoming asset count, target folders, manifest existence, recent exported files, and whether PNG/JSON files still exist.
 - Individual asset export buttons are useful during testing, but the intended production flow remains: generate incoming asset -> accept asset -> export accepted asset(s).
+
+## PF-0013.2 Export Stability Lesson
+
+The export foundation failure showed why the repo handoff must be clean and canonical. A ZIP that contains a nested stale `PixelFactory/` copy can cause the user to run the wrong backend and get `Not Found` even though the UI looks correct. Future handoffs should avoid duplicate project roots and should include restart notes when backend routes change.
+
+Recipes vs presets remains an important product distinction:
+- Recipes are the production workflow contracts: what kind of asset is being made, what ComfyUI workflow is used, required inputs, output expectations, metadata, validation, and allowed export targets.
+- Presets are creative/style lenses applied inside a recipe: medieval, fantasy, sci-fi, cozy, horror, SNES-like, Game Boy-like, palette/style direction, etc.
+- In plain terms: recipe = the pipeline/job type; preset = the art direction for that job.
+
