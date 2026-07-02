@@ -176,3 +176,84 @@ textarea {
   text-decoration: none;
   font-weight: 700;
 }
+
+
+.asset-layout {
+  padding: 24px;
+  display: grid;
+  grid-template-columns: minmax(420px, 1fr) 360px;
+  gap: 20px;
+}
+.asset-list-card, .asset-inspector-card { min-height: 640px; }
+.asset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 14px;
+}
+.asset-grid.empty, .asset-inspector.empty {
+  display: grid;
+  place-items: center;
+  min-height: 240px;
+  color: var(--muted);
+  background: #0b0d11;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.asset-card {
+  background: #0b0d11;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  cursor: pointer;
+}
+.asset-card:hover, .asset-card.selected { border-color: var(--accent); }
+.asset-card img {
+  width: 100%;
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  border-radius: 8px;
+}
+.asset-title { font-weight: 800; margin-top: 8px; font-size: 13px; overflow-wrap: anywhere; }
+.asset-meta { color: var(--muted); font-size: 12px; margin-top: 4px; }
+.asset-inspector img {
+  width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: #0b0d11;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.asset-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.asset-actions button, .asset-actions a { text-align: center; width: 100%; }
+.asset-actions a {
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.inspector-details {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+  margin-top: 12px;
+  overflow-wrap: anywhere;
+}
+.inspector-prompt {
+  white-space: pre-wrap;
+  background: #0b0d11;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  max-height: 160px;
+  overflow: auto;
+  color: var(--muted);
+  font-family: Consolas, ui-monospace, SFMono-Regular, monospace;
+  font-size: 12px;
+}

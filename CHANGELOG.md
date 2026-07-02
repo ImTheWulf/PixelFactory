@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.6 - Asset Browser
+
+- Added Asset Browser page.
+- Character generations now save into `PixelFactory-Projects/default/Incoming/Characters`.
+- Added metadata JSON per generated asset.
+- Added Accept, Download, Delete, and Send to Palette Lab actions.
+- Pixel Factory now starts organizing outputs instead of only showing loose images.
+
+
 ## v0.5 - Comfy Connector
 - Added PixelFactory-Web Character Studio.
 - Added ComfyUI connection check.

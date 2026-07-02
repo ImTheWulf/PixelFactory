@@ -10,13 +10,14 @@
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand">Pixel Factory</div>
-      <div class="subtitle">by Wulf · Web v0.5</div>
+      <div class="subtitle">by Wulf · Web v0.6</div>
 
       <nav class="nav">
         <button class="nav-btn active" data-view="palette">Palette Lab</button>
         <button class="nav-btn" data-view="character">Character Studio</button>
         <button class="nav-btn disabled">Tile Studio</button>
         <button class="nav-btn disabled">Repair Bench</button>
+        <button class="nav-btn" data-view="assets">Asset Browser</button>
         <button class="nav-btn disabled">Exporter</button>
       </nav>
 
@@ -92,6 +93,19 @@
         <button id="generateCharacterBtn">Generate Character</button>
       </section>
 
+
+
+      <section id="assetsControls" class="panel view-controls hidden">
+        <div class="panel-title">Asset Browser</div>
+        <label>Filter</label>
+        <select id="assetFilter">
+          <option value="">All assets</option>
+          <option value="incoming" selected>Incoming</option>
+          <option value="accepted">Accepted</option>
+        </select>
+        <button id="refreshAssetsBtn">Refresh Assets</button>
+      </section>
+
       <div id="status" class="status">Ready.</div>
     </aside>
 
@@ -134,6 +148,24 @@
         <section class="preview-card output-card">
           <h2>Generated Images</h2>
           <div id="characterOutput" class="image-gallery empty">Run Character Studio to generate images.</div>
+        </section>
+      </section>
+
+      <section id="assetsView" class="view">
+        <header class="topbar">
+          <h1>Asset Browser</h1>
+          <p>Generated images become assets. Accept, send to Palette Lab, download, or delete.</p>
+        </header>
+
+        <section class="asset-layout">
+          <div class="preview-card asset-list-card">
+            <h2>Assets</h2>
+            <div id="assetGrid" class="asset-grid empty">No assets yet. Generate from Character Studio.</div>
+          </div>
+          <div class="preview-card asset-inspector-card">
+            <h2>Inspector</h2>
+            <div id="assetInspector" class="asset-inspector empty">Select an asset.</div>
+          </div>
         </section>
       </section>
     </main>

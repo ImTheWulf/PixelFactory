@@ -1,4 +1,4 @@
-# PixelFactory Web v0.5
+# PixelFactory Web v0.6
 
 Local browser UI for Pixel Factory.
 
@@ -11,25 +11,12 @@ pip install -r requirements.txt
 python -m uvicorn backend.main:app --reload
 ```
 
-Open:
+Open `http://127.0.0.1:8000`.
 
-```text
-http://127.0.0.1:8000
-```
-
-## v0.5
+## v0.6
 
 - Palette Lab remains deterministic.
-- Adds ComfyUI connector.
-- Adds Character Studio web UI.
-- Runs `workflows/character.json` through ComfyUI API.
-
-## Before generating
-
-Start ComfyUI normally and make sure it is reachable at:
-
-```text
-http://127.0.0.1:8188
-```
-
-Click **Check Comfy** in Pixel Factory. If connected, go to Character Studio and generate.
+- Character Studio runs ComfyUI workflows.
+- Generated images are saved as assets.
+- Asset Browser lists generated assets.
+- Assets can be accepted, downloaded, deleted, or sent to Palette Lab.

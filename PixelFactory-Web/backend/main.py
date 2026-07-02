@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import base64
 import io
+import json
+import shutil
+import uuid
+from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
@@ -18,8 +22,14 @@ FRONTEND = ROOT / "frontend"
 STATIC = FRONTEND / "static"
 TEMPLATES = FRONTEND / "templates"
 WORKFLOWS = ROOT / "workflows"
+PROJECT_ROOT = ROOT.parent / "PixelFactory-Projects" / "default"
+INCOMING = PROJECT_ROOT / "Incoming"
+ACCEPTED = PROJECT_ROOT / "Accepted"
+METADATA = PROJECT_ROOT / "metadata"
+for _p in [INCOMING / "Characters", INCOMING / "Tiles", INCOMING / "Repairs", ACCEPTED / "Characters", ACCEPTED / "Tiles", ACCEPTED / "Repairs", METADATA]:
+    _p.mkdir(parents=True, exist_ok=True)
 
-app = FastAPI(title="Pixel Factory by Wulf", version="0.5-web")
+app = FastAPI(title="Pixel Factory by Wulf", version="0.6-web")
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
 
@@ -30,7 +40,7 @@ def index() -> str:
 
 @app.get("/api/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "app": "Pixel Factory Web", "version": "0.5"}
+    return {"status": "ok", "app": "Pixel Factory Web", "version": "0.6"}
 
 
 def _read_image(data: bytes) -> Image.Image:
@@ -71,6 +81,73 @@ async def process_image(
 class ComfyStatusRequest(BaseModel):
     url: str = "http://127.0.0.1:8188"
 
+
+
+
+def _slug(text: str, fallback: str = "asset") -> str:
+    safe = "".join(ch.lower() if ch.isalnum() else "_" for ch in text.strip())
+    safe = "_".join(part for part in safe.split("_") if part)
+    return (safe[:48] or fallback)
+
+
+def _asset_rel_path(path: Path) -> str:
+    return path.relative_to(PROJECT_ROOT).as_posix()
+
+
+def _asset_url(asset_id: str) -> str:
+    return f"/api/assets/{asset_id}/image"
+
+
+def _metadata_path(asset_id: str) -> Path:
+    return METADATA / f"{asset_id}.json"
+
+
+def _save_asset(
+    image_bytes: bytes,
+    asset_type: str,
+    prompt: str = "",
+    negative_prompt: str = "",
+    seed: int = -1,
+    workflow: str = "character",
+    width: int | None = None,
+    height: int | None = None,
+    steps: int | None = None,
+    batch_index: int = 0,
+) -> dict:
+    asset_id = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
+    name = f"{_slug(prompt, asset_type)}_{batch_index + 1:02d}"
+    folder = INCOMING / ("Characters" if asset_type == "character" else asset_type.capitalize())
+    folder.mkdir(parents=True, exist_ok=True)
+    image_path = folder / f"{asset_id}.png"
+    image_path.write_bytes(image_bytes)
+    meta = {
+        "id": asset_id,
+        "name": name,
+        "type": asset_type,
+        "status": "incoming",
+        "image_path": _asset_rel_path(image_path),
+        "created": datetime.now().isoformat(timespec="seconds"),
+        "prompt": prompt,
+        "negative_prompt": negative_prompt,
+        "seed": seed,
+        "workflow": workflow,
+        "width": width,
+        "height": height,
+        "steps": steps,
+        "batch_index": batch_index,
+    }
+    _metadata_path(asset_id).write_text(json.dumps(meta, indent=2), encoding="utf-8")
+    meta["image_url"] = _asset_url(asset_id)
+    return meta
+
+
+def _load_asset(asset_id: str) -> dict:
+    path = _metadata_path(asset_id)
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Asset not found")
+    meta = json.loads(path.read_text(encoding="utf-8"))
+    meta["image_url"] = _asset_url(asset_id)
+    return meta
 
 class CharacterGenerateRequest(BaseModel):
     comfy_url: str = "http://127.0.0.1:8188"
@@ -127,8 +204,93 @@ def generate_character(req: CharacterGenerateRequest) -> dict:
         )
         api_prompt = comfy_ui_workflow_to_api(patched)
         images = ComfyClient(req.comfy_url).run_prompt_and_get_images(api_prompt, timeout_seconds=600)
-        return {"ok": True, "count": len(images), "images": [_image_bytes_to_data_url(img) for img in images]}
+        assets = [
+            _save_asset(
+                img,
+                asset_type="character",
+                prompt=req.prompt,
+                negative_prompt=req.negative_prompt,
+                seed=req.seed,
+                workflow="character",
+                width=req.width,
+                height=req.height,
+                steps=req.steps,
+                batch_index=i,
+            )
+            for i, img in enumerate(images)
+        ]
+        return {
+            "ok": True,
+            "count": len(images),
+            "images": [_image_bytes_to_data_url(img) for img in images],
+            "assets": assets,
+        }
     except ComfyError as exc:
         raise HTTPException(status_code=502, detail=str(exc))
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.get("/api/assets")
+def list_assets(status: str | None = None, asset_type: str | None = None) -> dict:
+    assets = []
+    for path in sorted(METADATA.glob("*.json"), reverse=True):
+        try:
+            meta = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        if status and meta.get("status") != status:
+            continue
+        if asset_type and meta.get("type") != asset_type:
+            continue
+        meta["image_url"] = _asset_url(meta["id"])
+        assets.append(meta)
+    return {"ok": True, "count": len(assets), "assets": assets}
+
+
+@app.get("/api/assets/{asset_id}")
+def get_asset(asset_id: str) -> dict:
+    return _load_asset(asset_id)
+
+
+@app.get("/api/assets/{asset_id}/image")
+def get_asset_image(asset_id: str) -> Response:
+    meta = _load_asset(asset_id)
+    image_path = PROJECT_ROOT / meta["image_path"]
+    if not image_path.exists():
+        raise HTTPException(status_code=404, detail="Asset image missing")
+    return Response(content=image_path.read_bytes(), media_type="image/png")
+
+
+@app.post("/api/assets/{asset_id}/accept")
+def accept_asset(asset_id: str) -> dict:
+    meta = _load_asset(asset_id)
+    old_path = PROJECT_ROOT / meta["image_path"]
+    if not old_path.exists():
+        raise HTTPException(status_code=404, detail="Asset image missing")
+    target_folder = ACCEPTED / ("Characters" if meta.get("type") == "character" else str(meta.get("type", "Assets")).capitalize())
+    target_folder.mkdir(parents=True, exist_ok=True)
+    new_path = target_folder / old_path.name
+    if old_path.resolve() != new_path.resolve():
+        shutil.copy2(old_path, new_path)
+    meta["status"] = "accepted"
+    meta["accepted"] = datetime.now().isoformat(timespec="seconds")
+    meta["accepted_image_path"] = _asset_rel_path(new_path)
+    _metadata_path(asset_id).write_text(json.dumps({k:v for k,v in meta.items() if k != "image_url"}, indent=2), encoding="utf-8")
+    meta["image_url"] = _asset_url(asset_id)
+    return {"ok": True, "asset": meta}
+
+
+@app.delete("/api/assets/{asset_id}")
+def delete_asset(asset_id: str) -> dict:
+    meta = _load_asset(asset_id)
+    for key in ["image_path", "accepted_image_path"]:
+        value = meta.get(key)
+        if value:
+            path = PROJECT_ROOT / value
+            if path.exists():
+                path.unlink()
+    mp = _metadata_path(asset_id)
+    if mp.exists():
+        mp.unlink()
+    return {"ok": True, "deleted": asset_id}
