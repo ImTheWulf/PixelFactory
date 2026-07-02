@@ -10,7 +10,7 @@
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand">Pixel Factory</div>
-      <div class="subtitle">by Wulf · Web v0.9 · PF-0009</div>
+      <div class="subtitle">by Wulf · Web v0.10 · PF-0010</div>
 
       <nav class="nav">
         <button class="nav-btn active" data-view="palette">Palette Lab</button>
@@ -80,7 +80,7 @@
         <select id="characterRecipe"></select>
         <label>Seed</label>
         <input id="characterSeed" type="number" value="-1" />
-        <label>Size</label>
+        <label>Size <span class="hint">safe square only</span></label>
         <select id="characterSize">
           <option value="512">512 x 512</option>
           <option value="768">768 x 768</option>
@@ -168,6 +168,7 @@
           <p>Generated images become assets. Accept, set workspace, send to Palette Lab, download, or delete.</p>
         </header>
 
+        <div class="asset-help">Incoming assets are generated candidates. Accepted assets are copied into the Accepted folder and keep their metadata/history.</div>
         <section class="asset-layout">
           <div class="preview-card asset-list-card">
             <h2>Assets</h2>

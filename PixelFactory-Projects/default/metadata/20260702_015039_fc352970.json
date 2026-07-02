@@ -1,0 +1,30 @@
+{
+  "id": "20260702_015039_fc352970",
+  "name": "",
+  "type": "character",
+  "status": "incoming",
+  "image_path": "Incoming/Characters/20260702_015039_fc352970.png",
+  "created": "2026-07-02T01:50:39",
+  "prompt": "pixel art, 16-bit pixel art, SNES style, retro RPG, crisp pixels, limited color palette, hand placed pixels, clean readable silhouette,\n\nsingle character, full body, centered, subject fills 65 percent of frame, eye level, walking toward camera,\n\n{prompt}",
+  "resolved_prompt": "pixel art, 16-bit pixel art, SNES style, retro RPG, crisp pixels, limited color palette, hand placed pixels, clean readable silhouette,\n\nsingle character, full body, centered, subject fills 65 percent of frame, eye level, walking toward camera,\n\npixel art, 16-bit pixel art, SNES style, retro RPG, crisp pixels, limited color palette, hand placed pixels, clean readable silhouette,\n\nsingle character, full body, centered, subject fills 65 percent of frame, eye level, walking toward camera,\n\n{prompt}",
+  "negative_prompt": "photorealistic, realistic, 3D, CGI, painting, smooth shading, blurry, anti-aliased, random colored speckles, confetti pixels, noisy texture, stains, extra arms, third arm, extra hand, third hand, extra fingers, extra limbs, mutated hands, deformed hands, duplicate limbs, duplicate objects, missing hand, missing arm, disconnected limbs, bad anatomy, incorrect anatomy, walking stick, staff, cane, pipe, bamboo pole, wooden beam, baseball bat, crowbar, metal rod, gold rod, multiple fishing rods, multiple tackle boxes, tiny character, far away, wide shot, hallway, corridor, tunnel, maze, extreme perspective, vanishing point, multiple people, cropped, cut off feet, cut off head, text, logo, watermark, border, speech bubble, UI, health bars",
+  "seed": -1,
+  "workflow": "character",
+  "recipe_id": "character.default",
+  "recipe_name": "Default Character",
+  "width": 1024,
+  "height": 1024,
+  "steps": 24,
+  "batch_index": 0,
+  "engine": "comfy",
+  "export_targets": [
+    "godot",
+    "aseprite"
+  ],
+  "tags": [
+    "character",
+    "pixel-art",
+    "flux",
+    "default"
+  ]
+}

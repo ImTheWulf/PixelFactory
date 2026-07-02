@@ -36,3 +36,12 @@ The UI should not hardcode generation logic. It should load recipes and send rec
 - Added click-to-view behavior for Palette Lab previews, generated images, and asset inspector previews.
 - Fixed Palette Lab preview mode CSS to avoid squashing images.
 
+
+
+## PF-0010.1 Asset State Clarity Patch
+
+- Clear Incoming / Accepted asset badges.
+- Inspector shows current image path, original image path, accepted copy path, and project root.
+- Accepted assets use the accepted copy as their active image.
+- Generated assets keep stable default names.
+- Character generation is locked to safe square sizes: 512, 768, 1024.

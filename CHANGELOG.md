@@ -57,3 +57,12 @@
 - Asset Browser thumbnail images now open the universal viewer directly.
 - Card body still selects the asset for inspection.
 - Zoom overlay is now visually tied to the clickable thumbnail area.
+
+
+## PF-0010.1 Asset State Clarity Patch
+
+- Clear Incoming / Accepted asset badges.
+- Inspector shows current image path, original image path, accepted copy path, and project root.
+- Accepted assets use the accepted copy as their active image.
+- Generated assets keep stable default names.
+- Character generation is locked to safe square sizes: 512, 768, 1024.

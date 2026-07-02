@@ -14,5 +14,13 @@
   "steps": 24,
   "batch_index": 0,
   "accepted": "2026-07-01T21:39:45",
-  "accepted_image_path": "Accepted/Characters/20260701_213916_99891f16.png"
+  "accepted_image_path": "Accepted/Characters/20260701_213916_99891f16.png",
+  "active_image_path": "Accepted/Characters/20260701_213916_99891f16.png",
+  "project_root": "C:/Users/Owner/Downloads/PixelFactory/PixelFactory-Projects/default",
+  "favorite": true,
+  "updated": "2026-07-02T02:05:20",
+  "tags": [
+    "test"
+  ],
+  "notes": "Test"
 }

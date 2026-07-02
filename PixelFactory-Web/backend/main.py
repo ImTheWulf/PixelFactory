@@ -36,7 +36,7 @@ engine_service = EngineService()
 asset_service = AssetService(PROJECT_ROOT)
 workspace_service = WorkspaceService(PROJECT_ROOT)
 
-app = FastAPI(title="Pixel Factory by Wulf", version="0.8-pf0008-workspace")
+app = FastAPI(title="Pixel Factory by Wulf", version="0.10-pf0010-asset-metadata")
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
 
@@ -47,7 +47,7 @@ def index() -> str:
 
 @app.get("/api/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "app": "Pixel Factory Web", "version": "0.8", "milestone": "PF-0008 Workspace Pipeline"}
+    return {"status": "ok", "app": "Pixel Factory Web", "version": "0.10", "milestone": "PF-0010 Asset Metadata + Inspector Polish"}
 
 
 def _read_image(data: bytes) -> Image.Image:
@@ -105,6 +105,15 @@ def _save_asset(image_bytes: bytes, asset_type: str, **kwargs) -> dict:
     return asset_service.save_asset(image_bytes, asset_type, **kwargs)
 
 
+
+
+class AssetMetadataUpdateRequest(BaseModel):
+    name: str | None = None
+    tags: str | list[str] | None = None
+    notes: str | None = None
+    favorite: bool | None = None
+
+
 class CharacterGenerateRequest(BaseModel):
     comfy_url: str = "http://127.0.0.1:8188"
     recipe_id: str = "character.default"
@@ -158,6 +167,9 @@ def _image_bytes_to_data_url(data: bytes) -> str:
 @app.post("/api/generate/character")
 def generate_character(req: CharacterGenerateRequest) -> dict:
     try:
+        safe_sizes = {512, 768, 1024}
+        if req.width != req.height or req.width not in safe_sizes:
+            raise HTTPException(status_code=400, detail="Only safe square sizes are supported right now: 512, 768, or 1024.")
         recipe = recipe_service.load(req.recipe_id)
         workflow_id = recipe.get("workflow", "character")
         ui_wf = workflow_service.load(workflow_id)
@@ -247,6 +259,17 @@ def get_asset_image(asset_id: str) -> Response:
     if not image_path or not image_path.exists():
         raise HTTPException(status_code=404, detail="Asset image missing")
     return Response(content=image_path.read_bytes(), media_type="image/png")
+
+
+
+
+@app.patch("/api/assets/{asset_id}/metadata")
+def update_asset_metadata(asset_id: str, req: AssetMetadataUpdateRequest) -> dict:
+    changes = {k: v for k, v in req.model_dump().items() if v is not None}
+    meta = asset_service.update_metadata(asset_id, changes)
+    if not meta:
+        raise HTTPException(status_code=404, detail="Asset not found")
+    return {"ok": True, "asset": meta}
 
 
 @app.post("/api/assets/{asset_id}/accept")

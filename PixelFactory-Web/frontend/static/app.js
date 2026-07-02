@@ -242,7 +242,8 @@ async function loadCharacterDefaults() {
   const data = await response.json();
   characterPrompt.value = data.positive || "";
   characterNegative.value = data.negative || "";
-  document.getElementById("characterSize").value = String(data.width || 1024);
+  const safeSize = ["512", "768", "1024"].includes(String(data.width)) ? String(data.width) : "1024";
+  document.getElementById("characterSize").value = safeSize;
   document.getElementById("characterBatch").value = String(data.batch_size || 1);
   document.getElementById("characterSteps").value = String(data.steps || 24);
   setStatus(`Recipe loaded: ${data.display_name || recipeId}`);
@@ -296,6 +297,11 @@ generateCharacterBtn.addEventListener("click", async () => {
   setStatus("Queued Character Studio job...");
 
   const size = Number(document.getElementById("characterSize").value);
+  if (![512, 768, 1024].includes(size)) {
+    setStatus("Only safe square generation sizes are enabled: 512, 768, or 1024.");
+    generateCharacterBtn.disabled = false;
+    return;
+  }
   const payload = {
     comfy_url: comfyUrl.value,
     recipe_id: characterRecipe?.value || "character.default",
@@ -335,6 +341,43 @@ generateCharacterBtn.addEventListener("click", async () => {
 loadRecipes().then(loadCharacterDefaults).catch(() => {});
 
 
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function tagsToString(tags) {
+  if (Array.isArray(tags)) return tags.join(", ");
+  return String(tags || "");
+}
+
+function assetDisplayName(asset) {
+  return String(asset?.name || asset?.id || "asset");
+}
+
+function assetStatusLabel(asset) {
+  return asset?.status === "accepted" ? "Accepted" : "Incoming";
+}
+
+function assetFolderLabel(asset) {
+  if (asset?.status === "accepted" && asset?.accepted_image_path) return asset.accepted_image_path;
+  return asset?.image_path || "";
+}
+
+async function copyText(value, label = "Text") {
+  try {
+    await navigator.clipboard.writeText(String(value ?? ""));
+    setStatus(`${label} copied.`);
+  } catch (_) {
+    setStatus(`Could not copy ${label.toLowerCase()}.`);
+  }
+}
+
 // Asset Browser
 const assetGrid = document.getElementById("assetGrid");
 const assetInspector = document.getElementById("assetInspector");
@@ -369,29 +412,40 @@ function renderAssets(selectId = null) {
   assetGrid.classList.remove("empty");
   assets.forEach((asset) => {
     const card = document.createElement("div");
-    card.className = "asset-card" + (asset.id === selectedAssetId ? " selected" : "");
+    const displayName = assetDisplayName(asset);
+    const statusLabel = assetStatusLabel(asset);
+    card.className = "asset-card" + (asset.id === selectedAssetId ? " selected" : "") + (asset.status === "accepted" ? " accepted" : " incoming");
     card.innerHTML = `
       <div class="asset-thumb-wrap">
-        <img class="pf-viewable-image asset-thumb-image" src="${asset.image_url}" alt="${asset.name}" data-viewer-title="${asset.name}">
-        <span class="asset-thumb-zoom" aria-hidden="true">⌕</span>
+        <img class="asset-thumb-image" src="${asset.image_url}" alt="${escapeHtml(displayName)}">
+        <button class="asset-thumb-zoom" type="button" title="View large" aria-label="View ${escapeHtml(displayName)} large">⌕</button>
+        <span class="asset-status-badge ${asset.status === "accepted" ? "accepted" : "incoming"}">${statusLabel}</span>
+        ${asset.favorite ? '<span class="asset-favorite-badge" title="Favorite">★</span>' : ''}
       </div>
-      <div class="asset-title">${asset.name}</div>
-      <div class="asset-meta">${asset.type} · ${asset.status}</div>
+      <div class="asset-title">${asset.favorite ? '★ ' : ''}${escapeHtml(displayName)}</div>
+      <div class="asset-meta">${escapeHtml(asset.type)} · ${escapeHtml(statusLabel)}</div>
+      ${Array.isArray(asset.tags) && asset.tags.length ? `<div class="asset-tags">${asset.tags.map((t) => `<span>${escapeHtml(t)}</span>`).join("")}</div>` : ""}
     `;
     card.addEventListener("click", () => selectAsset(asset.id));
-    const thumbWrap = card.querySelector(".asset-thumb-wrap");
-    const zoomBtn = card.querySelector(".asset-thumb-zoom");
-    zoomBtn?.addEventListener("click", (event) => {
+    card.querySelector(".asset-thumb-zoom")?.addEventListener("click", (event) => {
       event.stopPropagation();
-      openImageViewer(asset.image_url, asset.name);
-    });
-    thumbWrap?.addEventListener("dblclick", (event) => {
-      event.stopPropagation();
-      openImageViewer(asset.image_url, asset.name);
+      openImageViewer(asset.image_url, displayName);
     });
     assetGrid.appendChild(card);
   });
   if (selectId) selectAsset(selectId);
+}
+
+function renderGenerationSettings(asset) {
+  const rows = [
+    ["Recipe", asset.recipe_name || asset.recipe_id || "?"],
+    ["Workflow", asset.workflow || "?"],
+    ["Engine", asset.engine || "?"],
+    ["Size", `${asset.width || "?"} x ${asset.height || "?"}`],
+    ["Steps", asset.steps || "?"],
+    ["Seed", asset.seed ?? "?"],
+  ];
+  return rows.map(([label, value]) => `<div><span>${label}</span><strong>${escapeHtml(value)}</strong></div>`).join("");
 }
 
 function selectAsset(assetId) {
@@ -399,36 +453,90 @@ function selectAsset(assetId) {
   const asset = assets.find((a) => a.id === assetId);
   renderAssets();
   if (!asset) return;
+  const tags = tagsToString(asset.tags);
+  const displayName = assetDisplayName(asset);
+  const statusLabel = assetStatusLabel(asset);
+  const activePath = assetFolderLabel(asset);
   assetInspector.className = "asset-inspector";
   assetInspector.innerHTML = `
-    <img class="pf-viewable-image" src="${asset.image_url}" alt="${asset.name}" data-viewer-title="${asset.name}">
+    <div class="inspector-hero">
+      <img src="${asset.image_url}" alt="${escapeHtml(displayName)}">
+      <button id="inspectorViewLargeBtn" type="button" class="inspector-view-btn">View Large</button>
+      <span class="inspector-status-badge ${asset.status === "accepted" ? "accepted" : "incoming"}">${statusLabel}</span>
+    </div>
+
     <div class="asset-actions">
-      <button id="viewAssetBtn">View Large</button>
       ${asset.status === "accepted" ? "" : '<button id="acceptAssetBtn">Accept</button>'}
+      <button id="favoriteAssetBtn">${asset.favorite ? "Unfavorite" : "Favorite"}</button>
       <button id="paletteAssetBtn">Palette Lab</button>
       <button id="workspaceAssetBtn">Set Workspace</button>
-      <a href="${asset.image_url}" download="${asset.name}.png">Download</a>
+      <a href="${asset.image_url}" download="${escapeHtml(asset.name)}.png">Download</a>
       <button id="deleteAssetBtn">Delete</button>
     </div>
-    <div class="inspector-details">
-      <strong>${asset.name}</strong><br>
-      ID: ${asset.id}<br>
-      Type: ${asset.type}<br>
-      Status: ${asset.status}<br>
-      Recipe: ${asset.recipe_name || asset.recipe_id || "?"}<br>
-      Created: ${asset.created || ""}<br>
-      Size: ${asset.width || "?"} x ${asset.height || "?"}<br>
-      Steps: ${asset.steps || "?"}<br>
-      Seed: ${asset.seed ?? "?"}
-    </div>
-    <h3>Prompt</h3>
-    <div class="inspector-prompt">${asset.prompt || ""}</div>
+
+    <section class="inspector-section">
+      <h3>Identity</h3>
+      <label>Asset Name</label>
+      <input id="assetNameInput" type="text" value="${escapeHtml(displayName)}">
+      <label>Tags</label>
+      <input id="assetTagsInput" type="text" value="${escapeHtml(tags)}" placeholder="npc, fisherman, accepted">
+      <label>Notes</label>
+      <textarea id="assetNotesInput" class="asset-notes" placeholder="Notes for future you...">${escapeHtml(asset.notes || "")}</textarea>
+      <button id="saveAssetMetadataBtn" type="button">Save Metadata</button>
+    </section>
+
+    <section class="inspector-section">
+      <h3>Generation</h3>
+      <div class="metadata-grid">${renderGenerationSettings(asset)}</div>
+      <div class="metadata-path"><strong>ID:</strong> ${escapeHtml(asset.id)}</div>
+      <div class="metadata-path"><strong>Status:</strong> ${escapeHtml(statusLabel)}</div>
+      <div class="metadata-path"><strong>Created:</strong> ${escapeHtml(asset.created || "")}</div>
+      <div class="metadata-path"><strong>Current Image:</strong> ${escapeHtml(activePath)}</div>
+      <div class="metadata-path"><strong>Original:</strong> ${escapeHtml(asset.image_path || "")}</div>
+      ${asset.accepted_image_path ? `<div class="metadata-path"><strong>Accepted Copy:</strong> ${escapeHtml(asset.accepted_image_path)}</div>` : ""}
+      ${asset.project_root ? `<div class="metadata-path"><strong>Project:</strong> ${escapeHtml(asset.project_root)}</div>` : ""}
+    </section>
+
+    <section class="inspector-section">
+      <div class="section-title-row"><h3>Prompt</h3><button id="copyPromptBtn" type="button">Copy</button></div>
+      <div class="inspector-prompt">${escapeHtml(asset.prompt || "")}</div>
+    </section>
+
+    <section class="inspector-section">
+      <div class="section-title-row"><h3>Negative Prompt</h3><button id="copyNegativeBtn" type="button">Copy</button></div>
+      <div class="inspector-prompt">${escapeHtml(asset.negative_prompt || "")}</div>
+    </section>
+
+    ${asset.resolved_prompt ? `<section class="inspector-section"><div class="section-title-row"><h3>Resolved Prompt</h3><button id="copyResolvedPromptBtn" type="button">Copy</button></div><div class="inspector-prompt">${escapeHtml(asset.resolved_prompt)}</div></section>` : ""}
   `;
-  document.getElementById("viewAssetBtn")?.addEventListener("click", () => openImageViewer(asset.image_url, asset.name));
+  document.getElementById("inspectorViewLargeBtn")?.addEventListener("click", () => openImageViewer(asset.image_url, displayName));
   document.getElementById("acceptAssetBtn")?.addEventListener("click", () => acceptAsset(asset.id));
+  document.getElementById("favoriteAssetBtn")?.addEventListener("click", () => updateAssetMetadata(asset.id, { favorite: !asset.favorite }));
   document.getElementById("paletteAssetBtn").addEventListener("click", () => sendAssetToPalette(asset));
   document.getElementById("workspaceAssetBtn").addEventListener("click", () => setWorkspaceFromAsset(asset));
   document.getElementById("deleteAssetBtn").addEventListener("click", () => deleteAsset(asset.id));
+  document.getElementById("saveAssetMetadataBtn")?.addEventListener("click", () => updateAssetMetadata(asset.id, {
+    name: document.getElementById("assetNameInput")?.value || displayName,
+    tags: document.getElementById("assetTagsInput")?.value || "",
+    notes: document.getElementById("assetNotesInput")?.value || "",
+  }));
+  document.getElementById("copyPromptBtn")?.addEventListener("click", () => copyText(asset.prompt || "", "Prompt"));
+  document.getElementById("copyNegativeBtn")?.addEventListener("click", () => copyText(asset.negative_prompt || "", "Negative prompt"));
+  document.getElementById("copyResolvedPromptBtn")?.addEventListener("click", () => copyText(asset.resolved_prompt || "", "Resolved prompt"));
+}
+
+async function updateAssetMetadata(assetId, changes) {
+  const response = await fetch(`/api/assets/${assetId}/metadata`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(changes),
+  });
+  if (!response.ok) {
+    setStatus("Metadata update failed.");
+    return;
+  }
+  setStatus("Asset metadata saved.");
+  await loadAssets(assetId);
 }
 
 async function acceptAsset(assetId) {
@@ -454,7 +562,7 @@ async function setWorkspaceFromAsset(asset) {
     return;
   }
   await refreshWorkspace();
-  setStatus(`Workspace set to ${asset.name}.`);
+  setStatus(`Workspace set to ${assetDisplayName(asset)}.`);
 }
 
 async function sendAssetToPalette(asset) {
