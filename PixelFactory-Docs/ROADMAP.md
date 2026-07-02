@@ -36,17 +36,3 @@
 ## Persistent Planning
 - Update `PixelFactory-Docs/PROJECT_MEMORY.md` whenever important ideas, feature decisions, or roadmap direction are discussed.
 
-## PF-0013 Export Foundation: Godot + Aseprite
-
-- Pixel Factory is intentionally focused on only two external tools: Godot and Aseprite.
-- Export foundation is PNG-first: copied image, sidecar JSON, and per-target manifest.
-- Export paths live under `PixelFactory-Projects/default/Exports/Godot` and `PixelFactory-Projects/default/Exports/Aseprite`.
-- Future export work should build on this foundation rather than adding unrelated external app targets.
-
-
-## PF-0013.1 Export Verification
-
-- Show export counts and recent export history in the Exporter view.
-- Show manifest path and whether manifest files exist.
-- Show whether exported PNG and sidecar JSON files still exist.
-- Preserve the recipes-vs-presets distinction in project memory.
