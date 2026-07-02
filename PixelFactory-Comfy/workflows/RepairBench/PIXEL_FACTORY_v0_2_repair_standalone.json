@@ -1,0 +1,596 @@
+{
+  "last_node_id": 52,
+  "last_link_id": 31,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "DualCLIPLoader",
+      "pos": [
+        -1450,
+        100
+      ],
+      "size": {
+        "0": 315,
+        "1": 110
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "widgets_values": [
+        "model.safetensors",
+        "t5xxl_fp8_e4m3fn.safetensors",
+        "flux"
+      ],
+      "title": "CORE - Dual CLIP Loader",
+      "properties": {
+        "Node name for S&R": "DualCLIPLoader"
+      },
+      "outputs": [
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            2
+          ],
+          "slot_index": 0
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "UnetLoaderGGUF",
+      "pos": [
+        -1450,
+        -60
+      ],
+      "size": {
+        "0": 315,
+        "1": 80
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "widgets_values": [
+        "flux1-dev-Q4_0.gguf"
+      ],
+      "title": "CORE - Flux GGUF Loader",
+      "properties": {
+        "Node name for S&R": "UnetLoaderGGUF"
+      },
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            1
+          ],
+          "slot_index": 0
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "LoraLoader",
+      "pos": [
+        -1080,
+        20
+      ],
+      "size": {
+        "0": 340,
+        "1": 130
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "widgets_values": [
+        "flux_pixelart128-000001.safetensors",
+        1.4,
+        1.3
+      ],
+      "title": "CORE - Pixel Art LoRA",
+      "properties": {
+        "Node name for S&R": "LoraLoader"
+      },
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 1
+        },
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 2
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            20
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            7,
+            8
+          ],
+          "slot_index": 1
+        },
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 2
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "VAELoader",
+      "pos": [
+        -1080,
+        230
+      ],
+      "size": {
+        "0": 315,
+        "1": 60
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "widgets_values": [
+        "diffusion_pytorch_model.safetensors"
+      ],
+      "title": "CORE - Flux VAE diffusion_pytorch_model",
+      "properties": {
+        "Node name for S&R": "VAELoader"
+      },
+      "outputs": [
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            18,
+            30
+          ],
+          "slot_index": 0
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "type": "CLIPTextEncode",
+      "pos": [
+        -700,
+        760
+      ],
+      "size": {
+        "0": 390,
+        "1": 170
+      },
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "widgets_values": [
+        "preserve the original image composition and style, repair only the obvious problem area, improve pixel clarity, cleaner face or hands or prop, no new objects, no new colors, no random speckles, maintain the same character, same clothing, same background, crisp pixel art, limited palette"
+      ],
+      "title": "REPAIR - Positive",
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            21
+          ],
+          "slot_index": 0
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "type": "CLIPTextEncode",
+      "pos": [
+        -700,
+        980
+      ],
+      "size": {
+        "0": 390,
+        "1": 170
+      },
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "widgets_values": [
+        "major changes, new background, new character, changed clothing, random colored speckles, confetti pixels, noisy texture, stains, extra detail, extra objects, extra limbs, extra hands, deformed hands, text, watermark, logo, blur, smooth shading, photorealistic, 3D"
+      ],
+      "title": "REPAIR - Negative",
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 8
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            22
+          ],
+          "slot_index": 0
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "type": "LoadImage",
+      "pos": [
+        -250,
+        820
+      ],
+      "size": {
+        "0": 315,
+        "1": 314
+      },
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            17
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null,
+          "slot_index": 1
+        }
+      ],
+      "widgets_values": [
+        "example.png",
+        "image"
+      ],
+      "title": "REPAIR - Load Image Here",
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      }
+    },
+    {
+      "id": 23,
+      "type": "VAEEncode",
+      "pos": [
+        120,
+        850
+      ],
+      "size": {
+        "0": 210,
+        "1": 60
+      },
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "title": "REPAIR - VAE Encode Loaded Image",
+      "properties": {
+        "Node name for S&R": "VAEEncode"
+      },
+      "inputs": [
+        {
+          "name": "pixels",
+          "type": "IMAGE",
+          "link": 17
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 18
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            19
+          ],
+          "slot_index": 0
+        }
+      ]
+    },
+    {
+      "id": 32,
+      "type": "KSampler",
+      "pos": [
+        500,
+        820
+      ],
+      "size": {
+        "0": 315,
+        "1": 262
+      },
+      "flags": {},
+      "order": 16,
+      "mode": 0,
+      "widgets_values": [
+        123456789,
+        "randomize",
+        14,
+        1.0,
+        "euler",
+        "simple",
+        0.16
+      ],
+      "title": "REPAIR - Low Denoise Img2Img",
+      "properties": {
+        "Node name for S&R": "KSampler"
+      },
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 20
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 21
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 22
+        },
+        {
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 19
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            29
+          ],
+          "slot_index": 0
+        }
+      ]
+    },
+    {
+      "id": 42,
+      "type": "VAEDecode",
+      "pos": [
+        870,
+        820
+      ],
+      "size": {
+        "0": 210,
+        "1": 60
+      },
+      "flags": {},
+      "order": 19,
+      "mode": 0,
+      "title": "REPAIR - VAE Decode",
+      "properties": {
+        "Node name for S&R": "VAEDecode"
+      },
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 29
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 30
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            31
+          ],
+          "slot_index": 0
+        }
+      ]
+    },
+    {
+      "id": 52,
+      "type": "PreviewImage",
+      "pos": [
+        1200,
+        820
+      ],
+      "size": {
+        "0": 420,
+        "1": 270
+      },
+      "flags": {},
+      "order": 22,
+      "mode": 0,
+      "widgets_values": [],
+      "title": "REPAIR - Preview",
+      "properties": {
+        "Node name for S&R": "SaveImage"
+      },
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 31
+        }
+      ],
+      "outputs": []
+    }
+  ],
+  "links": [
+    [
+      1,
+      2,
+      0,
+      3,
+      0,
+      "MODEL"
+    ],
+    [
+      2,
+      1,
+      0,
+      3,
+      1,
+      "CLIP"
+    ],
+    [
+      7,
+      3,
+      1,
+      14,
+      0,
+      "CLIP"
+    ],
+    [
+      8,
+      3,
+      1,
+      15,
+      0,
+      "CLIP"
+    ],
+    [
+      17,
+      22,
+      0,
+      23,
+      0,
+      "IMAGE"
+    ],
+    [
+      18,
+      4,
+      0,
+      23,
+      1,
+      "VAE"
+    ],
+    [
+      19,
+      23,
+      0,
+      32,
+      3,
+      "LATENT"
+    ],
+    [
+      20,
+      3,
+      0,
+      32,
+      0,
+      "MODEL"
+    ],
+    [
+      21,
+      14,
+      0,
+      32,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      22,
+      15,
+      0,
+      32,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      29,
+      32,
+      0,
+      42,
+      0,
+      "LATENT"
+    ],
+    [
+      30,
+      4,
+      0,
+      42,
+      1,
+      "VAE"
+    ],
+    [
+      31,
+      42,
+      0,
+      52,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "groups": [
+    {
+      "title": "PIXEL FACTORY v0.1 - CORE MODEL",
+      "bounding": [
+        -1500,
+        -120,
+        760,
+        470
+      ],
+      "color": "#3f789e",
+      "font_size": 24
+    },
+    {
+      "title": "REPAIR BENCH - standalone",
+      "bounding": [
+        -740,
+        730,
+        2300,
+        430
+      ],
+      "color": "#D9822B",
+      "font_size": 24
+    }
+  ],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.55,
+      "offset": [
+        100,
+        100
+      ]
+    },
+    "pixel_factory_version": "0.2 standalone repair",
+    "note": "Standalone lane: big Run only executes this tool, not the other lanes."
+  },
+  "version": 0.4
+}

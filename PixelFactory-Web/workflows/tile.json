@@ -1,0 +1,533 @@
+{
+  "last_node_id": 51,
+  "last_link_id": 28,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "DualCLIPLoader",
+      "pos": [
+        -1450,
+        100
+      ],
+      "size": {
+        "0": 315,
+        "1": 110
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "widgets_values": [
+        "model.safetensors",
+        "t5xxl_fp8_e4m3fn.safetensors",
+        "flux"
+      ],
+      "title": "CORE - Dual CLIP Loader",
+      "properties": {
+        "Node name for S&R": "DualCLIPLoader"
+      },
+      "outputs": [
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            2
+          ],
+          "slot_index": 0
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "UnetLoaderGGUF",
+      "pos": [
+        -1450,
+        -60
+      ],
+      "size": {
+        "0": 315,
+        "1": 80
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "widgets_values": [
+        "flux1-dev-Q4_0.gguf"
+      ],
+      "title": "CORE - Flux GGUF Loader",
+      "properties": {
+        "Node name for S&R": "UnetLoaderGGUF"
+      },
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            1
+          ],
+          "slot_index": 0
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "LoraLoader",
+      "pos": [
+        -1080,
+        20
+      ],
+      "size": {
+        "0": 340,
+        "1": 130
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "widgets_values": [
+        "flux_pixelart128-000001.safetensors",
+        1.4,
+        1.3
+      ],
+      "title": "CORE - Pixel Art LoRA",
+      "properties": {
+        "Node name for S&R": "LoraLoader"
+      },
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 1
+        },
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 2
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            13
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            5,
+            6
+          ],
+          "slot_index": 1
+        },
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": null,
+          "slot_index": 2
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "VAELoader",
+      "pos": [
+        -1080,
+        230
+      ],
+      "size": {
+        "0": 315,
+        "1": 60
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "widgets_values": [
+        "diffusion_pytorch_model.safetensors"
+      ],
+      "title": "CORE - Flux VAE diffusion_pytorch_model",
+      "properties": {
+        "Node name for S&R": "VAELoader"
+      },
+      "outputs": [
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            27
+          ],
+          "slot_index": 0
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "CLIPTextEncode",
+      "pos": [
+        -700,
+        260
+      ],
+      "size": {
+        "0": 390,
+        "1": 170
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "widgets_values": [
+        "top-down pixel art game tile, single seamless 16x16 cobblestone floor tile, orthographic view, flat camera, no perspective, gray uneven cobblestones, dark mortar lines, clean tileable edges, limited color palette, crisp pixels, SNES style, retro RPG tile, hand placed pixels, simple readable stone shapes, centered texture only, no scene, no characters"
+      ],
+      "title": "TILE - Positive",
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 5
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            14
+          ],
+          "slot_index": 0
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "type": "CLIPTextEncode",
+      "pos": [
+        -700,
+        480
+      ],
+      "size": {
+        "0": 390,
+        "1": 170
+      },
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "widgets_values": [
+        "character, person, face, body, hands, feet, creature, animal, building scene, wall, door, window, street lamp, trash can, sky, horizon, perspective, vanishing point, camera angle, isometric, 3D, photorealistic, realistic, CGI, painting, smooth shading, blur, anti-aliased, soft gradients, excessive detail, random colored speckles, confetti pixels, noise, stains, text, watermark, logo, border, frame, UI, health bars"
+      ],
+      "title": "TILE - Negative",
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 6
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            15
+          ],
+          "slot_index": 0
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "type": "EmptyLatentImage",
+      "pos": [
+        -250,
+        300
+      ],
+      "size": {
+        "0": 315,
+        "1": 106
+      },
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "widgets_values": [
+        256,
+        256,
+        1
+      ],
+      "title": "TILE - Canvas 256",
+      "properties": {
+        "Node name for S&R": "EmptyLatentImage"
+      },
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            16
+          ],
+          "slot_index": 0
+        }
+      ]
+    },
+    {
+      "id": 31,
+      "type": "KSampler",
+      "pos": [
+        160,
+        320
+      ],
+      "size": {
+        "0": 315,
+        "1": 262
+      },
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "widgets_values": [
+        123456789,
+        "randomize",
+        24,
+        1.0,
+        "euler",
+        "simple",
+        1.0
+      ],
+      "title": "TILE - Generate",
+      "properties": {
+        "Node name for S&R": "KSampler"
+      },
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 13
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 14
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 15
+        },
+        {
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 16
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            26
+          ],
+          "slot_index": 0
+        }
+      ]
+    },
+    {
+      "id": 41,
+      "type": "VAEDecode",
+      "pos": [
+        540,
+        330
+      ],
+      "size": {
+        "0": 210,
+        "1": 60
+      },
+      "flags": {},
+      "order": 18,
+      "mode": 0,
+      "title": "TILE - VAE Decode",
+      "properties": {
+        "Node name for S&R": "VAEDecode"
+      },
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 26
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 27
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            28
+          ],
+          "slot_index": 0
+        }
+      ]
+    },
+    {
+      "id": 51,
+      "type": "PreviewImage",
+      "pos": [
+        880,
+        330
+      ],
+      "size": {
+        "0": 420,
+        "1": 270
+      },
+      "flags": {},
+      "order": 21,
+      "mode": 0,
+      "widgets_values": [],
+      "title": "TILE - Preview",
+      "properties": {
+        "Node name for S&R": "SaveImage"
+      },
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 28
+        }
+      ],
+      "outputs": []
+    }
+  ],
+  "links": [
+    [
+      1,
+      2,
+      0,
+      3,
+      0,
+      "MODEL"
+    ],
+    [
+      2,
+      1,
+      0,
+      3,
+      1,
+      "CLIP"
+    ],
+    [
+      5,
+      3,
+      1,
+      12,
+      0,
+      "CLIP"
+    ],
+    [
+      6,
+      3,
+      1,
+      13,
+      0,
+      "CLIP"
+    ],
+    [
+      13,
+      3,
+      0,
+      31,
+      0,
+      "MODEL"
+    ],
+    [
+      14,
+      12,
+      0,
+      31,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      15,
+      13,
+      0,
+      31,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      16,
+      21,
+      0,
+      31,
+      3,
+      "LATENT"
+    ],
+    [
+      26,
+      31,
+      0,
+      41,
+      0,
+      "LATENT"
+    ],
+    [
+      27,
+      4,
+      0,
+      41,
+      1,
+      "VAE"
+    ],
+    [
+      28,
+      41,
+      0,
+      51,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "groups": [
+    {
+      "title": "PIXEL FACTORY v0.1 - CORE MODEL",
+      "bounding": [
+        -1500,
+        -120,
+        760,
+        470
+      ],
+      "color": "#3f789e",
+      "font_size": 24
+    },
+    {
+      "title": "TILE GENERATOR - standalone",
+      "bounding": [
+        -740,
+        220,
+        1900,
+        430
+      ],
+      "color": "#3FA34D",
+      "font_size": 24
+    }
+  ],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.55,
+      "offset": [
+        100,
+        100
+      ]
+    },
+    "pixel_factory_version": "0.2 standalone tile",
+    "note": "Standalone lane: big Run only executes this tool, not the other lanes."
+  },
+  "version": 0.4
+}
