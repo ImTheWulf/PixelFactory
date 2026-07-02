@@ -26,3 +26,13 @@
 
 ## Milestone 5: Project Memory
 - Track prompts, seeds, model, LoRA, VAE, repairs, accepted assets
+
+## Milestone 6: Export Foundation
+- Export accepted assets to Godot-friendly folders
+- Export accepted assets to Aseprite-friendly folders
+- Track export history in manifest files
+- Keep Godot and Aseprite as the only planned external export targets for now
+
+## Persistent Planning
+- Update `PixelFactory-Docs/PROJECT_MEMORY.md` whenever important ideas, feature decisions, or roadmap direction are discussed.
+
