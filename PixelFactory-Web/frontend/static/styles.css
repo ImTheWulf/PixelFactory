@@ -857,3 +857,46 @@ textarea {
   overflow-wrap: anywhere;
 }
 .export-target-row strong { color: var(--text); text-transform: capitalize; }
+
+
+/* PF-0013.1 export verification visibility */
+.export-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+.export-summary-grid > div {
+  background: #0b0d11;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  overflow-wrap: anywhere;
+}
+.export-summary-grid span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+.export-summary-grid strong { color: var(--text); }
+.export-target-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+.export-recent-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+.export-recent-item {
+  display: grid;
+  gap: 2px;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+.export-recent-item span, .export-empty-note {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}

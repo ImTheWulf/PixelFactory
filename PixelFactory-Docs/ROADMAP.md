@@ -43,3 +43,10 @@
 - Export paths live under `PixelFactory-Projects/default/Exports/Godot` and `PixelFactory-Projects/default/Exports/Aseprite`.
 - Future export work should build on this foundation rather than adding unrelated external app targets.
 
+
+## PF-0013.1 Export Verification
+
+- Show export counts and recent export history in the Exporter view.
+- Show manifest path and whether manifest files exist.
+- Show whether exported PNG and sidecar JSON files still exist.
+- Preserve the recipes-vs-presets distinction in project memory.

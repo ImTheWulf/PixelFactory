@@ -269,3 +269,17 @@ The chat that was lost contained export-foundation planning. The important recov
 - Export paths live under `PixelFactory-Projects/default/Exports/Godot` and `PixelFactory-Projects/default/Exports/Aseprite`.
 - Future export work should build on this foundation rather than adding unrelated external app targets.
 
+
+## Recipes vs Presets Decision
+
+- Recipes and presets are different concepts.
+- A recipe is the production workflow definition: what kind of asset is being made, which ComfyUI workflow to use, required generation fields, asset type, expected size, default tags, and supported export targets.
+- A preset is the flavor/style layer inside or alongside a recipe: medieval, fantasy, sci-fi, cyberpunk, cozy farming, horror, etc.
+- In practical terms: recipes answer "what are we making and how does it flow through PixelFactory?" Presets answer "what artistic/theme direction should this run use?"
+- Future UI should avoid merging these concepts. Recipe selection should feel like choosing the pipeline. Preset selection should feel like choosing a style pack for that pipeline.
+
+## PF-0013.1 Export Verification
+
+- The first export screen existed but was too quiet; it did not prove that exports actually happened.
+- Exporter needs to show accepted asset count, incoming asset count, target folders, manifest existence, recent exported files, and whether PNG/JSON files still exist.
+- Individual asset export buttons are useful during testing, but the intended production flow remains: generate incoming asset -> accept asset -> export accepted asset(s).

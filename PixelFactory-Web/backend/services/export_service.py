@@ -143,13 +143,33 @@ class ExportService:
 
     def status(self) -> dict[str, Any]:
         targets = {}
+        accepted_assets = self.asset_service.list(status="accepted")
+        incoming_assets = self.asset_service.list(status="incoming")
         for key, label in self.TARGETS.items():
             root = self.exports / label
             manifest = self._load_manifest(root)
+            exports = manifest.get("exports", [])
+            enriched_exports = []
+            for item in exports[:12]:
+                image_path = self.project_root / str(item.get("image_path", ""))
+                metadata_path = self.project_root / str(item.get("metadata_path", ""))
+                enriched_exports.append({
+                    **item,
+                    "image_exists": image_path.exists(),
+                    "metadata_exists": metadata_path.exists(),
+                })
             targets[key] = {
                 "folder": self._rel(root),
                 "manifest_path": self._rel(self._manifest_path(root)),
-                "count": len(manifest.get("exports", [])),
+                "manifest_exists": self._manifest_path(root).exists(),
+                "count": len(exports),
                 "updated": manifest.get("updated"),
+                "recent_exports": enriched_exports,
             }
-        return {"ok": True, "exports_root": self._rel(self.exports), "targets": targets}
+        return {
+            "ok": True,
+            "exports_root": self._rel(self.exports),
+            "accepted_count": len(accepted_assets),
+            "incoming_count": len(incoming_assets),
+            "targets": targets,
+        }

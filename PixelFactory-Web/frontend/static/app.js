@@ -668,6 +668,10 @@ async function sendAssetToPalette(asset) {
 
 
 async function exportAsset(assetId, target) {
+  if (!assetId) {
+    setStatus("Export failed: no asset selected.");
+    return null;
+  }
   const response = await fetch(`/api/assets/${assetId}/export`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -675,11 +679,13 @@ async function exportAsset(assetId, target) {
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    setStatus(`Export failed: ${data.detail || response.status}`);
+    const detail = data.detail || data.error || response.status;
+    setStatus(`Export failed for ${assetId}: ${detail}`);
+    await refreshExportStatus();
     return null;
   }
   const exportedPath = data.export?.image_path || "export folder";
-  setStatus(`Exported to ${target}: ${exportedPath}`);
+  setStatus(`Exported ${assetId} to ${target}: ${exportedPath}`);
   await refreshExportStatus();
   return data.export;
 }
@@ -692,10 +698,12 @@ async function exportAcceptedAssets() {
     const response = await fetch(`/api/exports/${target}/accepted`, { method: "POST" });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
-    setStatus(`Exported ${data.count || 0} accepted asset(s) to ${target}.`);
+    const failureText = data.failures?.length ? ` ${data.failures.length} failed.` : "";
+    setStatus(`Exported ${data.count || 0} accepted asset(s) to ${target}.${failureText}`);
     await refreshExportStatus();
   } catch (err) {
     setStatus(`Export accepted failed: ${err.message}`);
+    await refreshExportStatus();
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -709,13 +717,30 @@ async function refreshExportStatus() {
     const data = await response.json();
     const targets = data.targets || {};
     panel.innerHTML = `
-      <div class="metadata-path"><strong>Exports Root:</strong> ${escapeHtml(data.exports_root || "Exports")}</div>
+      <div class="export-summary-grid">
+        <div><span>Accepted assets</span><strong>${escapeHtml(data.accepted_count ?? 0)}</strong></div>
+        <div><span>Incoming assets</span><strong>${escapeHtml(data.incoming_count ?? 0)}</strong></div>
+        <div><span>Exports root</span><strong>${escapeHtml(data.exports_root || "Exports")}</strong></div>
+      </div>
       ${Object.entries(targets).map(([key, info]) => `
         <div class="export-target-row">
-          <strong>${escapeHtml(key)}</strong>
-          <span>${escapeHtml(info.count || 0)} exported</span>
-          <span>${escapeHtml(info.folder || "")}</span>
-          <span>${escapeHtml(info.manifest_path || "")}</span>
+          <div class="export-target-header">
+            <strong>${escapeHtml(key)}</strong>
+            <span>${escapeHtml(info.count || 0)} exported</span>
+          </div>
+          <div class="metadata-path"><strong>Folder:</strong> ${escapeHtml(info.folder || "")}</div>
+          <div class="metadata-path"><strong>Manifest:</strong> ${escapeHtml(info.manifest_path || "")} ${info.manifest_exists ? "✓" : "not created yet"}</div>
+          ${Array.isArray(info.recent_exports) && info.recent_exports.length ? `
+            <div class="export-recent-list">
+              ${info.recent_exports.map((item) => `
+                <div class="export-recent-item">
+                  <strong>${escapeHtml(item.name || item.asset_id || "asset")}</strong>
+                  <span>${escapeHtml(item.image_path || "")}</span>
+                  <span>${item.image_exists ? "PNG exists ✓" : "PNG missing"} · ${item.metadata_exists ? "JSON exists ✓" : "JSON missing"}</span>
+                </div>
+              `).join("")}
+            </div>
+          ` : `<div class="export-empty-note">No exports yet for ${escapeHtml(key)}.</div>`}
         </div>
       `).join("")}
     `;
