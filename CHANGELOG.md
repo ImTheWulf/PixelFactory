@@ -104,3 +104,10 @@ Quick favorite toggle and seed UI cleanup.
 - Export paths live under `PixelFactory-Projects/default/Exports/Godot` and `PixelFactory-Projects/default/Exports/Aseprite`.
 - Future export work should build on this foundation rather than adding unrelated external app targets.
 
+
+## PF-0013.3 — Export Selection Foundation
+
+- Added selected-asset batch export endpoint for Godot/Aseprite.
+- Added Asset Browser export checkboxes and inspector selection toggle.
+- Added Exporter controls for exporting selected assets and clearing selection.
+- Kept PF-0013 export scope PNG-first with JSON sidecars and manifests.

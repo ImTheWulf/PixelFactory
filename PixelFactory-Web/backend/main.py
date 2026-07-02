@@ -39,7 +39,7 @@ asset_service = AssetService(PROJECT_ROOT)
 workspace_service = WorkspaceService(PROJECT_ROOT)
 export_service = ExportService(PROJECT_ROOT, asset_service)
 
-app = FastAPI(title="Pixel Factory by Wulf", version="0.13-pf0013.2-export-stability")
+app = FastAPI(title="Pixel Factory by Wulf", version="0.13-pf0013.3-export-selection")
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
 
@@ -50,7 +50,7 @@ def index() -> str:
 
 @app.get("/api/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "app": "Pixel Factory Web", "version": "0.13", "milestone": "PF-0013.2 Export route and packaging stability"}
+    return {"status": "ok", "app": "Pixel Factory Web", "version": "0.13", "milestone": "PF-0013.3 Export selected assets foundation"}
 
 
 def _read_image(data: bytes) -> Image.Image:
@@ -114,6 +114,9 @@ def _save_asset(image_bytes: bytes, asset_type: str, **kwargs) -> dict:
 
 class ExportRequest(BaseModel):
     target: Literal["godot", "aseprite"]
+
+class ExportAssetsRequest(BaseModel):
+    asset_ids: list[str]
 
 class AssetMetadataUpdateRequest(BaseModel):
     name: str | None = None
@@ -342,6 +345,14 @@ def export_status() -> dict:
 def export_asset(asset_id: str, req: ExportRequest) -> dict:
     try:
         return export_service.export_asset(asset_id, req.target)
+    except ExportError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@app.post("/api/exports/{target}/assets")
+def export_selected_assets(target: Literal["godot", "aseprite"], req: ExportAssetsRequest) -> dict:
+    try:
+        return export_service.export_assets(req.asset_ids, target)
     except ExportError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 

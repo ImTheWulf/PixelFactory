@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0013" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0013_3" />
 </head>
 <body>
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand">Pixel Factory</div>
-      <div class="subtitle">by Wulf · Web v0.13 · PF-0013.2</div>
+      <div class="subtitle">by Wulf · Web v0.13 · PF-0013.3</div>
 
       <nav class="nav">
         <button class="nav-btn active" data-view="palette">Palette Lab</button>
@@ -114,8 +114,11 @@
           <option value="godot">Godot</option>
           <option value="aseprite">Aseprite</option>
         </select>
+        <button id="exportSelectedBtn" type="button">Export Selected Assets</button>
         <button id="exportAcceptedBtn" type="button">Export Accepted Assets</button>
+        <button id="clearSelectedExportsBtn" type="button">Clear Selection</button>
         <button id="refreshExportsBtn" type="button">Refresh Export Status</button>
+        <div id="exportSelectionStatus" class="workspace-status">Selected for export: 0</div>
       </section>
 
       <section id="assetsControls" class="panel view-controls hidden">
@@ -244,6 +247,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0013"></script>
+  <script src="/static/app.js?v=pf0013_3"></script>
 </body>
 </html>

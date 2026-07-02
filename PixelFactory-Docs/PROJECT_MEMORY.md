@@ -293,3 +293,10 @@ Recipes vs presets remains an important product distinction:
 - Presets are creative/style lenses applied inside a recipe: medieval, fantasy, sci-fi, cozy, horror, SNES-like, Game Boy-like, palette/style direction, etc.
 - In plain terms: recipe = the pipeline/job type; preset = the art direction for that job.
 
+
+## PF-0013.3 Export Selection Foundation
+
+- Export foundation now supports both production bulk export of all accepted assets and testing/export curation through selected assets.
+- Selected export is intentionally local UI state for now; it does not change asset metadata.
+- Backend route added: `POST /api/exports/{target}/assets` with `{ "asset_ids": [...] }`.
+- This keeps the PNG-first Godot/Aseprite foundation intact while making the exporter more useful during asset review.

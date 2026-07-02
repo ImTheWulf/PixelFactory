@@ -131,15 +131,31 @@ class ExportService:
         self._write_manifest(target_root, record)
         return {"ok": True, "export": record, "manifest_path": self._rel(self._manifest_path(target_root))}
 
-    def export_accepted(self, target: str) -> dict[str, Any]:
+    def export_assets(self, asset_ids: list[str], target: str) -> dict[str, Any]:
+        """Export an explicit set of assets. Used by PF-0013.3 selected export."""
         exported = []
         failures = []
-        for asset in self.asset_service.list(status="accepted"):
+        seen: set[str] = set()
+        for raw_asset_id in asset_ids:
+            asset_id = str(raw_asset_id).strip()
+            if not asset_id or asset_id in seen:
+                continue
+            seen.add(asset_id)
             try:
-                exported.append(self.export_asset(asset["id"], target)["export"])
+                exported.append(self.export_asset(asset_id, target)["export"])
             except Exception as exc:
-                failures.append({"asset_id": asset.get("id"), "error": str(exc)})
-        return {"ok": not failures, "target": target.lower().strip(), "count": len(exported), "exports": exported, "failures": failures}
+                failures.append({"asset_id": asset_id, "error": str(exc)})
+        return {
+            "ok": not failures,
+            "target": target.lower().strip(),
+            "requested_count": len(seen),
+            "count": len(exported),
+            "exports": exported,
+            "failures": failures,
+        }
+
+    def export_accepted(self, target: str) -> dict[str, Any]:
+        return self.export_assets([asset["id"] for asset in self.asset_service.list(status="accepted")], target)
 
     def status(self) -> dict[str, Any]:
         targets = {}

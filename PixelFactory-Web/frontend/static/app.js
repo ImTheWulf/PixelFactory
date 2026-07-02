@@ -18,6 +18,7 @@ function setView(name) {
     hydratePaletteFromWorkspaceIfNeeded();
   }
   if (name === "exporter") {
+    updateExportSelectionStatus();
     refreshExportStatus();
   }
 }
@@ -421,8 +422,34 @@ const assetFilter = document.getElementById("assetFilter");
 const assetBrowserTitle = document.getElementById("assetBrowserTitle");
 let assets = [];
 let selectedAssetId = null;
+let exportSelection = new Set();
+
+function updateExportSelectionStatus() {
+  const count = exportSelection.size;
+  const label = `Selected for export: ${count}`;
+  const selectionStatus = document.getElementById("exportSelectionStatus");
+  if (selectionStatus) selectionStatus.textContent = label;
+  const btn = document.getElementById("exportSelectedBtn");
+  if (btn) btn.disabled = count === 0;
+}
+
+function toggleExportSelection(assetId, checked = null) {
+  if (!assetId) return;
+  const nextChecked = checked === null ? !exportSelection.has(assetId) : Boolean(checked);
+  if (nextChecked) exportSelection.add(assetId);
+  else exportSelection.delete(assetId);
+  updateExportSelectionStatus();
+  renderAssets(selectedAssetId);
+}
 
 assetGrid?.addEventListener("click", async (event) => {
+  const exportToggle = event.target.closest(".asset-export-select");
+  if (exportToggle) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    toggleExportSelection(exportToggle.dataset.assetId, exportToggle.checked);
+    return;
+  }
   const favoriteButton = event.target.closest(".asset-card-favorite");
   if (!favoriteButton) return;
   event.preventDefault();
@@ -475,12 +502,16 @@ function renderAssets(selectId = null) {
     const card = document.createElement("div");
     const displayName = assetDisplayName(asset);
     const statusLabel = assetStatusLabel(asset);
-    card.className = "asset-card" + (asset.id === selectedAssetId ? " selected" : "") + (asset.status === "accepted" ? " accepted" : " incoming");
+    card.className = "asset-card" + (asset.id === selectedAssetId ? " selected" : "") + (exportSelection.has(asset.id) ? " export-selected" : "") + (asset.status === "accepted" ? " accepted" : " incoming");
     card.dataset.assetId = asset.id;
     card.innerHTML = `
       <div class="asset-thumb-wrap">
         <img class="asset-thumb-image" src="${asset.image_url}" alt="${escapeHtml(displayName)}">
         <button class="asset-thumb-zoom" type="button" title="View large" aria-label="View ${escapeHtml(displayName)} large">⌕</button>
+        <label class="asset-export-select-wrap" title="Select for batch export">
+          <input class="asset-export-select" type="checkbox" data-asset-id="${escapeHtml(asset.id)}" ${exportSelection.has(asset.id) ? "checked" : ""}>
+          Export
+        </label>
         <button class="asset-card-favorite ${asset.favorite ? "active" : ""}" type="button" data-asset-id="${escapeHtml(asset.id)}" title="${asset.favorite ? "Unfavorite" : "Favorite"}" aria-label="${asset.favorite ? "Unfavorite" : "Favorite"} ${escapeHtml(displayName)}">${asset.favorite ? "★" : "☆"}</button>
         <span class="asset-status-badge ${asset.status === "accepted" ? "accepted" : "incoming"}">${statusLabel}</span>
       </div>
@@ -499,6 +530,7 @@ function renderAssets(selectId = null) {
     assetGrid.appendChild(card);
   });
   if (selectId) selectAsset(selectId);
+  updateExportSelectionStatus();
 }
 
 function renderGenerationSettings(asset) {
@@ -535,6 +567,7 @@ function selectAsset(assetId) {
       <button id="favoriteAssetBtn">${asset.favorite ? "Unfavorite" : "Favorite"}</button>
       <button id="paletteAssetBtn">Palette Lab</button>
       <button id="workspaceAssetBtn">Set Workspace</button>
+      <button id="selectForExportAssetBtn">${exportSelection.has(asset.id) ? "Unselect Export" : "Select Export"}</button>
       <button id="exportGodotAssetBtn">Export Godot</button>
       <button id="exportAsepriteAssetBtn">Export Aseprite</button>
       <a href="${asset.image_url}" download="${escapeHtml(asset.name)}.png">Download</a>
@@ -582,6 +615,7 @@ function selectAsset(assetId) {
   document.getElementById("paletteAssetBtn").addEventListener("click", () => sendAssetToPalette(asset));
   document.getElementById("workspaceAssetBtn").addEventListener("click", () => setWorkspaceFromAsset(asset));
   document.getElementById("deleteAssetBtn").addEventListener("click", () => deleteAsset(asset.id));
+  document.getElementById("selectForExportAssetBtn")?.addEventListener("click", () => toggleExportSelection(asset.id));
   document.getElementById("exportGodotAssetBtn")?.addEventListener("click", () => exportAsset(asset.id, "godot"));
   document.getElementById("exportAsepriteAssetBtn")?.addEventListener("click", () => exportAsset(asset.id, "aseprite"));
   document.getElementById("saveAssetMetadataBtn")?.addEventListener("click", () => updateAssetMetadata(asset.id, {
@@ -642,6 +676,8 @@ async function deleteAsset(assetId) {
   const response = await fetch(`/api/assets/${assetId}`, { method: "DELETE" });
   if (!response.ok) { setStatus("Delete failed."); return; }
   selectedAssetId = null;
+  exportSelection.delete(assetId);
+  updateExportSelectionStatus();
   setStatus("Asset deleted.");
   await loadAssets();
 }
@@ -690,6 +726,33 @@ async function exportAsset(assetId, target) {
   return data.export;
 }
 
+async function exportSelectedAssets() {
+  const target = document.getElementById("exportTarget")?.value || "godot";
+  const btn = document.getElementById("exportSelectedBtn");
+  if (!exportSelection.size) {
+    setStatus("Select one or more assets first.");
+    return;
+  }
+  if (btn) btn.disabled = true;
+  try {
+    const response = await fetch(`/api/exports/${target}/assets`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ asset_ids: Array.from(exportSelection) }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
+    const failureText = data.failures?.length ? ` ${data.failures.length} failed.` : "";
+    setStatus(`Exported ${data.count || 0} selected asset(s) to ${target}.${failureText}`);
+    await refreshExportStatus();
+  } catch (err) {
+    setStatus(`Export selected failed: ${err.message}`);
+    await refreshExportStatus();
+  } finally {
+    updateExportSelectionStatus();
+  }
+}
+
 async function exportAcceptedAssets() {
   const target = document.getElementById("exportTarget")?.value || "godot";
   const btn = document.getElementById("exportAcceptedBtn");
@@ -718,6 +781,7 @@ async function refreshExportStatus() {
     const targets = data.targets || {};
     panel.innerHTML = `
       <div class="export-summary-grid">
+        <div><span>Selected assets</span><strong>${escapeHtml(exportSelection.size)}</strong></div>
         <div><span>Accepted assets</span><strong>${escapeHtml(data.accepted_count ?? 0)}</strong></div>
         <div><span>Incoming assets</span><strong>${escapeHtml(data.incoming_count ?? 0)}</strong></div>
         <div><span>Exports root</span><strong>${escapeHtml(data.exports_root || "Exports")}</strong></div>
@@ -749,7 +813,14 @@ async function refreshExportStatus() {
   }
 }
 
+document.getElementById("exportSelectedBtn")?.addEventListener("click", exportSelectedAssets);
 document.getElementById("exportAcceptedBtn")?.addEventListener("click", exportAcceptedAssets);
+document.getElementById("clearSelectedExportsBtn")?.addEventListener("click", () => {
+  exportSelection.clear();
+  updateExportSelectionStatus();
+  renderAssets(selectedAssetId);
+  setStatus("Export selection cleared.");
+});
 document.getElementById("refreshExportsBtn")?.addEventListener("click", refreshExportStatus);
 
 refreshAssetsBtn?.addEventListener("click", () => loadAssets());
