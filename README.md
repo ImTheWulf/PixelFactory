@@ -17,3 +17,11 @@ A modular pixel-art asset production toolkit.
 ## Current Milestone
 
 PF-0008 Workspace Pipeline: latest generations are placed into a temporary workspace for Palette Lab and future repair/export tools.
+
+## PF-0009 — Universal Image Viewer
+
+- Added shared full-screen image viewer modal.
+- Added Fit / 1:1 / Zoom controls.
+- Added click-to-view behavior for Palette Lab previews, generated images, and asset inspector previews.
+- Fixed Palette Lab preview mode CSS to avoid squashing images.
+

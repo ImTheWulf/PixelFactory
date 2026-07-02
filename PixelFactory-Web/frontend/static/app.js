@@ -79,6 +79,11 @@ function applyPreviewMode() {
   [originalPreview, processedPreview].forEach((img) => {
     img.classList.toggle("fit-image", mode === "fit");
     img.classList.toggle("actual-image", mode === "actual");
+    const viewport = img.closest(".viewport");
+    if (viewport) {
+      viewport.classList.toggle("fit-mode", mode === "fit");
+      viewport.classList.toggle("actual-mode", mode === "actual");
+    }
   });
 }
 
@@ -112,6 +117,8 @@ async function loadImageIntoPaletteFromUrl(url, filename = "workspace.png", sour
   selectedFile = new File([blob], filename, { type: "image/png" });
   selectedFileSource = source;
   originalPreview.src = `${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}`;
+  originalPreview.classList.add("pf-viewable-image");
+  originalPreview.dataset.viewerTitle = filename;
   processedPreview.removeAttribute("src");
   downloadBtn.disabled = true;
   applyPreviewMode();
@@ -152,6 +159,8 @@ imageInput.addEventListener("change", () => {
   selectedFile = file;
   selectedFileSource = "upload";
   originalPreview.src = URL.createObjectURL(file);
+  originalPreview.classList.add("pf-viewable-image");
+  originalPreview.dataset.viewerTitle = file.name;
   processedPreview.removeAttribute("src");
   downloadBtn.disabled = true;
   applyPreviewMode();
@@ -180,6 +189,8 @@ processBtn.addEventListener("click", async () => {
     if (processedBlobUrl) URL.revokeObjectURL(processedBlobUrl);
     processedBlobUrl = URL.createObjectURL(blob);
     processedPreview.src = processedBlobUrl;
+    processedPreview.classList.add("pf-viewable-image");
+    processedPreview.dataset.viewerTitle = "Processed preview";
     applyPreviewMode();
     downloadBtn.disabled = false;
     setStatus("Processed preview ready.");
@@ -246,6 +257,8 @@ function addGeneratedImage(src, index, asset = null) {
   const img = document.createElement("img");
   img.src = asset?.image_url || src;
   img.alt = `Generated character ${index + 1}`;
+  img.classList.add("pf-viewable-image");
+  img.dataset.viewerTitle = asset?.name || `Generated character ${index + 1}`;
   const actions = document.createElement("div");
   actions.className = "generated-actions";
   const download = document.createElement("a");
@@ -358,7 +371,7 @@ function renderAssets(selectId = null) {
     const card = document.createElement("div");
     card.className = "asset-card" + (asset.id === selectedAssetId ? " selected" : "");
     card.innerHTML = `
-      <img src="${asset.image_url}" alt="${asset.name}">
+      <img class="pf-viewable-image" src="${asset.image_url}" alt="${asset.name}" data-viewer-title="${asset.name}">
       <div class="asset-title">${asset.name}</div>
       <div class="asset-meta">${asset.type} · ${asset.status}</div>
     `;
@@ -375,8 +388,9 @@ function selectAsset(assetId) {
   if (!asset) return;
   assetInspector.className = "asset-inspector";
   assetInspector.innerHTML = `
-    <img src="${asset.image_url}" alt="${asset.name}">
+    <img class="pf-viewable-image" src="${asset.image_url}" alt="${asset.name}" data-viewer-title="${asset.name}">
     <div class="asset-actions">
+      <button id="viewAssetBtn">View Large</button>
       ${asset.status === "accepted" ? "" : '<button id="acceptAssetBtn">Accept</button>'}
       <button id="paletteAssetBtn">Palette Lab</button>
       <button id="workspaceAssetBtn">Set Workspace</button>
@@ -397,6 +411,7 @@ function selectAsset(assetId) {
     <h3>Prompt</h3>
     <div class="inspector-prompt">${asset.prompt || ""}</div>
   `;
+  document.getElementById("viewAssetBtn")?.addEventListener("click", () => openImageViewer(asset.image_url, asset.name));
   document.getElementById("acceptAssetBtn")?.addEventListener("click", () => acceptAsset(asset.id));
   document.getElementById("paletteAssetBtn").addEventListener("click", () => sendAssetToPalette(asset));
   document.getElementById("workspaceAssetBtn").addEventListener("click", () => setWorkspaceFromAsset(asset));
@@ -441,6 +456,132 @@ async function sendAssetToPalette(asset) {
 
 refreshAssetsBtn?.addEventListener("click", () => loadAssets());
 assetFilter?.addEventListener("change", () => loadAssets());
+
+
+
+// PF-0009 Universal Image Viewer
+const imageViewerModal = document.getElementById("imageViewerModal");
+const imageViewerImage = document.getElementById("imageViewerImage");
+const imageViewerStage = document.getElementById("imageViewerStage");
+const imageViewerTitle = document.getElementById("imageViewerTitle");
+const imageViewerMeta = document.getElementById("imageViewerMeta");
+const viewerDownloadLink = document.getElementById("viewerDownloadLink");
+const viewerCloseBtn = document.getElementById("viewerCloseBtn");
+const viewerFitBtn = document.getElementById("viewerFitBtn");
+const viewerActualBtn = document.getElementById("viewerActualBtn");
+const viewerZoomInBtn = document.getElementById("viewerZoomInBtn");
+const viewerZoomOutBtn = document.getElementById("viewerZoomOutBtn");
+
+let viewerZoom = 1;
+let viewerMode = "fit";
+let viewerDragging = false;
+let viewerDragStart = { x: 0, y: 0, scrollLeft: 0, scrollTop: 0 };
+
+function updateViewerMeta() {
+  if (!imageViewerMeta) return;
+  const pct = Math.round(viewerZoom * 100);
+  imageViewerMeta.textContent = viewerMode === "fit" ? "Fit to window" : `${pct}%`;
+}
+
+function applyViewerMode() {
+  if (!imageViewerImage || !imageViewerStage) return;
+  imageViewerStage.classList.toggle("fit", viewerMode === "fit");
+  imageViewerStage.classList.toggle("actual", viewerMode !== "fit");
+  if (viewerMode === "fit") {
+    imageViewerImage.style.transform = "none";
+    imageViewerImage.style.maxWidth = "100%";
+    imageViewerImage.style.maxHeight = "100%";
+  } else {
+    imageViewerImage.style.maxWidth = "none";
+    imageViewerImage.style.maxHeight = "none";
+    imageViewerImage.style.transform = `scale(${viewerZoom})`;
+  }
+  updateViewerMeta();
+}
+
+function openImageViewer(src, title = "Image") {
+  if (!imageViewerModal || !imageViewerImage) return;
+  imageViewerImage.src = src;
+  imageViewerTitle.textContent = title || "Image";
+  viewerDownloadLink.href = src;
+  viewerDownloadLink.download = `${(title || "pixel_factory_image").replace(/[^a-z0-9_\-]+/gi, "_")}.png`;
+  viewerMode = "fit";
+  viewerZoom = 1;
+  imageViewerModal.classList.remove("hidden");
+  imageViewerModal.setAttribute("aria-hidden", "false");
+  applyViewerMode();
+}
+
+function closeImageViewer() {
+  if (!imageViewerModal) return;
+  imageViewerModal.classList.add("hidden");
+  imageViewerModal.setAttribute("aria-hidden", "true");
+  if (imageViewerImage) imageViewerImage.removeAttribute("src");
+}
+
+function setViewerActual(zoom = 1) {
+  viewerMode = "actual";
+  viewerZoom = Math.max(0.1, Math.min(8, zoom));
+  applyViewerMode();
+}
+
+function setViewerFit() {
+  viewerMode = "fit";
+  viewerZoom = 1;
+  applyViewerMode();
+}
+
+viewerCloseBtn?.addEventListener("click", closeImageViewer);
+document.querySelector("[data-viewer-close]")?.addEventListener("click", closeImageViewer);
+viewerFitBtn?.addEventListener("click", setViewerFit);
+viewerActualBtn?.addEventListener("click", () => setViewerActual(1));
+viewerZoomInBtn?.addEventListener("click", () => setViewerActual(viewerZoom * 1.25));
+viewerZoomOutBtn?.addEventListener("click", () => setViewerActual(viewerZoom / 1.25));
+
+imageViewerStage?.addEventListener("wheel", (event) => {
+  if (!imageViewerImage?.src) return;
+  event.preventDefault();
+  const direction = event.deltaY < 0 ? 1.15 : 1 / 1.15;
+  setViewerActual((viewerMode === "fit" ? 1 : viewerZoom) * direction);
+}, { passive: false });
+
+imageViewerStage?.addEventListener("mousedown", (event) => {
+  if (viewerMode === "fit") return;
+  viewerDragging = true;
+  imageViewerStage.classList.add("dragging");
+  viewerDragStart = {
+    x: event.clientX,
+    y: event.clientY,
+    scrollLeft: imageViewerStage.scrollLeft,
+    scrollTop: imageViewerStage.scrollTop,
+  };
+});
+window.addEventListener("mousemove", (event) => {
+  if (!viewerDragging || !imageViewerStage) return;
+  imageViewerStage.scrollLeft = viewerDragStart.scrollLeft - (event.clientX - viewerDragStart.x);
+  imageViewerStage.scrollTop = viewerDragStart.scrollTop - (event.clientY - viewerDragStart.y);
+});
+window.addEventListener("mouseup", () => {
+  viewerDragging = false;
+  imageViewerStage?.classList.remove("dragging");
+});
+
+document.addEventListener("keydown", (event) => {
+  if (imageViewerModal?.classList.contains("hidden")) return;
+  if (event.key === "Escape") closeImageViewer();
+  if (event.key === "0") setViewerFit();
+  if (event.key === "1") setViewerActual(1);
+});
+
+document.addEventListener("click", (event) => {
+  const img = event.target.closest("img.pf-viewable-image");
+  if (!img || !img.src) return;
+  if (event.target.closest(".asset-card")) {
+    // Asset card clicks select assets; use inspector or View Large for modal.
+    return;
+  }
+  openImageViewer(img.src, img.dataset.viewerTitle || img.alt || "Image");
+});
 
 // Startup
 (async function initPixelFactory() {

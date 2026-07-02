@@ -44,3 +44,11 @@
 
 ## v0.1-v0.3
 - Early Comfy workflow experiments and desktop app prototype.
+
+## PF-0009 — Universal Image Viewer
+
+- Added shared full-screen image viewer modal.
+- Added Fit / 1:1 / Zoom controls.
+- Added click-to-view behavior for Palette Lab previews, generated images, and asset inspector previews.
+- Fixed Palette Lab preview mode CSS to avoid squashing images.
+

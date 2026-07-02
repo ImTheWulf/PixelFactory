@@ -10,7 +10,7 @@
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand">Pixel Factory</div>
-      <div class="subtitle">by Wulf · Web v0.8 · PF-0008</div>
+      <div class="subtitle">by Wulf · Web v0.9 · PF-0009</div>
 
       <nav class="nav">
         <button class="nav-btn active" data-view="palette">Palette Lab</button>
@@ -180,6 +180,30 @@
         </section>
       </section>
     </main>
+  </div>
+
+
+  <div id="imageViewerModal" class="image-viewer-modal hidden" aria-hidden="true">
+    <div class="image-viewer-backdrop" data-viewer-close></div>
+    <div class="image-viewer-panel" role="dialog" aria-modal="true" aria-label="Image viewer">
+      <div class="image-viewer-toolbar">
+        <div>
+          <div id="imageViewerTitle" class="image-viewer-title">Image Viewer</div>
+          <div id="imageViewerMeta" class="image-viewer-meta">Fit</div>
+        </div>
+        <div class="image-viewer-actions">
+          <button id="viewerZoomOutBtn" type="button">−</button>
+          <button id="viewerFitBtn" type="button">Fit</button>
+          <button id="viewerActualBtn" type="button">1:1</button>
+          <button id="viewerZoomInBtn" type="button">+</button>
+          <a id="viewerDownloadLink" href="#" download>Download</a>
+          <button id="viewerCloseBtn" type="button">Close</button>
+        </div>
+      </div>
+      <div id="imageViewerStage" class="image-viewer-stage">
+        <img id="imageViewerImage" alt="Full image preview" />
+      </div>
+    </div>
   </div>
 
   <script src="/static/app.js"></script>
