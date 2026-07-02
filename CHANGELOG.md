@@ -52,3 +52,8 @@
 - Added click-to-view behavior for Palette Lab previews, generated images, and asset inspector previews.
 - Fixed Palette Lab preview mode CSS to avoid squashing images.
 
+
+## PF-0009.1
+- Asset Browser thumbnail images now open the universal viewer directly.
+- Card body still selects the asset for inspection.
+- Zoom overlay is now visually tied to the clickable thumbnail area.

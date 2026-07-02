@@ -327,7 +327,7 @@ textarea {
   object-fit: unset;
 }
 .pf-viewable-image {
-  cursor: zoom-in;
+  cursor: pointer;
 }
 .image-viewer-modal.hidden {
   display: none;
@@ -411,7 +411,10 @@ textarea {
   overflow: hidden;
 }
 .image-viewer-stage.actual {
-  place-items: start;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: auto;
   cursor: grab;
 }
 .image-viewer-stage.dragging {
@@ -437,3 +440,59 @@ textarea {
   width: auto;
   height: auto;
 }
+
+/* PF-0009.1 asset thumbnail viewer patch */
+.asset-thumb-wrap {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #0b0d11;
+  cursor: zoom-in;
+}
+.asset-thumb-wrap:hover .asset-thumb-image {
+  filter: brightness(1.08);
+}
+.asset-thumb-zoom {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.22);
+  border-radius: 999px;
+  background: rgba(0,0,0,.55);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 900;
+  opacity: .85;
+  pointer-events: auto;
+  cursor: zoom-in;
+}
+.asset-thumb-wrap:hover .asset-thumb-zoom {
+  opacity: 1;
+  border-color: var(--accent);
+}
+
+
+/* PF-0009.2 viewer behavior patch */
+.asset-thumb-wrap { cursor: pointer; }
+.asset-thumb-wrap::after {
+  content: "Double-click to view";
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  max-width: calc(100% - 52px);
+  padding: 4px 6px;
+  border-radius: 6px;
+  background: rgba(0,0,0,.5);
+  color: rgba(255,255,255,.88);
+  font-size: 10px;
+  opacity: 0;
+  transition: opacity .12s ease;
+  pointer-events: none;
+}
+.asset-thumb-wrap:hover::after { opacity: 1; }
+.asset-thumb-zoom:hover { background: rgba(77,163,255,.85); }
+.image-viewer-stage.actual img { flex: 0 0 auto; }

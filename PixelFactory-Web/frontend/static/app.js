@@ -371,11 +371,24 @@ function renderAssets(selectId = null) {
     const card = document.createElement("div");
     card.className = "asset-card" + (asset.id === selectedAssetId ? " selected" : "");
     card.innerHTML = `
-      <img class="pf-viewable-image" src="${asset.image_url}" alt="${asset.name}" data-viewer-title="${asset.name}">
+      <div class="asset-thumb-wrap">
+        <img class="pf-viewable-image asset-thumb-image" src="${asset.image_url}" alt="${asset.name}" data-viewer-title="${asset.name}">
+        <span class="asset-thumb-zoom" aria-hidden="true">⌕</span>
+      </div>
       <div class="asset-title">${asset.name}</div>
       <div class="asset-meta">${asset.type} · ${asset.status}</div>
     `;
     card.addEventListener("click", () => selectAsset(asset.id));
+    const thumbWrap = card.querySelector(".asset-thumb-wrap");
+    const zoomBtn = card.querySelector(".asset-thumb-zoom");
+    zoomBtn?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      openImageViewer(asset.image_url, asset.name);
+    });
+    thumbWrap?.addEventListener("dblclick", (event) => {
+      event.stopPropagation();
+      openImageViewer(asset.image_url, asset.name);
+    });
     assetGrid.appendChild(card);
   });
   if (selectId) selectAsset(selectId);
@@ -483,20 +496,34 @@ function updateViewerMeta() {
   imageViewerMeta.textContent = viewerMode === "fit" ? "Fit to window" : `${pct}%`;
 }
 
-function applyViewerMode() {
+function centerViewerScroll() {
+  if (!imageViewerStage) return;
+  requestAnimationFrame(() => {
+    imageViewerStage.scrollLeft = Math.max(0, (imageViewerStage.scrollWidth - imageViewerStage.clientWidth) / 2);
+    imageViewerStage.scrollTop = Math.max(0, (imageViewerStage.scrollHeight - imageViewerStage.clientHeight) / 2);
+  });
+}
+
+function applyViewerMode({ center = false } = {}) {
   if (!imageViewerImage || !imageViewerStage) return;
   imageViewerStage.classList.toggle("fit", viewerMode === "fit");
   imageViewerStage.classList.toggle("actual", viewerMode !== "fit");
+  imageViewerImage.style.transform = "none";
+
   if (viewerMode === "fit") {
-    imageViewerImage.style.transform = "none";
+    imageViewerImage.style.width = "auto";
+    imageViewerImage.style.height = "auto";
     imageViewerImage.style.maxWidth = "100%";
     imageViewerImage.style.maxHeight = "100%";
   } else {
+    const naturalWidth = imageViewerImage.naturalWidth || imageViewerImage.width || 1;
     imageViewerImage.style.maxWidth = "none";
     imageViewerImage.style.maxHeight = "none";
-    imageViewerImage.style.transform = `scale(${viewerZoom})`;
+    imageViewerImage.style.width = `${Math.max(1, Math.round(naturalWidth * viewerZoom))}px`;
+    imageViewerImage.style.height = "auto";
   }
   updateViewerMeta();
+  if (center || viewerMode === "fit") centerViewerScroll();
 }
 
 function openImageViewer(src, title = "Image") {
@@ -509,7 +536,8 @@ function openImageViewer(src, title = "Image") {
   viewerZoom = 1;
   imageViewerModal.classList.remove("hidden");
   imageViewerModal.setAttribute("aria-hidden", "false");
-  applyViewerMode();
+  if (imageViewerImage.complete) applyViewerMode({ center: true });
+  else imageViewerImage.onload = () => applyViewerMode({ center: true });
 }
 
 function closeImageViewer() {
@@ -519,16 +547,16 @@ function closeImageViewer() {
   if (imageViewerImage) imageViewerImage.removeAttribute("src");
 }
 
-function setViewerActual(zoom = 1) {
+function setViewerActual(zoom = 1, { center = true } = {}) {
   viewerMode = "actual";
   viewerZoom = Math.max(0.1, Math.min(8, zoom));
-  applyViewerMode();
+  applyViewerMode({ center });
 }
 
 function setViewerFit() {
   viewerMode = "fit";
   viewerZoom = 1;
-  applyViewerMode();
+  applyViewerMode({ center: true });
 }
 
 viewerCloseBtn?.addEventListener("click", closeImageViewer);
@@ -542,7 +570,7 @@ imageViewerStage?.addEventListener("wheel", (event) => {
   if (!imageViewerImage?.src) return;
   event.preventDefault();
   const direction = event.deltaY < 0 ? 1.15 : 1 / 1.15;
-  setViewerActual((viewerMode === "fit" ? 1 : viewerZoom) * direction);
+  setViewerActual((viewerMode === "fit" ? 1 : viewerZoom) * direction, { center: viewerMode === "fit" });
 }, { passive: false });
 
 imageViewerStage?.addEventListener("mousedown", (event) => {
@@ -576,10 +604,8 @@ document.addEventListener("keydown", (event) => {
 document.addEventListener("click", (event) => {
   const img = event.target.closest("img.pf-viewable-image");
   if (!img || !img.src) return;
-  if (event.target.closest(".asset-card")) {
-    // Asset card clicks select assets; use inspector or View Large for modal.
-    return;
-  }
+  // Asset cards use explicit controls: click selects, magnify opens, double-click thumbnail opens.
+  if (event.target.closest(".asset-card")) return;
   openImageViewer(img.src, img.dataset.viewerTitle || img.alt || "Image");
 });
 
