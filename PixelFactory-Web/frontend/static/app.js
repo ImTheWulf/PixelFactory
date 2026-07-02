@@ -17,6 +17,9 @@ function setView(name) {
   if (name === "palette") {
     hydratePaletteFromWorkspaceIfNeeded();
   }
+  if (name === "exporter") {
+    refreshExportStatus();
+  }
 }
 
 navButtons.forEach((btn) => btn.addEventListener("click", () => setView(btn.dataset.view)));
@@ -532,6 +535,8 @@ function selectAsset(assetId) {
       <button id="favoriteAssetBtn">${asset.favorite ? "Unfavorite" : "Favorite"}</button>
       <button id="paletteAssetBtn">Palette Lab</button>
       <button id="workspaceAssetBtn">Set Workspace</button>
+      <button id="exportGodotAssetBtn">Export Godot</button>
+      <button id="exportAsepriteAssetBtn">Export Aseprite</button>
       <a href="${asset.image_url}" download="${escapeHtml(asset.name)}.png">Download</a>
       <button id="deleteAssetBtn">Delete</button>
     </div>
@@ -577,6 +582,8 @@ function selectAsset(assetId) {
   document.getElementById("paletteAssetBtn").addEventListener("click", () => sendAssetToPalette(asset));
   document.getElementById("workspaceAssetBtn").addEventListener("click", () => setWorkspaceFromAsset(asset));
   document.getElementById("deleteAssetBtn").addEventListener("click", () => deleteAsset(asset.id));
+  document.getElementById("exportGodotAssetBtn")?.addEventListener("click", () => exportAsset(asset.id, "godot"));
+  document.getElementById("exportAsepriteAssetBtn")?.addEventListener("click", () => exportAsset(asset.id, "aseprite"));
   document.getElementById("saveAssetMetadataBtn")?.addEventListener("click", () => updateAssetMetadata(asset.id, {
     name: document.getElementById("assetNameInput")?.value || displayName,
     tags: document.getElementById("assetTagsInput")?.value || "",
@@ -658,6 +665,67 @@ async function sendAssetToPalette(asset) {
   await refreshWorkspace();
   await loadWorkspaceIntoPalette();
 }
+
+
+async function exportAsset(assetId, target) {
+  const response = await fetch(`/api/assets/${assetId}/export`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ target }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    setStatus(`Export failed: ${data.detail || response.status}`);
+    return null;
+  }
+  const exportedPath = data.export?.image_path || "export folder";
+  setStatus(`Exported to ${target}: ${exportedPath}`);
+  await refreshExportStatus();
+  return data.export;
+}
+
+async function exportAcceptedAssets() {
+  const target = document.getElementById("exportTarget")?.value || "godot";
+  const btn = document.getElementById("exportAcceptedBtn");
+  if (btn) btn.disabled = true;
+  try {
+    const response = await fetch(`/api/exports/${target}/accepted`, { method: "POST" });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
+    setStatus(`Exported ${data.count || 0} accepted asset(s) to ${target}.`);
+    await refreshExportStatus();
+  } catch (err) {
+    setStatus(`Export accepted failed: ${err.message}`);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function refreshExportStatus() {
+  const panel = document.getElementById("exportStatusPanel");
+  if (!panel) return;
+  try {
+    const response = await fetch("/api/exports");
+    const data = await response.json();
+    const targets = data.targets || {};
+    panel.innerHTML = `
+      <div class="metadata-path"><strong>Exports Root:</strong> ${escapeHtml(data.exports_root || "Exports")}</div>
+      ${Object.entries(targets).map(([key, info]) => `
+        <div class="export-target-row">
+          <strong>${escapeHtml(key)}</strong>
+          <span>${escapeHtml(info.count || 0)} exported</span>
+          <span>${escapeHtml(info.folder || "")}</span>
+          <span>${escapeHtml(info.manifest_path || "")}</span>
+        </div>
+      `).join("")}
+    `;
+  } catch (err) {
+    panel.textContent = `Could not load export status: ${err.message}`;
+  }
+}
+
+document.getElementById("exportAcceptedBtn")?.addEventListener("click", exportAcceptedAssets);
+document.getElementById("refreshExportsBtn")?.addEventListener("click", refreshExportStatus);
 
 refreshAssetsBtn?.addEventListener("click", () => loadAssets());
 assetFilter?.addEventListener("change", () => loadAssets());

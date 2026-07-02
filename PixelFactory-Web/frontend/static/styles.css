@@ -828,3 +828,32 @@ textarea {
 .asset-card-favorite:active {
   transform: scale(.96);
 }
+
+.export-layout {
+  padding: 24px;
+  display: grid;
+  grid-template-columns: minmax(420px, 760px);
+  gap: 20px;
+}
+.export-card { min-height: 360px; }
+.export-copy {
+  color: var(--muted);
+  line-height: 1.5;
+  margin-top: 0;
+}
+.export-status-panel {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+.export-target-row {
+  display: grid;
+  gap: 4px;
+  background: #0b0d11;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.export-target-row strong { color: var(--text); text-transform: capitalize; }

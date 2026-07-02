@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0012_3" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0013" />
 </head>
 <body>
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand">Pixel Factory</div>
-      <div class="subtitle">by Wulf · Web v0.12.3 · PF-0012.3</div>
+      <div class="subtitle">by Wulf · Web v0.13 · PF-0013</div>
 
       <nav class="nav">
         <button class="nav-btn active" data-view="palette">Palette Lab</button>
@@ -18,7 +18,7 @@
         <button class="nav-btn disabled">Tile Studio</button>
         <button class="nav-btn disabled">Repair Bench</button>
         <button class="nav-btn" data-view="assets">Asset Browser</button>
-        <button class="nav-btn disabled">Exporter</button>
+        <button class="nav-btn" data-view="exporter">Exporter</button>
       </nav>
 
 
@@ -107,6 +107,17 @@
 
 
 
+      <section id="exporterControls" class="panel view-controls hidden">
+        <div class="panel-title">Exporter</div>
+        <label>Target</label>
+        <select id="exportTarget">
+          <option value="godot">Godot</option>
+          <option value="aseprite">Aseprite</option>
+        </select>
+        <button id="exportAcceptedBtn" type="button">Export Accepted Assets</button>
+        <button id="refreshExportsBtn" type="button">Refresh Export Status</button>
+      </section>
+
       <section id="assetsControls" class="panel view-controls hidden">
         <div class="panel-title">Asset Browser</div>
         <label>Filter</label>
@@ -177,7 +188,7 @@
       <section id="assetsView" class="view">
         <header class="topbar">
           <h1 id="assetBrowserTitle">Asset Browser</h1>
-          <p>Generated images become assets. Accept, set workspace, send to Palette Lab, download, or delete.</p>
+          <p>Generated images become assets. Accept, set workspace, send to Palette Lab, export to Godot/Aseprite, download, or delete.</p>
         </header>
 
         <div class="asset-help">Incoming assets are generated candidates. Accepted assets are copied into the Accepted folder and keep their metadata/history.</div>
@@ -189,6 +200,20 @@
           <div class="preview-card asset-inspector-card">
             <h2>Inspector</h2>
             <div id="assetInspector" class="asset-inspector empty">Select an asset.</div>
+          </div>
+        </section>
+      </section>
+          <section id="exporterView" class="view">
+        <header class="topbar">
+          <h1>Exporter</h1>
+          <p>PNG-first export foundation for the only outside tools in the Pixel Factory pipeline: Godot and Aseprite.</p>
+        </header>
+
+        <section class="export-layout">
+          <div class="preview-card export-card">
+            <h2>Export Foundation</h2>
+            <p class="export-copy">Exports copy accepted Pixel Factory assets into stable Godot and Aseprite folders with sidecar JSON and a manifest. This is the foundation for later Godot import helpers, sprite sheets, frame metadata, and Aseprite CLI support.</p>
+            <div id="exportStatusPanel" class="export-status-panel">Export status not loaded.</div>
           </div>
         </section>
       </section>
@@ -219,6 +244,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0012_3"></script>
+  <script src="/static/app.js?v=pf0013"></script>
 </body>
 </html>

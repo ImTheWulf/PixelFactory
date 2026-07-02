@@ -96,3 +96,11 @@
 ## PF-0012.2
 
 Quick favorite toggle and seed UI cleanup.
+
+## PF-0013 Export Foundation: Godot + Aseprite
+
+- Pixel Factory is intentionally focused on only two external tools: Godot and Aseprite.
+- Export foundation is PNG-first: copied image, sidecar JSON, and per-target manifest.
+- Export paths live under `PixelFactory-Projects/default/Exports/Godot` and `PixelFactory-Projects/default/Exports/Aseprite`.
+- Future export work should build on this foundation rather than adding unrelated external app targets.
+

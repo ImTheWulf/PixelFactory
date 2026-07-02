@@ -19,6 +19,7 @@ from pydantic import BaseModel
 from backend.comfy.client import ComfyError, comfy_ui_workflow_to_api, patch_character_workflow
 from backend.services.asset_service import AssetService
 from backend.services.engine_service import EngineService
+from backend.services.export_service import ExportError, ExportService
 from backend.services.recipe_service import RecipeError, RecipeService
 from backend.services.workflow_service import WorkflowError, WorkflowService
 from backend.services.workspace_service import WorkspaceService
@@ -36,8 +37,9 @@ workflow_service = WorkflowService(WORKFLOWS)
 engine_service = EngineService()
 asset_service = AssetService(PROJECT_ROOT)
 workspace_service = WorkspaceService(PROJECT_ROOT)
+export_service = ExportService(PROJECT_ROOT, asset_service)
 
-app = FastAPI(title="Pixel Factory by Wulf", version="0.12-pf0012-ui-layout-polish")
+app = FastAPI(title="Pixel Factory by Wulf", version="0.13-pf0013-export-foundation")
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
 
@@ -48,7 +50,7 @@ def index() -> str:
 
 @app.get("/api/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "app": "Pixel Factory Web", "version": "0.12", "milestone": "PF-0012 UI Layout + Asset Filter Polish"}
+    return {"status": "ok", "app": "Pixel Factory Web", "version": "0.13", "milestone": "PF-0013 Export Foundation: Godot + Aseprite"}
 
 
 def _read_image(data: bytes) -> Image.Image:
@@ -107,6 +109,11 @@ def _save_asset(image_bytes: bytes, asset_type: str, **kwargs) -> dict:
 
 
 
+
+
+
+class ExportRequest(BaseModel):
+    target: Literal["godot", "aseprite"]
 
 class AssetMetadataUpdateRequest(BaseModel):
     name: str | None = None
@@ -324,3 +331,24 @@ def delete_asset(asset_id: str) -> dict:
     if not asset_service.delete(asset_id):
         raise HTTPException(status_code=404, detail="Asset not found")
     return {"ok": True, "deleted": asset_id}
+
+
+@app.get("/api/exports")
+def export_status() -> dict:
+    return export_service.status()
+
+
+@app.post("/api/assets/{asset_id}/export")
+def export_asset(asset_id: str, req: ExportRequest) -> dict:
+    try:
+        return export_service.export_asset(asset_id, req.target)
+    except ExportError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@app.post("/api/exports/{target}/accepted")
+def export_accepted_assets(target: Literal["godot", "aseprite"]) -> dict:
+    try:
+        return export_service.export_accepted(target)
+    except ExportError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
