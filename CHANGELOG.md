@@ -1,3 +1,9 @@
+## PF-0012.3 — Favorite Click Reliability
+
+- Fixed asset card star click handler.
+- Added static cache busting for frontend assets.
+- Routed inspector Favorite through the same toggle path.
+
 
 ## PF-0012 — UI Layout + Asset Filter Polish
 
@@ -86,3 +92,7 @@
 - Accepted assets use the accepted copy as their active image.
 - Generated assets keep stable default names.
 - Character generation is locked to safe square sizes: 512, 768, 1024.
+
+## PF-0012.2
+
+Quick favorite toggle and seed UI cleanup.

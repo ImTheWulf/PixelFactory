@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0012_3" />
 </head>
 <body>
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand">Pixel Factory</div>
-      <div class="subtitle">by Wulf · Web v0.12 · PF-0012</div>
+      <div class="subtitle">by Wulf · Web v0.12.3 · PF-0012.3</div>
 
       <nav class="nav">
         <button class="nav-btn active" data-view="palette">Palette Lab</button>
@@ -77,8 +77,10 @@
           <button id="randomSeedBtn" type="button">Use Random Seed</button>
           <button id="reuseSeedBtn" type="button" disabled>Reuse Last Seed</button>
         </div>
-        <label>Actual Seed</label>
-        <input id="actualSeedDisplay" type="text" value="—" readonly />
+        <div id="lastSeedGroup" class="last-seed-group hidden">
+          <label>Last Generated Seed</label>
+          <input id="actualSeedDisplay" type="text" value="—" readonly />
+        </div>
         <label>Size <span class="hint">safe square only</span></label>
         <select id="characterSize">
           <option value="512">512 x 512</option>
@@ -217,6 +219,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js"></script>
+  <script src="/static/app.js?v=pf0012_3"></script>
 </body>
 </html>

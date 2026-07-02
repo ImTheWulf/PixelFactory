@@ -1,0 +1,8 @@
+pixel art, 16-bit pixel art, retro RPG sprite, crisp pixels, limited color palette,
+single character, full body, centered, subject fills 65% of frame,
+bald homeless fisherman, dark worn jacket, green shirt, blue jeans, boots,
+quiet city alley, brick buildings, urban decay, moody atmosphere
+
+NEGATIVE:
+photorealistic, 3D, blurry, soft focus, mushy face, unreadable eyes,
+extra hands, extra limbs, tiny character, random colored speckles, text, watermark

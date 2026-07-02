@@ -1,0 +1,18 @@
+{
+  "id": "tile.cobblestone",
+  "category": "tile",
+  "display_name": "Cobblestone Tile",
+  "description": "Baseline recipe for top-down cobblestone raw material. Tile Studio will become fully wired in a later milestone.",
+  "engine": "comfy",
+  "workflow": "tile",
+  "asset_type": "tile",
+  "prompt_template": "top-down pixel art game tile, seamless repeating texture, orthographic view, flat lighting, crisp pixels, limited color palette, {prompt}",
+  "negative_prompt": "character, person, building, wall, street scene, perspective, horizon, realistic, photorealistic, blurry, smooth shading, anti-aliased, text, watermark, border, frame",
+  "resolution": { "width": 512, "height": 512 },
+  "batch_size": 4,
+  "steps": 24,
+  "sampler": "euler",
+  "scheduler": "simple",
+  "export_targets": ["godot", "aseprite"],
+  "tags": ["tile", "cobblestone", "pixel-art"]
+}

@@ -778,3 +778,53 @@ textarea {
   .engine-url { width: 160px; }
   .asset-layout { grid-template-columns: 1fr; }
 }
+
+
+/* PF-0012.2 quick favorite + seed cleanup */
+.last-seed-group.hidden {
+  display: none;
+}
+
+.asset-card-favorite {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.22);
+  background: rgba(0,0,0,.52);
+  color: rgba(255,255,255,.82);
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.asset-card-favorite.active {
+  color: #ffd66b;
+  border-color: rgba(255,214,107,.65);
+  background: rgba(0,0,0,.64);
+}
+
+.asset-card-favorite:hover {
+  transform: scale(1.06);
+  border-color: var(--accent);
+}
+
+.asset-status-badge {
+  max-width: calc(100% - 62px);
+}
+
+
+/* PF-0012.3 favorite click reliability */
+.asset-card-favorite {
+  pointer-events: auto;
+  user-select: none;
+}
+.asset-card-favorite:active {
+  transform: scale(.96);
+}

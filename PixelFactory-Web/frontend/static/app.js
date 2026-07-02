@@ -221,6 +221,7 @@ const characterOutput = document.getElementById("characterOutput");
 const randomSeedBtn = document.getElementById("randomSeedBtn");
 const reuseSeedBtn = document.getElementById("reuseSeedBtn");
 const actualSeedDisplay = document.getElementById("actualSeedDisplay");
+const lastSeedGroup = document.getElementById("lastSeedGroup");
 let lastActualSeed = null;
 
 async function loadRecipes() {
@@ -252,7 +253,8 @@ async function loadCharacterDefaults() {
   document.getElementById("characterSteps").value = String(data.steps || 24);
   const defaultSeed = data.seed ?? -1;
   document.getElementById("characterSeed").value = String(defaultSeed);
-  if (actualSeedDisplay) actualSeedDisplay.value = "—";
+  if (lastSeedGroup && lastActualSeed === null) lastSeedGroup.classList.add("hidden");
+  if (actualSeedDisplay && lastActualSeed !== null) actualSeedDisplay.value = String(lastActualSeed);
   setStatus(`Recipe loaded: ${data.display_name || recipeId}`);
 }
 
@@ -265,15 +267,13 @@ function makePixelFactorySeed() {
 randomSeedBtn?.addEventListener("click", () => {
   const seed = makePixelFactorySeed();
   document.getElementById("characterSeed").value = String(seed);
-  if (actualSeedDisplay) actualSeedDisplay.value = String(seed);
-  setStatus(`Random seed selected: ${seed}.`);
+  setStatus(`Random seed selected for next generation: ${seed}.`);
 });
 
 reuseSeedBtn?.addEventListener("click", () => {
   if (lastActualSeed === null) return;
   document.getElementById("characterSeed").value = String(lastActualSeed);
-  if (actualSeedDisplay) actualSeedDisplay.value = String(lastActualSeed);
-  setStatus(`Reusing seed ${lastActualSeed}.`);
+  setStatus(`Reusing last generated seed ${lastActualSeed}.`);
 });
 
 
@@ -351,6 +351,7 @@ generateCharacterBtn.addEventListener("click", async () => {
     if (typeof data.seed !== "undefined") {
       lastActualSeed = data.seed;
       if (actualSeedDisplay) actualSeedDisplay.value = String(data.seed);
+      if (lastSeedGroup) lastSeedGroup.classList.remove("hidden");
       if (reuseSeedBtn) reuseSeedBtn.disabled = false;
       document.getElementById("characterSeed").value = String(data.seed);
     }
@@ -418,6 +419,17 @@ const assetBrowserTitle = document.getElementById("assetBrowserTitle");
 let assets = [];
 let selectedAssetId = null;
 
+assetGrid?.addEventListener("click", async (event) => {
+  const favoriteButton = event.target.closest(".asset-card-favorite");
+  if (!favoriteButton) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  const card = favoriteButton.closest(".asset-card");
+  const assetId = favoriteButton.dataset.assetId || card?.dataset.assetId;
+  if (!assetId) return;
+  await toggleAssetFavorite(assetId);
+});
+
 function assetStatusQuery() {
   const status = assetFilter?.value || "";
   if (status === "favorite") return "?favorite=true";
@@ -461,14 +473,15 @@ function renderAssets(selectId = null) {
     const displayName = assetDisplayName(asset);
     const statusLabel = assetStatusLabel(asset);
     card.className = "asset-card" + (asset.id === selectedAssetId ? " selected" : "") + (asset.status === "accepted" ? " accepted" : " incoming");
+    card.dataset.assetId = asset.id;
     card.innerHTML = `
       <div class="asset-thumb-wrap">
         <img class="asset-thumb-image" src="${asset.image_url}" alt="${escapeHtml(displayName)}">
         <button class="asset-thumb-zoom" type="button" title="View large" aria-label="View ${escapeHtml(displayName)} large">⌕</button>
+        <button class="asset-card-favorite ${asset.favorite ? "active" : ""}" type="button" data-asset-id="${escapeHtml(asset.id)}" title="${asset.favorite ? "Unfavorite" : "Favorite"}" aria-label="${asset.favorite ? "Unfavorite" : "Favorite"} ${escapeHtml(displayName)}">${asset.favorite ? "★" : "☆"}</button>
         <span class="asset-status-badge ${asset.status === "accepted" ? "accepted" : "incoming"}">${statusLabel}</span>
-        ${asset.favorite ? '<span class="asset-favorite-badge" title="Favorite">★</span>' : ''}
       </div>
-      <div class="asset-title">${asset.favorite ? '★ ' : ''}${escapeHtml(displayName)}</div>
+      <div class="asset-title">${escapeHtml(displayName)}</div>
       <div class="asset-meta">${escapeHtml(asset.type)} · ${escapeHtml(statusLabel)}</div>
       ${Array.isArray(asset.tags) && asset.tags.length ? `<div class="asset-tags">${asset.tags.map((t) => `<span>${escapeHtml(t)}</span>`).join("")}</div>` : ""}
     `;
@@ -477,6 +490,9 @@ function renderAssets(selectId = null) {
       event.stopPropagation();
       openImageViewer(asset.image_url, displayName);
     });
+    const favoriteButton = card.querySelector(".asset-card-favorite");
+    favoriteButton?.addEventListener("pointerdown", (event) => event.stopPropagation());
+    favoriteButton?.addEventListener("mousedown", (event) => event.stopPropagation());
     assetGrid.appendChild(card);
   });
   if (selectId) selectAsset(selectId);
@@ -557,7 +573,7 @@ function selectAsset(assetId) {
   `;
   document.getElementById("inspectorViewLargeBtn")?.addEventListener("click", () => openImageViewer(asset.image_url, displayName));
   document.getElementById("acceptAssetBtn")?.addEventListener("click", () => acceptAsset(asset.id));
-  document.getElementById("favoriteAssetBtn")?.addEventListener("click", () => updateAssetMetadata(asset.id, { favorite: !asset.favorite }));
+  document.getElementById("favoriteAssetBtn")?.addEventListener("click", () => toggleAssetFavorite(asset.id));
   document.getElementById("paletteAssetBtn").addEventListener("click", () => sendAssetToPalette(asset));
   document.getElementById("workspaceAssetBtn").addEventListener("click", () => setWorkspaceFromAsset(asset));
   document.getElementById("deleteAssetBtn").addEventListener("click", () => deleteAsset(asset.id));
@@ -579,10 +595,32 @@ async function updateAssetMetadata(assetId, changes) {
   });
   if (!response.ok) {
     setStatus("Metadata update failed.");
-    return;
+    return null;
   }
   setStatus("Asset metadata saved.");
   await loadAssets(assetId);
+  return true;
+}
+
+async function toggleAssetFavorite(assetId) {
+  const asset = assets.find((item) => item.id === assetId);
+  if (!asset) return;
+
+  const nextFavorite = !asset.favorite;
+  const wasSelected = selectedAssetId === assetId;
+
+  // Optimistic UI update so the card responds immediately.
+  asset.favorite = nextFavorite;
+  renderAssets(wasSelected ? assetId : selectedAssetId);
+
+  const ok = await updateAssetMetadata(assetId, { favorite: nextFavorite });
+  if (!ok) {
+    asset.favorite = !nextFavorite;
+    await loadAssets(wasSelected ? assetId : selectedAssetId);
+    return;
+  }
+
+  setStatus(nextFavorite ? "Asset marked as favorite." : "Asset removed from favorites.");
 }
 
 async function acceptAsset(assetId) {
@@ -758,7 +796,7 @@ document.addEventListener("keydown", (event) => {
 document.addEventListener("click", (event) => {
   const img = event.target.closest("img.pf-viewable-image");
   if (!img || !img.src) return;
-  // Asset cards use explicit controls: click selects, magnify opens, double-click thumbnail opens.
+  // Asset cards use explicit controls: click selects, magnify opens, star favorites.
   if (event.target.closest(".asset-card")) return;
   openImageViewer(img.src, img.dataset.viewerTitle || img.alt || "Image");
 });

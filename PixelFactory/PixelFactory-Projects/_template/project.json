@@ -1,0 +1,11 @@
+{
+  "name": "New Pixel Factory Project",
+  "style": "retro_pixel",
+  "palette": "unset",
+  "models": {
+    "generator": "flux1-dev-Q4_0.gguf",
+    "lora": "flux_pixelart128-000001.safetensors",
+    "vae": "diffusion_pytorch_model.safetensors"
+  },
+  "assets": []
+}
