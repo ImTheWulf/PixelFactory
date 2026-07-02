@@ -257,3 +257,46 @@ textarea {
   font-family: Consolas, ui-monospace, SFMono-Regular, monospace;
   font-size: 12px;
 }
+
+/* PF-0008 Workspace Pipeline */
+.workspace-status {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 10px;
+  font-size: 13px;
+  color: var(--muted);
+  background: #0b0d11;
+}
+.viewport {
+  align-items: center;
+  justify-items: center;
+}
+.viewport img.fit-image {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+.viewport img.actual-image {
+  max-width: none;
+  max-height: none;
+  width: auto;
+  height: auto;
+}
+.generated-actions {
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.generated-actions button,
+.generated-actions a {
+  flex: 1 1 120px;
+  min-width: 110px;
+}
+.asset-actions {
+  grid-template-columns: 1fr 1fr;
+}
+.asset-actions button,
+.asset-actions a {
+  min-height: 39px;
+}

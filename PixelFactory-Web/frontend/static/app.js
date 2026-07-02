@@ -13,6 +13,10 @@ function setView(name) {
   controlPanels.forEach((panel) => panel.classList.add("hidden"));
   const panel = document.getElementById(`${name}Controls`);
   if (panel) panel.classList.remove("hidden");
+
+  if (name === "palette") {
+    hydratePaletteFromWorkspaceIfNeeded();
+  }
 }
 
 navButtons.forEach((btn) => btn.addEventListener("click", () => setView(btn.dataset.view)));
@@ -22,7 +26,7 @@ const comfyUrl = document.getElementById("comfyUrl");
 const checkComfyBtn = document.getElementById("checkComfyBtn");
 const comfyStatus = document.getElementById("comfyStatus");
 
-checkComfyBtn.addEventListener("click", async () => {
+async function checkComfy({ quiet = false } = {}) {
   checkComfyBtn.disabled = true;
   comfyStatus.textContent = "Checking...";
   comfyStatus.className = "engine-status";
@@ -36,20 +40,24 @@ checkComfyBtn.addEventListener("click", async () => {
     if (data.connected) {
       comfyStatus.textContent = "Connected";
       comfyStatus.className = "engine-status connected";
-      setStatus("ComfyUI connected.");
-    } else {
-      comfyStatus.textContent = "Disconnected";
-      comfyStatus.className = "engine-status disconnected";
-      setStatus(`ComfyUI not found: ${data.error || "unknown error"}`);
+      if (!quiet) setStatus("ComfyUI connected.");
+      return true;
     }
+    comfyStatus.textContent = "Disconnected";
+    comfyStatus.className = "engine-status disconnected";
+    if (!quiet) setStatus(`ComfyUI not found: ${data.error || "unknown error"}`);
+    return false;
   } catch (err) {
     comfyStatus.textContent = "Disconnected";
     comfyStatus.className = "engine-status disconnected";
-    setStatus(`Comfy check failed: ${err.message}`);
+    if (!quiet) setStatus(`Comfy check failed: ${err.message}`);
+    return false;
   } finally {
     checkComfyBtn.disabled = false;
   }
-});
+}
+
+checkComfyBtn.addEventListener("click", () => checkComfy());
 
 // Palette Lab
 const imageInput = document.getElementById("imageInput");
@@ -57,23 +65,102 @@ const originalPreview = document.getElementById("originalPreview");
 const processedPreview = document.getElementById("processedPreview");
 const processBtn = document.getElementById("processBtn");
 const downloadBtn = document.getElementById("downloadBtn");
+const previewMode = document.getElementById("previewMode");
+const loadWorkspaceBtn = document.getElementById("loadWorkspaceBtn");
+const workspaceStatus = document.getElementById("workspaceStatus");
 
 let selectedFile = null;
+let selectedFileSource = null;
 let processedBlobUrl = null;
+let workspace = { has_image: false };
+
+function applyPreviewMode() {
+  const mode = previewMode?.value || "fit";
+  [originalPreview, processedPreview].forEach((img) => {
+    img.classList.toggle("fit-image", mode === "fit");
+    img.classList.toggle("actual-image", mode === "actual");
+  });
+}
+
+previewMode?.addEventListener("change", applyPreviewMode);
+
+async function refreshWorkspace({ quiet = true } = {}) {
+  try {
+    const response = await fetch("/api/workspace");
+    const data = await response.json();
+    workspace = data.workspace || { has_image: false };
+    if (workspaceStatus) {
+      workspaceStatus.textContent = workspace.has_image
+        ? `Workspace: ${workspace.asset_name || workspace.source || "image loaded"}`
+        : "Workspace: empty";
+    }
+    loadWorkspaceBtn.disabled = !workspace.has_image;
+    if (!quiet && workspace.has_image) setStatus("Workspace refreshed.");
+    return workspace;
+  } catch (err) {
+    if (workspaceStatus) workspaceStatus.textContent = "Workspace: unavailable";
+    loadWorkspaceBtn.disabled = true;
+    if (!quiet) setStatus(`Workspace error: ${err.message}`);
+    return { has_image: false };
+  }
+}
+
+async function loadImageIntoPaletteFromUrl(url, filename = "workspace.png", source = "workspace") {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Unable to load image: HTTP ${response.status}`);
+  const blob = await response.blob();
+  selectedFile = new File([blob], filename, { type: "image/png" });
+  selectedFileSource = source;
+  originalPreview.src = `${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}`;
+  processedPreview.removeAttribute("src");
+  downloadBtn.disabled = true;
+  applyPreviewMode();
+}
+
+async function loadWorkspaceIntoPalette() {
+  const ws = await refreshWorkspace();
+  if (!ws.has_image) {
+    setStatus("Workspace is empty. Generate or select an asset first.");
+    return;
+  }
+  try {
+    await loadImageIntoPaletteFromUrl(ws.image_url, `${ws.asset_name || "workspace"}.png`, "workspace");
+    setView("palette");
+    setStatus(`Loaded workspace into Palette Lab: ${ws.asset_name || "current image"}.`);
+  } catch (err) {
+    setStatus(`Workspace load failed: ${err.message}`);
+  }
+}
+
+async function hydratePaletteFromWorkspaceIfNeeded() {
+  if (selectedFile) return;
+  const ws = await refreshWorkspace();
+  if (!ws.has_image) return;
+  try {
+    await loadImageIntoPaletteFromUrl(ws.image_url, `${ws.asset_name || "workspace"}.png`, "workspace");
+    setStatus(`Palette Lab loaded current workspace: ${ws.asset_name || "current image"}.`);
+  } catch (_) {
+    // quiet hydration only
+  }
+}
+
+loadWorkspaceBtn?.addEventListener("click", loadWorkspaceIntoPalette);
 
 imageInput.addEventListener("change", () => {
   const file = imageInput.files?.[0];
   if (!file) return;
   selectedFile = file;
+  selectedFileSource = "upload";
   originalPreview.src = URL.createObjectURL(file);
   processedPreview.removeAttribute("src");
   downloadBtn.disabled = true;
+  applyPreviewMode();
   setStatus(`Loaded ${file.name}`);
 });
 
 processBtn.addEventListener("click", async () => {
   if (!selectedFile) {
-    setStatus("Load an image first.");
+    setStatus("Load an image first, or use the current workspace.");
     return;
   }
 
@@ -93,6 +180,7 @@ processBtn.addEventListener("click", async () => {
     if (processedBlobUrl) URL.revokeObjectURL(processedBlobUrl);
     processedBlobUrl = URL.createObjectURL(blob);
     processedPreview.src = processedBlobUrl;
+    applyPreviewMode();
     downloadBtn.disabled = false;
     setStatus("Processed preview ready.");
   } catch (err) {
@@ -166,6 +254,13 @@ function addGeneratedImage(src, index, asset = null) {
   download.textContent = "Download";
   actions.appendChild(download);
   if (asset) {
+    const palette = document.createElement("button");
+    palette.textContent = "Palette Lab";
+    palette.addEventListener("click", async () => {
+      await sendAssetToPalette(asset);
+    });
+    actions.appendChild(palette);
+
     const openAssets = document.createElement("button");
     openAssets.textContent = "Open in Assets";
     openAssets.addEventListener("click", () => { setView("assets"); loadAssets(asset.id); });
@@ -212,7 +307,9 @@ generateCharacterBtn.addEventListener("click", async () => {
     (data.assets || []).forEach((asset, i) => addGeneratedImage(data.images?.[i], i, asset));
     if (!data.assets) data.images.forEach(addGeneratedImage);
     await loadAssets();
-    setStatus(`Character job complete. ${data.count} image(s) returned and saved as asset(s).`);
+    await refreshWorkspace();
+    // The first returned generation is now the current workspace. Palette Lab will load it automatically when opened.
+    setStatus(`Character job complete. ${data.count} image(s) returned. Current workspace is ready for Palette Lab.`);
   } catch (err) {
     characterOutput.classList.add("empty");
     characterOutput.textContent = "Generation failed.";
@@ -282,6 +379,7 @@ function selectAsset(assetId) {
     <div class="asset-actions">
       ${asset.status === "accepted" ? "" : '<button id="acceptAssetBtn">Accept</button>'}
       <button id="paletteAssetBtn">Palette Lab</button>
+      <button id="workspaceAssetBtn">Set Workspace</button>
       <a href="${asset.image_url}" download="${asset.name}.png">Download</a>
       <button id="deleteAssetBtn">Delete</button>
     </div>
@@ -290,6 +388,7 @@ function selectAsset(assetId) {
       ID: ${asset.id}<br>
       Type: ${asset.type}<br>
       Status: ${asset.status}<br>
+      Recipe: ${asset.recipe_name || asset.recipe_id || "?"}<br>
       Created: ${asset.created || ""}<br>
       Size: ${asset.width || "?"} x ${asset.height || "?"}<br>
       Steps: ${asset.steps || "?"}<br>
@@ -300,6 +399,7 @@ function selectAsset(assetId) {
   `;
   document.getElementById("acceptAssetBtn")?.addEventListener("click", () => acceptAsset(asset.id));
   document.getElementById("paletteAssetBtn").addEventListener("click", () => sendAssetToPalette(asset));
+  document.getElementById("workspaceAssetBtn").addEventListener("click", () => setWorkspaceFromAsset(asset));
   document.getElementById("deleteAssetBtn").addEventListener("click", () => deleteAsset(asset.id));
 }
 
@@ -319,17 +419,33 @@ async function deleteAsset(assetId) {
   await loadAssets();
 }
 
+async function setWorkspaceFromAsset(asset) {
+  const response = await fetch(`/api/workspace/from-asset/${asset.id}`, { method: "POST" });
+  if (!response.ok) {
+    setStatus("Could not set workspace from asset.");
+    return;
+  }
+  await refreshWorkspace();
+  setStatus(`Workspace set to ${asset.name}.`);
+}
+
 async function sendAssetToPalette(asset) {
-  const response = await fetch(asset.image_url);
-  const blob = await response.blob();
-  selectedFile = new File([blob], `${asset.name}.png`, { type: "image/png" });
-  originalPreview.src = asset.image_url;
-  processedPreview.removeAttribute("src");
-  downloadBtn.disabled = true;
-  setView("palette");
-  setStatus(`Loaded ${asset.name} into Palette Lab.`);
+  const response = await fetch(`/api/workspace/from-asset/${asset.id}`, { method: "POST" });
+  if (!response.ok) {
+    setStatus("Could not load asset into workspace.");
+    return;
+  }
+  await refreshWorkspace();
+  await loadWorkspaceIntoPalette();
 }
 
 refreshAssetsBtn?.addEventListener("click", () => loadAssets());
 assetFilter?.addEventListener("change", () => loadAssets());
-loadAssets().catch(() => {});
+
+// Startup
+(async function initPixelFactory() {
+  applyPreviewMode();
+  await refreshWorkspace();
+  await loadAssets().catch(() => {});
+  await checkComfy({ quiet: true });
+})();

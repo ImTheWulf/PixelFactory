@@ -1,5 +1,15 @@
 # Changelog
 
+## PF-0008 — Workspace Pipeline
+
+- Added temporary Workspace service.
+- Character Studio now sends the latest generated image into Workspace.
+- Palette Lab can load Workspace directly.
+- Asset Browser can set an asset as Workspace.
+- Added automatic ComfyUI status check on page load.
+- Added Palette Lab Fit / Actual Pixels preview mode.
+
+
 ## v0.7 / PF-0007 — Recipe Framework
 
 - Added data-driven recipe framework.

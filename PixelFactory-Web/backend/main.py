@@ -20,6 +20,7 @@ from backend.services.asset_service import AssetService
 from backend.services.engine_service import EngineService
 from backend.services.recipe_service import RecipeError, RecipeService
 from backend.services.workflow_service import WorkflowError, WorkflowService
+from backend.services.workspace_service import WorkspaceService
 
 ROOT = Path(__file__).resolve().parents[1]
 FRONTEND = ROOT / "frontend"
@@ -33,8 +34,9 @@ recipe_service = RecipeService(RECIPES)
 workflow_service = WorkflowService(WORKFLOWS)
 engine_service = EngineService()
 asset_service = AssetService(PROJECT_ROOT)
+workspace_service = WorkspaceService(PROJECT_ROOT)
 
-app = FastAPI(title="Pixel Factory by Wulf", version="0.7-pf0007-recipes")
+app = FastAPI(title="Pixel Factory by Wulf", version="0.8-pf0008-workspace")
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
 
@@ -45,7 +47,7 @@ def index() -> str:
 
 @app.get("/api/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "app": "Pixel Factory Web", "version": "0.7", "milestone": "PF-0007 Recipe Framework"}
+    return {"status": "ok", "app": "Pixel Factory Web", "version": "0.8", "milestone": "PF-0008 Workspace Pipeline"}
 
 
 def _read_image(data: bytes) -> Image.Image:
@@ -195,12 +197,30 @@ def generate_character(req: CharacterGenerateRequest) -> dict:
             )
             for i, img in enumerate(images)
         ]
+        workspace = None
+        if images and assets:
+            workspace = workspace_service.set_from_bytes(
+                images[0],
+                {
+                    "source": "generation",
+                    "asset_id": assets[0]["id"],
+                    "asset_name": assets[0].get("name", "Generated asset"),
+                    "asset_type": assets[0].get("type", "character"),
+                    "recipe_id": req.recipe_id,
+                    "recipe_name": recipe.get("display_name", req.recipe_id),
+                    "workflow": workflow_id,
+                    "prompt": req.prompt,
+                    "width": req.width,
+                    "height": req.height,
+                },
+            )
         return {
             "ok": True,
             "recipe": {"id": req.recipe_id, "display_name": recipe.get("display_name", req.recipe_id)},
             "count": len(images),
             "images": [_image_bytes_to_data_url(img) for img in images],
             "assets": assets,
+            "workspace": workspace,
         }
     except (ComfyError, WorkflowError) as exc:
         raise HTTPException(status_code=502, detail=str(exc))
@@ -235,6 +255,34 @@ def accept_asset(asset_id: str) -> dict:
     if not meta:
         raise HTTPException(status_code=404, detail="Asset not found or image missing")
     return {"ok": True, "asset": meta}
+
+
+@app.get("/api/workspace")
+def get_workspace() -> dict:
+    return {"ok": True, "workspace": workspace_service.get()}
+
+
+@app.get("/api/workspace/image")
+def get_workspace_image() -> Response:
+    image_path = workspace_service.image_path()
+    if not image_path or not image_path.exists():
+        raise HTTPException(status_code=404, detail="Workspace image missing")
+    return Response(content=image_path.read_bytes(), media_type="image/png")
+
+
+@app.post("/api/workspace/from-asset/{asset_id}")
+def workspace_from_asset(asset_id: str) -> dict:
+    meta = _load_asset(asset_id)
+    image_path = asset_service.image_path(asset_id)
+    if not image_path or not image_path.exists():
+        raise HTTPException(status_code=404, detail="Asset image missing")
+    workspace = workspace_service.set_from_asset(meta, image_path)
+    return {"ok": True, "workspace": workspace}
+
+
+@app.post("/api/workspace/clear")
+def clear_workspace() -> dict:
+    return {"ok": True, "workspace": workspace_service.clear()}
 
 
 @app.delete("/api/assets/{asset_id}")

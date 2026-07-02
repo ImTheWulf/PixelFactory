@@ -10,7 +10,7 @@
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand">Pixel Factory</div>
-      <div class="subtitle">by Wulf · Web v0.7 · PF-0007</div>
+      <div class="subtitle">by Wulf · Web v0.8 · PF-0008</div>
 
       <nav class="nav">
         <button class="nav-btn active" data-view="palette">Palette Lab</button>
@@ -60,6 +60,15 @@
           <option value="palette">Palette Only</option>
           <option value="resize">Nearest Resize Only</option>
         </select>
+
+        <label>Preview Mode</label>
+        <select id="previewMode">
+          <option value="fit" selected>Fit to Window</option>
+          <option value="actual">Actual Pixels</option>
+        </select>
+
+        <button id="loadWorkspaceBtn" disabled>Load Workspace Image</button>
+        <div id="workspaceStatus" class="workspace-status">Workspace: checking...</div>
 
         <button id="processBtn">Process Preview</button>
         <button id="downloadBtn" disabled>Download PNG</button>
@@ -133,7 +142,7 @@
       <section id="characterView" class="view">
         <header class="topbar">
           <h1>Character Studio</h1>
-          <p>Runs your local ComfyUI character workflow from Pixel Factory.</p>
+          <p>Runs your local ComfyUI character workflow, saves assets, and places the latest result into the current workspace.</p>
         </header>
 
         <section class="form-grid">
@@ -156,7 +165,7 @@
       <section id="assetsView" class="view">
         <header class="topbar">
           <h1>Asset Browser</h1>
-          <p>Generated images become assets. Accept, send to Palette Lab, download, or delete.</p>
+          <p>Generated images become assets. Accept, set workspace, send to Palette Lab, download, or delete.</p>
         </header>
 
         <section class="asset-layout">

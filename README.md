@@ -12,3 +12,8 @@ A modular pixel-art asset production toolkit.
 
 1. Open `PixelFactory-Docs/GIT_START_HERE.md` for Git/GitHub notes.
 2. Open `PixelFactory-Web/README.md` to run the new browser-based Palette Lab.
+
+
+## Current Milestone
+
+PF-0008 Workspace Pipeline: latest generations are placed into a temporary workspace for Palette Lab and future repair/export tools.
