@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.7 / PF-0007 — Recipe Framework
+
+- Added data-driven recipe framework.
+- Added Character, Tile, and Repair recipe examples.
+- Added Pixel Factory Default style preset.
+- Added backend services: RecipeService, WorkflowService, EngineService, AssetService.
+- Character Studio now loads defaults from `character.default`.
+- Character generation metadata now records recipe id and resolved prompt.
+- Accepted assets no longer show the Accept button in the inspector.
+
+
 ## v0.6 - Asset Browser
 
 - Added Asset Browser page.

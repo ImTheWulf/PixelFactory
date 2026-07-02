@@ -1,6 +1,6 @@
-# PixelFactory Web v0.6
+# Pixel Factory Web
 
-Local browser UI for Pixel Factory.
+Local web UI for Pixel Factory.
 
 ## Run
 
@@ -11,12 +11,20 @@ pip install -r requirements.txt
 python -m uvicorn backend.main:app --reload
 ```
 
-Open `http://127.0.0.1:8000`.
+Open:
 
-## v0.6
+```text
+http://127.0.0.1:8000
+```
 
-- Palette Lab remains deterministic.
-- Character Studio runs ComfyUI workflows.
-- Generated images are saved as assets.
-- Asset Browser lists generated assets.
-- Assets can be accepted, downloaded, deleted, or sent to Palette Lab.
+## PF-0007 Recipe Framework
+
+Character Studio now uses recipes from:
+
+```text
+PixelFactory-Web/recipes/character/default.json
+```
+
+Recipes are configuration. They describe workflow id, default prompt, negative prompt, resolution, batch size, steps, model hints, LoRA hints, and export targets.
+
+The UI should not hardcode generation logic. It should load recipes and send recipe ids to the backend.

@@ -1,0 +1,17 @@
+{
+  "id": "repair.character",
+  "category": "repair",
+  "display_name": "Character Repair",
+  "description": "Targeted img2img repair recipe placeholder. Repair Bench wiring comes after the recipe framework.",
+  "engine": "comfy",
+  "workflow": "repair_character",
+  "asset_type": "repair",
+  "prompt_template": "preserve the same character, preserve pose, preserve outfit, improve only the requested problem: {prompt}",
+  "negative_prompt": "random colored speckles, noisy texture, duplicate limbs, extra hands, changed identity, changed outfit, changed background, text, watermark",
+  "denoise": 0.2,
+  "steps": 16,
+  "sampler": "euler",
+  "scheduler": "simple",
+  "export_targets": ["godot", "aseprite"],
+  "tags": ["repair", "character", "img2img"]
+}

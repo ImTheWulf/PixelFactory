@@ -113,25 +113,44 @@ downloadBtn.addEventListener("click", () => {
 });
 
 // Character Studio
+const characterRecipe = document.getElementById("characterRecipe");
 const characterPrompt = document.getElementById("characterPrompt");
 const characterNegative = document.getElementById("characterNegative");
 const loadCharacterDefaultsBtn = document.getElementById("loadCharacterDefaultsBtn");
 const generateCharacterBtn = document.getElementById("generateCharacterBtn");
 const characterOutput = document.getElementById("characterOutput");
 
+async function loadRecipes() {
+  if (!characterRecipe) return;
+  const response = await fetch("/api/recipes?category=character");
+  const data = await response.json();
+  characterRecipe.innerHTML = "";
+  (data.recipes || []).forEach((recipe) => {
+    const option = document.createElement("option");
+    option.value = recipe.id;
+    option.textContent = recipe.display_name || recipe.id;
+    characterRecipe.appendChild(option);
+  });
+  if (!characterRecipe.value && characterRecipe.options.length) {
+    characterRecipe.selectedIndex = 0;
+  }
+}
+
 async function loadCharacterDefaults() {
-  setStatus("Loading Character workflow defaults...");
-  const response = await fetch("/api/workflows/character/defaults");
+  const recipeId = characterRecipe?.value || "character.default";
+  setStatus(`Loading recipe ${recipeId}...`);
+  const response = await fetch(`/api/workflows/character/defaults?recipe_id=${encodeURIComponent(recipeId)}`);
   const data = await response.json();
   characterPrompt.value = data.positive || "";
   characterNegative.value = data.negative || "";
   document.getElementById("characterSize").value = String(data.width || 1024);
   document.getElementById("characterBatch").value = String(data.batch_size || 1);
   document.getElementById("characterSteps").value = String(data.steps || 24);
-  setStatus("Character defaults loaded.");
+  setStatus(`Recipe loaded: ${data.display_name || recipeId}`);
 }
 
 loadCharacterDefaultsBtn.addEventListener("click", loadCharacterDefaults);
+characterRecipe?.addEventListener("change", loadCharacterDefaults);
 
 function addGeneratedImage(src, index, asset = null) {
   const wrap = document.createElement("div");
@@ -171,6 +190,7 @@ generateCharacterBtn.addEventListener("click", async () => {
   const size = Number(document.getElementById("characterSize").value);
   const payload = {
     comfy_url: comfyUrl.value,
+    recipe_id: characterRecipe?.value || "character.default",
     prompt: characterPrompt.value,
     negative_prompt: characterNegative.value,
     seed: Number(document.getElementById("characterSeed").value),
@@ -202,7 +222,7 @@ generateCharacterBtn.addEventListener("click", async () => {
   }
 });
 
-loadCharacterDefaults().catch(() => {});
+loadRecipes().then(loadCharacterDefaults).catch(() => {});
 
 
 // Asset Browser
@@ -260,7 +280,7 @@ function selectAsset(assetId) {
   assetInspector.innerHTML = `
     <img src="${asset.image_url}" alt="${asset.name}">
     <div class="asset-actions">
-      <button id="acceptAssetBtn">Accept</button>
+      ${asset.status === "accepted" ? "" : '<button id="acceptAssetBtn">Accept</button>'}
       <button id="paletteAssetBtn">Palette Lab</button>
       <a href="${asset.image_url}" download="${asset.name}.png">Download</a>
       <button id="deleteAssetBtn">Delete</button>
@@ -278,7 +298,7 @@ function selectAsset(assetId) {
     <h3>Prompt</h3>
     <div class="inspector-prompt">${asset.prompt || ""}</div>
   `;
-  document.getElementById("acceptAssetBtn").addEventListener("click", () => acceptAsset(asset.id));
+  document.getElementById("acceptAssetBtn")?.addEventListener("click", () => acceptAsset(asset.id));
   document.getElementById("paletteAssetBtn").addEventListener("click", () => sendAssetToPalette(asset));
   document.getElementById("deleteAssetBtn").addEventListener("click", () => deleteAsset(asset.id));
 }
