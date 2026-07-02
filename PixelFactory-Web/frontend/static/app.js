@@ -427,27 +427,29 @@ let exportSelection = new Set();
 function updateExportSelectionStatus() {
   const count = exportSelection.size;
   const label = `Selected for export: ${count}`;
-  const selectionStatus = document.getElementById("exportSelectionStatus");
-  if (selectionStatus) selectionStatus.textContent = label;
-  const btn = document.getElementById("exportSelectedBtn");
-  if (btn) btn.disabled = count === 0;
+  ["exportSelectionStatus", "assetExportSelectionStatus"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = label;
+  });
+  ["exportSelectedBtn", "assetExportSelectedBtn"].forEach((id) => {
+    const btn = document.getElementById(id);
+    if (btn) btn.disabled = count === 0;
+  });
 }
 
-function toggleExportSelection(assetId, checked = null) {
+function toggleExportSelection(assetId, checked = null, rerender = true) {
   if (!assetId) return;
   const nextChecked = checked === null ? !exportSelection.has(assetId) : Boolean(checked);
   if (nextChecked) exportSelection.add(assetId);
   else exportSelection.delete(assetId);
   updateExportSelectionStatus();
-  renderAssets(selectedAssetId);
+  if (rerender) renderAssets(selectedAssetId);
 }
 
 assetGrid?.addEventListener("click", async (event) => {
-  const exportToggle = event.target.closest(".asset-export-select");
-  if (exportToggle) {
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    toggleExportSelection(exportToggle.dataset.assetId, exportToggle.checked);
+  const exportWrap = event.target.closest(".asset-export-select-wrap");
+  if (exportWrap) {
+    event.stopPropagation();
     return;
   }
   const favoriteButton = event.target.closest(".asset-card-favorite");
@@ -527,6 +529,18 @@ function renderAssets(selectId = null) {
     const favoriteButton = card.querySelector(".asset-card-favorite");
     favoriteButton?.addEventListener("pointerdown", (event) => event.stopPropagation());
     favoriteButton?.addEventListener("mousedown", (event) => event.stopPropagation());
+    const exportWrap = card.querySelector(".asset-export-select-wrap");
+    const exportInput = card.querySelector(".asset-export-select");
+    ["pointerdown", "mousedown", "mouseup", "click"].forEach((eventName) => {
+      exportWrap?.addEventListener(eventName, (event) => event.stopPropagation());
+      exportInput?.addEventListener(eventName, (event) => event.stopPropagation());
+    });
+    exportInput?.addEventListener("change", (event) => {
+      event.stopPropagation();
+      toggleExportSelection(asset.id, event.target.checked, false);
+      card.classList.toggle("export-selected", event.target.checked);
+      updateExportSelectionStatus();
+    });
     assetGrid.appendChild(card);
   });
   if (selectId) selectAsset(selectId);
@@ -726,8 +740,12 @@ async function exportAsset(assetId, target) {
   return data.export;
 }
 
+function selectedExportTarget() {
+  return document.getElementById("assetExportTarget")?.value || document.getElementById("exportTarget")?.value || "godot";
+}
+
 async function exportSelectedAssets() {
-  const target = document.getElementById("exportTarget")?.value || "godot";
+  const target = selectedExportTarget();
   const btn = document.getElementById("exportSelectedBtn");
   if (!exportSelection.size) {
     setStatus("Select one or more assets first.");
@@ -814,13 +832,16 @@ async function refreshExportStatus() {
 }
 
 document.getElementById("exportSelectedBtn")?.addEventListener("click", exportSelectedAssets);
+document.getElementById("assetExportSelectedBtn")?.addEventListener("click", exportSelectedAssets);
 document.getElementById("exportAcceptedBtn")?.addEventListener("click", exportAcceptedAssets);
-document.getElementById("clearSelectedExportsBtn")?.addEventListener("click", () => {
+function clearExportSelection() {
   exportSelection.clear();
   updateExportSelectionStatus();
   renderAssets(selectedAssetId);
   setStatus("Export selection cleared.");
-});
+}
+document.getElementById("clearSelectedExportsBtn")?.addEventListener("click", clearExportSelection);
+document.getElementById("assetClearSelectedExportsBtn")?.addEventListener("click", clearExportSelection);
 document.getElementById("refreshExportsBtn")?.addEventListener("click", refreshExportStatus);
 
 refreshAssetsBtn?.addEventListener("click", () => loadAssets());

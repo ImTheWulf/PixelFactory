@@ -501,8 +501,8 @@ textarea {
 /* PF-0010 Asset Metadata + Inspector Polish */
 .asset-favorite-badge {
   position: absolute;
-  left: 8px;
-  top: 8px;
+  left: 10px;
+  bottom: 10px;
   display: grid;
   place-items: center;
   width: 26px;
@@ -633,8 +633,8 @@ textarea {
 .asset-status-badge,
 .inspector-status-badge {
   position: absolute;
-  left: 8px;
-  top: 8px;
+  left: 10px;
+  bottom: 10px;
   padding: 4px 7px;
   border-radius: 999px;
   font-size: 10px;
@@ -908,19 +908,20 @@ textarea {
 }
 .asset-export-select-wrap {
   position: absolute;
-  left: 8px;
-  top: 8px;
+  left: 10px;
+  bottom: 10px;
   z-index: 4;
   display: inline-flex;
   align-items: center;
   gap: 4px;
   border: 1px solid rgba(255,255,255,.22);
   border-radius: 999px;
-  background: rgba(0,0,0,.56);
+  background: rgba(4, 8, 14, .82);
   color: rgba(255,255,255,.86);
-  font-size: 11px;
+  font-size: 10px;
+  line-height: 1;
   font-weight: 800;
-  padding: 5px 8px;
+  padding: 6px 7px;
   user-select: none;
   cursor: pointer;
 }
@@ -929,4 +930,68 @@ textarea {
 }
 .asset-export-select-wrap:hover {
   border-color: var(--accent);
+}
+
+.asset-export-select {
+  width: 14px;
+  height: 14px;
+}
+#assetExportSelectionStatus {
+  margin-top: 8px;
+}
+
+/* PF-0013.3c selected export UI cleanup */
+.asset-thumb-wrap {
+  position: relative;
+  overflow: hidden;
+}
+.asset-status-badge {
+  top: 8px;
+  left: 8px;
+  bottom: auto;
+  right: auto;
+  max-width: calc(100% - 48px);
+  height: auto;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 3;
+}
+.asset-export-select-wrap {
+  left: 8px;
+  bottom: 8px;
+  top: auto;
+  right: auto;
+  max-width: calc(100% - 48px);
+  height: 24px;
+  box-sizing: border-box;
+  z-index: 5;
+}
+.asset-export-select-wrap input {
+  flex: 0 0 auto;
+}
+.asset-card-favorite {
+  z-index: 6;
+}
+.asset-thumb-zoom {
+  z-index: 6;
+}
+.inspector-status-badge {
+  top: 10px;
+  left: 10px;
+  bottom: auto;
+  right: auto;
+  width: auto;
+  height: auto;
+  max-width: calc(100% - 20px);
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 4;
+}
+.inspector-hero {
+  position: relative;
+  overflow: hidden;
 }

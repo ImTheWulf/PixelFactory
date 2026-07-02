@@ -1,3 +1,10 @@
+## PF-0013.3c - Selected Export UI Cleanup
+
+- Fixed export checkbox click propagation so selection stays visible after card interactions.
+- Moved card status badge to the top-left to avoid overlap with Export checkbox.
+- Fixed inspector status badge stretching by resetting bottom/height constraints.
+- Kept Asset Browser export actions while preserving existing Exporter page controls.
+
 ## PF-0012.3 — Favorite Click Reliability
 
 - Fixed asset card star click handler.
