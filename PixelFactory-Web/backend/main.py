@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import io
 import json
+import random
 import shutil
 import uuid
 from datetime import datetime
@@ -36,7 +37,7 @@ engine_service = EngineService()
 asset_service = AssetService(PROJECT_ROOT)
 workspace_service = WorkspaceService(PROJECT_ROOT)
 
-app = FastAPI(title="Pixel Factory by Wulf", version="0.10-pf0010-asset-metadata")
+app = FastAPI(title="Pixel Factory by Wulf", version="0.11-pf0011-generation-settings")
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
 
@@ -47,7 +48,7 @@ def index() -> str:
 
 @app.get("/api/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "app": "Pixel Factory Web", "version": "0.10", "milestone": "PF-0010 Asset Metadata + Inspector Polish"}
+    return {"status": "ok", "app": "Pixel Factory Web", "version": "0.11", "milestone": "PF-0011 Generation Settings Fix"}
 
 
 def _read_image(data: bytes) -> Image.Image:
@@ -175,11 +176,17 @@ def generate_character(req: CharacterGenerateRequest) -> dict:
         ui_wf = workflow_service.load(workflow_id)
         positive = recipe_service.merged_prompt(recipe, req.prompt)
         negative = recipe_service.negative_prompt(recipe, req.negative_prompt)
+
+        # PF-0011: never send -1 into Comfy as the final stored seed.
+        # Pixel Factory owns randomization so the exact seed can be saved, reused,
+        # copied, and written into metadata for regeneration later.
+        actual_seed = int(req.seed) if int(req.seed) >= 0 else random.randint(1, 2_147_483_647)
+
         patched = patch_character_workflow(
             ui_wf,
             positive=positive,
             negative=negative,
-            seed=req.seed,
+            seed=actual_seed,
             width=req.width,
             height=req.height,
             batch_size=req.batch_size,
@@ -195,7 +202,8 @@ def generate_character(req: CharacterGenerateRequest) -> dict:
                 prompt=req.prompt,
                 resolved_prompt=positive,
                 negative_prompt=negative,
-                seed=req.seed,
+                seed=actual_seed,
+                requested_seed=req.seed,
                 workflow=workflow_id,
                 recipe_id=req.recipe_id,
                 recipe_name=recipe.get("display_name", req.recipe_id),
@@ -224,12 +232,15 @@ def generate_character(req: CharacterGenerateRequest) -> dict:
                     "prompt": req.prompt,
                     "width": req.width,
                     "height": req.height,
+                    "seed": actual_seed,
                 },
             )
         return {
             "ok": True,
             "recipe": {"id": req.recipe_id, "display_name": recipe.get("display_name", req.recipe_id)},
             "count": len(images),
+            "seed": actual_seed,
+            "requested_seed": req.seed,
             "images": [_image_bytes_to_data_url(img) for img in images],
             "assets": assets,
             "workspace": workspace,

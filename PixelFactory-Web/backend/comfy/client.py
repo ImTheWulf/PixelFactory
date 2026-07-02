@@ -176,10 +176,10 @@ def patch_character_workflow(
             if height is not None: widgets[1] = int(height)
             if batch_size is not None: widgets[2] = int(batch_size)
         if typ == "KSampler":
-            if seed is not None and seed >= 0:
+            # PF-0011: the backend resolves random seeds before this point.
+            # Keep Comfy fixed so metadata exactly matches the generated output.
+            if seed is not None:
                 widgets[0] = int(seed)
                 widgets[1] = "fixed"
-            else:
-                widgets[1] = "randomize"
             if steps is not None: widgets[2] = int(steps)
     return wf

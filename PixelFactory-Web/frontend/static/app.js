@@ -218,6 +218,10 @@ const characterNegative = document.getElementById("characterNegative");
 const loadCharacterDefaultsBtn = document.getElementById("loadCharacterDefaultsBtn");
 const generateCharacterBtn = document.getElementById("generateCharacterBtn");
 const characterOutput = document.getElementById("characterOutput");
+const randomSeedBtn = document.getElementById("randomSeedBtn");
+const reuseSeedBtn = document.getElementById("reuseSeedBtn");
+const actualSeedDisplay = document.getElementById("actualSeedDisplay");
+let lastActualSeed = null;
 
 async function loadRecipes() {
   if (!characterRecipe) return;
@@ -246,11 +250,27 @@ async function loadCharacterDefaults() {
   document.getElementById("characterSize").value = safeSize;
   document.getElementById("characterBatch").value = String(data.batch_size || 1);
   document.getElementById("characterSteps").value = String(data.steps || 24);
+  const defaultSeed = data.seed ?? -1;
+  document.getElementById("characterSeed").value = String(defaultSeed);
+  if (actualSeedDisplay) actualSeedDisplay.value = "—";
   setStatus(`Recipe loaded: ${data.display_name || recipeId}`);
 }
 
 loadCharacterDefaultsBtn.addEventListener("click", loadCharacterDefaults);
 characterRecipe?.addEventListener("change", loadCharacterDefaults);
+randomSeedBtn?.addEventListener("click", () => {
+  document.getElementById("characterSeed").value = "-1";
+  if (actualSeedDisplay) actualSeedDisplay.value = "Random on next generate";
+  setStatus("Random seed enabled. Pixel Factory will save the actual seed after generation.");
+});
+
+reuseSeedBtn?.addEventListener("click", () => {
+  if (lastActualSeed === null) return;
+  document.getElementById("characterSeed").value = String(lastActualSeed);
+  if (actualSeedDisplay) actualSeedDisplay.value = String(lastActualSeed);
+  setStatus(`Reusing seed ${lastActualSeed}.`);
+});
+
 
 function addGeneratedImage(src, index, asset = null) {
   const wrap = document.createElement("div");
@@ -323,12 +343,18 @@ generateCharacterBtn.addEventListener("click", async () => {
     const data = await response.json();
     if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
     characterOutput.innerHTML = "";
+    if (typeof data.seed !== "undefined") {
+      lastActualSeed = data.seed;
+      if (actualSeedDisplay) actualSeedDisplay.value = String(data.seed);
+      if (reuseSeedBtn) reuseSeedBtn.disabled = false;
+      document.getElementById("characterSeed").value = String(data.seed);
+    }
     (data.assets || []).forEach((asset, i) => addGeneratedImage(data.images?.[i], i, asset));
     if (!data.assets) data.images.forEach(addGeneratedImage);
     await loadAssets();
     await refreshWorkspace();
     // The first returned generation is now the current workspace. Palette Lab will load it automatically when opened.
-    setStatus(`Character job complete. ${data.count} image(s) returned. Current workspace is ready for Palette Lab.`);
+    setStatus(`Character job complete. ${data.count} image(s) returned. Seed ${data.seed}. Current workspace is ready for Palette Lab.`);
   } catch (err) {
     characterOutput.classList.add("empty");
     characterOutput.textContent = "Generation failed.";

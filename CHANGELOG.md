@@ -1,3 +1,13 @@
+
+## PF-0011 - Generation Settings Fix
+
+- Added Pixel Factory-side random seed resolution.
+- Saved actual seed instead of `-1` in generated asset metadata.
+- Added Use Random Seed and Reuse Last Seed controls.
+- Character Studio now displays the actual seed returned by generation.
+- Comfy KSampler is now patched with a fixed actual seed for reproducibility.
+- Kept generation sizes locked to safe square values.
+
 # Changelog
 
 ## PF-0008 — Workspace Pipeline
