@@ -37,7 +37,7 @@ engine_service = EngineService()
 asset_service = AssetService(PROJECT_ROOT)
 workspace_service = WorkspaceService(PROJECT_ROOT)
 
-app = FastAPI(title="Pixel Factory by Wulf", version="0.11-pf0011-generation-settings")
+app = FastAPI(title="Pixel Factory by Wulf", version="0.12-pf0012-ui-layout-polish")
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
 
@@ -48,7 +48,7 @@ def index() -> str:
 
 @app.get("/api/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "app": "Pixel Factory Web", "version": "0.11", "milestone": "PF-0011 Generation Settings Fix"}
+    return {"status": "ok", "app": "Pixel Factory Web", "version": "0.12", "milestone": "PF-0012 UI Layout + Asset Filter Polish"}
 
 
 def _read_image(data: bytes) -> Image.Image:
@@ -254,8 +254,8 @@ def generate_character(req: CharacterGenerateRequest) -> dict:
 
 
 @app.get("/api/assets")
-def list_assets(status: str | None = None, asset_type: str | None = None) -> dict:
-    assets = asset_service.list(status=status, asset_type=asset_type)
+def list_assets(status: str | None = None, asset_type: str | None = None, favorite: bool = False) -> dict:
+    assets = asset_service.list(status=status, asset_type=asset_type, favorite=favorite)
     return {"ok": True, "count": len(assets), "assets": assets}
 
 

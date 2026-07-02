@@ -72,7 +72,7 @@ class AssetService:
         meta["project_root"] = self.project_root.as_posix()
         return meta
 
-    def list(self, status: str | None = None, asset_type: str | None = None) -> list[dict[str, Any]]:
+    def list(self, status: str | None = None, asset_type: str | None = None, favorite: bool = False) -> list[dict[str, Any]]:
         assets: list[dict[str, Any]] = []
         for path in sorted(self.metadata.glob("*.json"), reverse=True):
             try:
@@ -80,6 +80,8 @@ class AssetService:
             except Exception:
                 continue
             if status and meta.get("status") != status:
+                continue
+            if favorite and not bool(meta.get("favorite")):
                 continue
             if asset_type and meta.get("type") != asset_type:
                 continue

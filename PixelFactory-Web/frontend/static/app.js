@@ -258,10 +258,15 @@ async function loadCharacterDefaults() {
 
 loadCharacterDefaultsBtn.addEventListener("click", loadCharacterDefaults);
 characterRecipe?.addEventListener("change", loadCharacterDefaults);
+function makePixelFactorySeed() {
+  return Math.floor(Math.random() * 2147483646) + 1;
+}
+
 randomSeedBtn?.addEventListener("click", () => {
-  document.getElementById("characterSeed").value = "-1";
-  if (actualSeedDisplay) actualSeedDisplay.value = "Random on next generate";
-  setStatus("Random seed enabled. Pixel Factory will save the actual seed after generation.");
+  const seed = makePixelFactorySeed();
+  document.getElementById("characterSeed").value = String(seed);
+  if (actualSeedDisplay) actualSeedDisplay.value = String(seed);
+  setStatus(`Random seed selected: ${seed}.`);
 });
 
 reuseSeedBtn?.addEventListener("click", () => {
@@ -409,16 +414,31 @@ const assetGrid = document.getElementById("assetGrid");
 const assetInspector = document.getElementById("assetInspector");
 const refreshAssetsBtn = document.getElementById("refreshAssetsBtn");
 const assetFilter = document.getElementById("assetFilter");
+const assetBrowserTitle = document.getElementById("assetBrowserTitle");
 let assets = [];
 let selectedAssetId = null;
 
 function assetStatusQuery() {
   const status = assetFilter?.value || "";
+  if (status === "favorite") return "?favorite=true";
   return status ? `?status=${encodeURIComponent(status)}` : "";
+}
+
+function updateAssetBrowserHeading() {
+  if (!assetBrowserTitle) return;
+  const value = assetFilter?.value || "";
+  const names = {
+    "": "All Assets",
+    incoming: "Incoming Assets",
+    accepted: "Accepted Assets",
+    favorite: "Favorite Assets",
+  };
+  assetBrowserTitle.textContent = names[value] || "Asset Browser";
 }
 
 async function loadAssets(selectId = null) {
   if (!assetGrid) return;
+  updateAssetBrowserHeading();
   const response = await fetch(`/api/assets${assetStatusQuery()}`);
   const data = await response.json();
   assets = data.assets || [];

@@ -10,7 +10,7 @@
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand">Pixel Factory</div>
-      <div class="subtitle">by Wulf · Web v0.11 · PF-0011</div>
+      <div class="subtitle">by Wulf · Web v0.12 · PF-0012</div>
 
       <nav class="nav">
         <button class="nav-btn active" data-view="palette">Palette Lab</button>
@@ -21,13 +21,6 @@
         <button class="nav-btn disabled">Exporter</button>
       </nav>
 
-      <section class="panel">
-        <div class="panel-title">ComfyUI Engine</div>
-        <label>Comfy URL</label>
-        <input id="comfyUrl" type="text" value="http://127.0.0.1:8188" />
-        <button id="checkComfyBtn">Check Comfy</button>
-        <div id="comfyStatus" class="engine-status disconnected">Disconnected</div>
-      </section>
 
       <section id="paletteControls" class="panel view-controls">
         <label class="file-label">
@@ -119,6 +112,7 @@
           <option value="">All assets</option>
           <option value="incoming" selected>Incoming</option>
           <option value="accepted">Accepted</option>
+          <option value="favorite">Favorites</option>
         </select>
         <button id="refreshAssetsBtn">Refresh Assets</button>
       </section>
@@ -127,6 +121,16 @@
     </aside>
 
     <main class="workspace">
+      <div class="global-engine-bar">
+        <div class="engine-chip">
+          <span class="engine-dot" aria-hidden="true"></span>
+          <span class="engine-label">ComfyUI</span>
+          <div id="comfyStatus" class="engine-status disconnected">Disconnected</div>
+        </div>
+        <input id="comfyUrl" class="engine-url" type="text" value="http://127.0.0.1:8188" aria-label="ComfyUI URL" />
+        <button id="checkComfyBtn" class="engine-check-btn">Check</button>
+      </div>
+
       <section id="paletteView" class="view active">
         <header class="topbar">
           <h1>Palette Lab</h1>
@@ -170,7 +174,7 @@
 
       <section id="assetsView" class="view">
         <header class="topbar">
-          <h1>Asset Browser</h1>
+          <h1 id="assetBrowserTitle">Asset Browser</h1>
           <p>Generated images become assets. Accept, set workspace, send to Palette Lab, download, or delete.</p>
         </header>
 

@@ -1,4 +1,14 @@
 
+## PF-0012 — UI Layout + Asset Filter Polish
+
+- Moved ComfyUI connection into a compact global status bar.
+- Added Asset Browser Favorites filter.
+- Added dynamic Asset Browser headings based on filter.
+- Fixed favorite badge overlap on asset thumbnails.
+- Random seed now fills the seed input immediately.
+- Tightened sidebar overflow behavior.
+
+
 ## PF-0011 - Generation Settings Fix
 
 - Added Pixel Factory-side random seed resolution.
