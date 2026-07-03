@@ -1,3 +1,12 @@
+## PF-0015.2 — Asset Multi-Select Foundation
+
+- Removed the small Export checkbox pill from asset thumbnails.
+- Added Shift/Ctrl/Cmd-click multi-select behavior in Asset Browser.
+- Added selected asset highlighting and a bottom selection bar.
+- Added multi-select Inspector summary with preview thumbnails, type/status counts, and tag summary.
+- Multi-selected assets can now be routed into Exporter for Godot or Aseprite setup.
+- Updated visible version label to PF-0015.2.
+
 ## PF-0015.1 — Export Routing and UI Control Polish
 
 - Routed asset inspector export actions into the Exporter instead of exporting immediately.

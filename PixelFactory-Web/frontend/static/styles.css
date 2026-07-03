@@ -1420,3 +1420,162 @@ select option:hover {
 .export-route-btn:hover {
   border-color: var(--accent);
 }
+
+/* PF-0015.2 asset multi-select foundation */
+.asset-export-select-wrap,
+.asset-export-select {
+  display: none !important;
+}
+
+.asset-card.export-selected {
+  border-color: rgba(94, 162, 255, .95);
+  box-shadow: 0 0 0 1px rgba(94, 162, 255, .46) inset, 0 16px 42px rgba(47, 125, 246, .16);
+}
+
+.asset-selected-mark {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  z-index: 6;
+  width: 24px;
+  height: 24px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: #eaf4ff;
+  background: rgba(47, 125, 246, .92);
+  border: 1px solid rgba(255, 255, 255, .24);
+  font-size: 13px;
+  font-weight: 900;
+  box-shadow: 0 10px 24px rgba(0,0,0,.36);
+}
+
+.asset-card.export-selected .asset-selected-mark {
+  display: inline-flex;
+}
+
+.asset-selection-bar {
+  position: fixed;
+  left: 232px;
+  right: 24px;
+  bottom: 18px;
+  z-index: 80;
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  border: 1px solid rgba(94, 162, 255, .32);
+  border-radius: 16px;
+  background: rgba(10, 17, 28, .94);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 18px 60px rgba(0,0,0,.42), 0 0 0 1px rgba(255,255,255,.03) inset;
+}
+
+.asset-selection-bar.hidden {
+  display: none;
+}
+
+.asset-selection-bar strong {
+  display: block;
+  color: var(--text);
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.asset-selection-bar span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.asset-selection-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.asset-selection-actions button {
+  min-width: 128px;
+}
+
+.multi-inspector-hero {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(0,0,0,.22);
+}
+
+.multi-inspector-hero img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: #05070a;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.asset-inspector.multi .inspector-section h3 {
+  margin-top: 0;
+}
+
+.multi-tags {
+  margin-top: 12px;
+}
+
+.multi-actions {
+  margin-top: 14px;
+}
+
+.multi-actions button:first-child {
+  grid-column: 1 / -1;
+  border-color: rgba(94,162,255,.55);
+  color: #d9eaff;
+}
+
+.multi-selection-list {
+  display: grid;
+  gap: 8px;
+  max-height: 260px;
+  overflow: auto;
+}
+
+.multi-selection-list div {
+  display: grid;
+  gap: 2px;
+  padding: 8px;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 10px;
+  background: rgba(0,0,0,.16);
+}
+
+.multi-selection-list strong {
+  color: var(--text);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.multi-selection-list span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+@media (max-width: 900px) {
+  .asset-selection-bar {
+    left: 16px;
+    right: 16px;
+    bottom: 12px;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .asset-selection-actions button {
+    width: 100%;
+  }
+}

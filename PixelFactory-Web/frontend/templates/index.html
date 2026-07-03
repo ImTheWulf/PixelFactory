@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0015_1_export_routing" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0015_2_asset_multiselect" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.15 · PF-0015.1</div>
+          <div class="subtitle">by Wulf · Web v0.15 · PF-0015.2</div>
         </div>
       </div>
 
@@ -376,6 +376,16 @@
     </main>
   </div>
 
+  <div id="assetSelectionBar" class="asset-selection-bar hidden" aria-live="polite">
+    <div>
+      <strong id="assetSelectionCount">0 selected</strong>
+      <span id="assetSelectionMeta">Shift-click assets to multi-select.</span>
+    </div>
+    <div class="asset-selection-actions">
+      <button id="selectionBarExporterBtn" type="button">Send to Exporter</button>
+      <button id="selectionBarClearBtn" type="button">Clear Selection</button>
+    </div>
+  </div>
 
   <div id="imageViewerModal" class="image-viewer-modal hidden" aria-hidden="true">
     <div class="image-viewer-backdrop" data-viewer-close></div>
@@ -400,6 +410,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0015_design_foundation"></script>
+  <script src="/static/app.js?v=pf0015_2_asset_multiselect"></script>
 </body>
 </html>

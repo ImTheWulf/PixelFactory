@@ -606,6 +606,53 @@ let assets = [];
 let selectedAssetId = null;
 let exportSelection = new Set();
 
+function selectedAssets() {
+  return assets.filter((asset) => exportSelection.has(asset.id));
+}
+
+function assetCountSummary(items, key) {
+  const counts = {};
+  items.forEach((item) => {
+    const value = String(item?.[key] || "unknown");
+    counts[value] = (counts[value] || 0) + 1;
+  });
+  return counts;
+}
+
+function formatCountSummary(counts) {
+  const entries = Object.entries(counts);
+  if (!entries.length) return "None";
+  return entries
+    .map(([name, count]) => `${count} ${name}${count === 1 ? "" : "s"}`)
+    .join(" · ");
+}
+
+function selectedTagSummary(items, limit = 8) {
+  const counts = {};
+  items.forEach((item) => {
+    (item.tags || []).forEach((tag) => {
+      const value = String(tag || "").trim();
+      if (!value) return;
+      counts[value] = (counts[value] || 0) + 1;
+    });
+  });
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, limit);
+}
+
+function updateSelectionBar(items = selectedAssets()) {
+  const bar = document.getElementById("assetSelectionBar");
+  const countEl = document.getElementById("assetSelectionCount");
+  const metaEl = document.getElementById("assetSelectionMeta");
+  if (!bar || !countEl || !metaEl) return;
+
+  const count = exportSelection.size;
+  bar.classList.toggle("hidden", count === 0);
+  countEl.textContent = `${count} selected`;
+  metaEl.textContent = count ? formatCountSummary(assetCountSummary(items, "type")) : "Shift-click assets to multi-select.";
+}
+
 function updateExportSelectionStatus() {
   const count = exportSelection.size;
   const label = `Selected for export: ${count}`;
@@ -613,10 +660,11 @@ function updateExportSelectionStatus() {
     const el = document.getElementById(id);
     if (el) el.textContent = label;
   });
-  ["exportSelectedBtn", "assetExportSelectedBtn"].forEach((id) => {
+  ["exportSelectedBtn", "assetExportSelectedBtn", "selectionBarExporterBtn"].forEach((id) => {
     const btn = document.getElementById(id);
     if (btn) btn.disabled = count === 0;
   });
+  updateSelectionBar();
 }
 
 function toggleExportSelection(assetId, checked = null, rerender = true) {
@@ -626,14 +674,16 @@ function toggleExportSelection(assetId, checked = null, rerender = true) {
   else exportSelection.delete(assetId);
   updateExportSelectionStatus();
   if (rerender) renderAssets(selectedAssetId);
+  if (exportSelection.size > 1) renderMultiSelectionInspector();
+  else if (exportSelection.size === 1) {
+    const only = Array.from(exportSelection)[0];
+    selectAsset(only, false);
+  } else if (selectedAssetId) {
+    selectAsset(selectedAssetId, false);
+  }
 }
 
 assetGrid?.addEventListener("click", async (event) => {
-  const exportWrap = event.target.closest(".asset-export-select-wrap");
-  if (exportWrap) {
-    event.stopPropagation();
-    return;
-  }
   const favoriteButton = event.target.closest(".asset-card-favorite");
   if (!favoriteButton) return;
   event.preventDefault();
@@ -708,10 +758,7 @@ function renderAssets(selectId = null) {
       <div class="asset-thumb-wrap">
         <img class="asset-thumb-image" src="${asset.image_url}" alt="${escapeHtml(displayName)}">
         <button class="asset-thumb-zoom" type="button" title="View large" aria-label="View ${escapeHtml(displayName)} large">⌕</button>
-        <label class="asset-export-select-wrap" title="Select for batch export">
-          <input class="asset-export-select" type="checkbox" data-asset-id="${escapeHtml(asset.id)}" ${exportSelection.has(asset.id) ? "checked" : ""}>
-          Export
-        </label>
+        <div class="asset-selected-mark" aria-hidden="true">✓</div>
         <button class="asset-card-favorite ${asset.favorite ? "active" : ""}" type="button" data-asset-id="${escapeHtml(asset.id)}" title="${asset.favorite ? "Unfavorite" : "Favorite"}" aria-label="${asset.favorite ? "Unfavorite" : "Favorite"} ${escapeHtml(displayName)}"><span class="asset-favorite-star" aria-hidden="true">${asset.favorite ? "★" : "☆"}</span></button>
         <span class="asset-status-badge ${asset.status === "accepted" ? "accepted" : "incoming"}">${statusLabel}</span>
       </div>
@@ -719,7 +766,14 @@ function renderAssets(selectId = null) {
       <div class="asset-meta">${escapeHtml(asset.type)} · ${escapeHtml(statusLabel)}</div>
       ${Array.isArray(asset.tags) && asset.tags.length ? `<div class="asset-tags">${asset.tags.map((t) => `<span>${escapeHtml(t)}</span>`).join("")}</div>` : ""}
     `;
-    card.addEventListener("click", () => selectAsset(asset.id));
+    card.addEventListener("click", (event) => {
+      if (event.shiftKey || event.ctrlKey || event.metaKey) {
+        event.preventDefault();
+        toggleExportSelection(asset.id);
+        return;
+      }
+      selectAsset(asset.id, true);
+    });
     card.querySelector(".asset-thumb-zoom")?.addEventListener("click", (event) => {
       event.stopPropagation();
       openImageViewer(asset.image_url, displayName);
@@ -727,22 +781,62 @@ function renderAssets(selectId = null) {
     const favoriteButton = card.querySelector(".asset-card-favorite");
     favoriteButton?.addEventListener("pointerdown", (event) => event.stopPropagation());
     favoriteButton?.addEventListener("mousedown", (event) => event.stopPropagation());
-    const exportWrap = card.querySelector(".asset-export-select-wrap");
-    const exportInput = card.querySelector(".asset-export-select");
-    ["pointerdown", "mousedown", "mouseup", "click"].forEach((eventName) => {
-      exportWrap?.addEventListener(eventName, (event) => event.stopPropagation());
-      exportInput?.addEventListener(eventName, (event) => event.stopPropagation());
-    });
-    exportInput?.addEventListener("change", (event) => {
-      event.stopPropagation();
-      toggleExportSelection(asset.id, event.target.checked, false);
-      card.classList.toggle("export-selected", event.target.checked);
-      updateExportSelectionStatus();
-    });
     assetGrid.appendChild(card);
   });
   if (selectId) selectAsset(selectId);
+  if (exportSelection.size > 1) renderMultiSelectionInspector();
   updateExportSelectionStatus();
+}
+
+function renderMultiSelectionInspector() {
+  if (!assetInspector) return;
+  const items = selectedAssets();
+  if (!items.length) {
+    assetInspector.className = "asset-inspector empty";
+    assetInspector.textContent = "Select an asset.";
+    return;
+  }
+
+  const typeSummary = formatCountSummary(assetCountSummary(items, "type"));
+  const statusSummary = formatCountSummary(assetCountSummary(items, "status"));
+  const tagSummary = selectedTagSummary(items);
+
+  assetInspector.className = "asset-inspector multi";
+  assetInspector.innerHTML = `
+    <div class="multi-inspector-hero">
+      ${items.slice(0, 9).map((asset) => `<img src="${asset.image_url}" alt="${escapeHtml(assetDisplayName(asset))}">`).join("")}
+    </div>
+
+    <section class="inspector-section">
+      <h3>${items.length} Assets Selected</h3>
+      <div class="metadata-grid">
+        <div><span>Types</span><strong>${escapeHtml(typeSummary)}</strong></div>
+        <div><span>Status</span><strong>${escapeHtml(statusSummary)}</strong></div>
+      </div>
+      <div class="asset-tags multi-tags">
+        ${tagSummary.length ? tagSummary.map(([tag, count]) => `<span>${escapeHtml(tag)} × ${count}</span>`).join("") : "<span>No shared tags found</span>"}
+      </div>
+    </section>
+
+    <div class="asset-actions multi-actions">
+      <button id="multiSendExporterBtn" type="button">Send to Exporter</button>
+      <button id="multiSendGodotBtn" type="button">Godot Export Setup</button>
+      <button id="multiSendAsepriteBtn" type="button">Aseprite Export Setup</button>
+      <button id="multiClearSelectionBtn" type="button">Clear Selection</button>
+    </div>
+
+    <section class="inspector-section">
+      <h3>Selection</h3>
+      <div class="multi-selection-list">
+        ${items.map((asset) => `<div><strong>${escapeHtml(assetDisplayName(asset))}</strong><span>${escapeHtml(asset.type || "asset")} · ${escapeHtml(assetStatusLabel(asset))}</span></div>`).join("")}
+      </div>
+    </section>
+  `;
+
+  document.getElementById("multiSendExporterBtn")?.addEventListener("click", () => routeSelectionToExporter());
+  document.getElementById("multiSendGodotBtn")?.addEventListener("click", () => routeSelectionToExporter("godot"));
+  document.getElementById("multiSendAsepriteBtn")?.addEventListener("click", () => routeSelectionToExporter("aseprite"));
+  document.getElementById("multiClearSelectionBtn")?.addEventListener("click", clearExportSelection);
 }
 
 function renderGenerationSettings(asset) {
@@ -757,7 +851,11 @@ function renderGenerationSettings(asset) {
   return rows.map(([label, value]) => `<div><span>${label}</span><strong>${escapeHtml(value)}</strong></div>`).join("");
 }
 
-function selectAsset(assetId) {
+function selectAsset(assetId, clearMultiSelection = false) {
+  if (clearMultiSelection && exportSelection.size) {
+    exportSelection.clear();
+    updateExportSelectionStatus();
+  }
   selectedAssetId = assetId;
   const asset = assets.find((a) => a.id === assetId);
   renderAssets();
@@ -778,7 +876,7 @@ function selectAsset(assetId) {
       ${asset.status === "accepted" ? "" : '<button id="acceptAssetBtn">Accept</button>'}
       <button id="favoriteAssetBtn">${asset.favorite ? "Unfavorite" : "Favorite"}</button>
       <button id="paletteAssetBtn">Open in Palette Lab</button>
-      <button id="selectForExportAssetBtn">${exportSelection.has(asset.id) ? "Unselect Export" : "Select Export"}</button>
+      <button id="selectForExportAssetBtn">${exportSelection.has(asset.id) ? "Remove from Selection" : "Add to Selection"}</button>
       <button id="sendToExporterBtn" class="export-route-btn">Send to Exporter</button>
       <button id="sendToGodotExporterBtn" class="export-route-btn">Godot Export Setup</button>
       <button id="sendToAsepriteExporterBtn" class="export-route-btn">Aseprite Export Setup</button>
@@ -926,25 +1024,48 @@ async function sendAssetToPalette(asset) {
 
 
 
+function applyExportTarget(target = null) {
+  if (!target) return;
+  const sidebarTarget = document.getElementById("assetExportTarget");
+  const exporterTarget = document.getElementById("exportTarget");
+  if (sidebarTarget) sidebarTarget.value = target;
+  if (exporterTarget) exporterTarget.value = target;
+}
+
+function routeSelectionToExporter(target = null) {
+  if (!exportSelection.size) {
+    setStatus("Shift-click one or more assets before opening the Exporter.");
+    return;
+  }
+  applyExportTarget(target);
+  updateExportSelectionStatus();
+  setView("exporter");
+  setStatus(`Loaded ${exportSelection.size} selected asset(s) into Exporter${target ? ` for ${target}` : ""}.`);
+}
+
 function routeAssetToExporter(assetId, target = null) {
   if (!assetId) {
-    setStatus("Select an asset before opening the Exporter.");
+    routeSelectionToExporter(target);
     return;
   }
 
   exportSelection.clear();
   exportSelection.add(assetId);
-
-  if (target) {
-    const sidebarTarget = document.getElementById("assetExportTarget");
-    const exporterTarget = document.getElementById("exportTarget");
-    if (sidebarTarget) sidebarTarget.value = target;
-    if (exporterTarget) exporterTarget.value = target;
-  }
-
+  applyExportTarget(target);
   updateExportSelectionStatus();
   setView("exporter");
   setStatus(`Loaded 1 asset into Exporter${target ? ` for ${target}` : ""}.`);
+}
+
+function clearExportSelection() {
+  exportSelection.clear();
+  updateExportSelectionStatus();
+  renderAssets(selectedAssetId);
+  if (selectedAssetId) selectAsset(selectedAssetId, false);
+  else {
+    assetInspector.className = "asset-inspector empty";
+    assetInspector.textContent = "Select an asset.";
+  }
 }
 
 
@@ -1065,14 +1186,12 @@ async function refreshExportStatus() {
 document.getElementById("exportSelectedBtn")?.addEventListener("click", exportSelectedAssets);
 document.getElementById("assetExportSelectedBtn")?.addEventListener("click", exportSelectedAssets);
 document.getElementById("exportAcceptedBtn")?.addEventListener("click", exportAcceptedAssets);
-function clearExportSelection() {
-  exportSelection.clear();
-  updateExportSelectionStatus();
-  renderAssets(selectedAssetId);
-  setStatus("Export selection cleared.");
+function clearExportSelectionWithStatus() {
+  clearExportSelection();
+  setStatus("Selection cleared.");
 }
-document.getElementById("clearSelectedExportsBtn")?.addEventListener("click", clearExportSelection);
-document.getElementById("assetClearSelectedExportsBtn")?.addEventListener("click", clearExportSelection);
+document.getElementById("clearSelectedExportsBtn")?.addEventListener("click", clearExportSelectionWithStatus);
+document.getElementById("assetClearSelectedExportsBtn")?.addEventListener("click", clearExportSelectionWithStatus);
 document.getElementById("refreshExportsBtn")?.addEventListener("click", refreshExportStatus);
 
 async function clearUnsavedCandidates() {
@@ -1110,6 +1229,9 @@ async function clearUnsavedCandidates() {
 }
 
 refreshAssetsBtn?.addEventListener("click", () => loadAssets());
+document.getElementById("selectionBarClearBtn")?.addEventListener("click", clearExportSelection);
+document.getElementById("selectionBarExporterBtn")?.addEventListener("click", () => routeSelectionToExporter());
+
 assetFilter?.addEventListener("change", () => loadAssets());
 assetTypeFilter?.addEventListener("change", () => loadAssets());
 assetSort?.addEventListener("change", () => { assets = sortAssetsForView(assets); renderAssets(selectedAssetId); });
