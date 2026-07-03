@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0015_2_asset_multiselect" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0015_3_export_panel_routing" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.15 · PF-0015.2</div>
+          <div class="subtitle">by Wulf · Web v0.15 · PF-0015.3</div>
         </div>
       </div>
 
@@ -198,14 +198,6 @@
         </select>
         <button id="refreshAssetsBtn">Refresh Assets</button>
         <button id="clearCandidateAssetsBtn" type="button">Clear Unsaved Candidates</button>
-        <label>Export Target</label>
-        <select id="assetExportTarget">
-          <option value="godot">Godot</option>
-          <option value="aseprite">Aseprite</option>
-        </select>
-        <button id="assetExportSelectedBtn" type="button">Export Selected</button>
-        <button id="assetClearSelectedExportsBtn" type="button">Clear Export Selection</button>
-        <div id="assetExportSelectionStatus" class="workspace-status">Selected for export: 0</div>
       </section>
 
       <div id="status" class="status">Ready.</div>
@@ -369,6 +361,7 @@
           <div class="preview-card export-card">
             <h2>Export Foundation</h2>
             <p class="export-copy">Exports copy accepted Pixel Factory assets into stable Godot and Aseprite folders with sidecar JSON and a manifest. Individual asset export buttons can also export the selected asset while you are testing. This is the foundation for later Godot import helpers, sprite sheets, frame metadata, and Aseprite CLI support.</p>
+            <div id="exportSelectionPanel" class="export-selection-panel">No assets selected for export.</div>
             <div id="exportStatusPanel" class="export-status-panel">Export status not loaded.</div>
           </div>
         </section>
@@ -382,7 +375,7 @@
       <span id="assetSelectionMeta">Shift-click assets to multi-select.</span>
     </div>
     <div class="asset-selection-actions">
-      <button id="selectionBarExporterBtn" type="button">Send to Exporter</button>
+      <button id="selectionBarExporterBtn" type="button">Export Selected</button>
       <button id="selectionBarClearBtn" type="button">Clear Selection</button>
     </div>
   </div>
@@ -410,6 +403,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0015_2_asset_multiselect"></script>
+  <script src="/static/app.js?v=pf0015_3_export_panel_routing"></script>
 </body>
 </html>

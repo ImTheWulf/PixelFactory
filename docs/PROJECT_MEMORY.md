@@ -371,3 +371,10 @@ Expected behavior:
 
 The backend Workspace service can remain as implementation plumbing, but user-facing UI should treat Palette Lab as the practical editing/touch-up workspace until a separate canvas system exists.
 
+## PF-0015.3 Export Flow Direction
+
+Asset Browser should select assets and route them into Exporter.
+
+Asset Browser should not expose separate direct Godot/Aseprite export actions in the inspector because that duplicates the Exporter panel. The Exporter panel is where export target, selected asset preview, and export action should live.
+
+Palette Lab remains a single-asset workspace for now. Batch Palette Lab processing can come later if needed.

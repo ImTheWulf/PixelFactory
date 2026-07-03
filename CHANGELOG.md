@@ -1,3 +1,12 @@
+
+## PF-0015.3 — Export Routing Cleanup
+
+- Removed redundant direct Godot/Aseprite export setup buttons from Asset Browser inspector.
+- Removed Asset Browser sidebar export target controls.
+- Consolidated asset export flow through the Exporter panel.
+- Added selected asset preview thumbnails and selection summaries to the Exporter panel.
+- Kept Palette Lab single-asset routing separate from batch export routing.
+
 ## PF-0015.2 — Asset Multi-Select Foundation
 
 - Removed the small Export checkbox pill from asset thumbnails.

@@ -655,16 +655,17 @@ function updateSelectionBar(items = selectedAssets()) {
 
 function updateExportSelectionStatus() {
   const count = exportSelection.size;
-  const label = `Selected for export: ${count}`;
-  ["exportSelectionStatus", "assetExportSelectionStatus"].forEach((id) => {
+  const label = `Export selection: ${count}`;
+  ["exportSelectionStatus"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.textContent = label;
   });
-  ["exportSelectedBtn", "assetExportSelectedBtn", "selectionBarExporterBtn"].forEach((id) => {
+  ["exportSelectedBtn", "selectionBarExporterBtn"].forEach((id) => {
     const btn = document.getElementById(id);
     if (btn) btn.disabled = count === 0;
   });
   updateSelectionBar();
+  renderExportSelectionPanel();
 }
 
 function toggleExportSelection(assetId, checked = null, rerender = true) {
@@ -819,9 +820,7 @@ function renderMultiSelectionInspector() {
     </section>
 
     <div class="asset-actions multi-actions">
-      <button id="multiSendExporterBtn" type="button">Send to Exporter</button>
-      <button id="multiSendGodotBtn" type="button">Godot Export Setup</button>
-      <button id="multiSendAsepriteBtn" type="button">Aseprite Export Setup</button>
+      <button id="multiSendExporterBtn" type="button">Export</button>
       <button id="multiClearSelectionBtn" type="button">Clear Selection</button>
     </div>
 
@@ -834,8 +833,6 @@ function renderMultiSelectionInspector() {
   `;
 
   document.getElementById("multiSendExporterBtn")?.addEventListener("click", () => routeSelectionToExporter());
-  document.getElementById("multiSendGodotBtn")?.addEventListener("click", () => routeSelectionToExporter("godot"));
-  document.getElementById("multiSendAsepriteBtn")?.addEventListener("click", () => routeSelectionToExporter("aseprite"));
   document.getElementById("multiClearSelectionBtn")?.addEventListener("click", clearExportSelection);
 }
 
@@ -877,9 +874,7 @@ function selectAsset(assetId, clearMultiSelection = false) {
       <button id="favoriteAssetBtn">${asset.favorite ? "Unfavorite" : "Favorite"}</button>
       <button id="paletteAssetBtn">Open in Palette Lab</button>
       <button id="selectForExportAssetBtn">${exportSelection.has(asset.id) ? "Remove from Selection" : "Add to Selection"}</button>
-      <button id="sendToExporterBtn" class="export-route-btn">Send to Exporter</button>
-      <button id="sendToGodotExporterBtn" class="export-route-btn">Godot Export Setup</button>
-      <button id="sendToAsepriteExporterBtn" class="export-route-btn">Aseprite Export Setup</button>
+      <button id="sendToExporterBtn" class="export-route-btn">Export</button>
       <a href="${asset.image_url}" download="${escapeHtml(asset.name)}.png">Download</a>
       <button id="deleteAssetBtn">Delete</button>
     </div>
@@ -926,8 +921,6 @@ function selectAsset(assetId, clearMultiSelection = false) {
   document.getElementById("deleteAssetBtn").addEventListener("click", () => deleteAsset(asset.id));
   document.getElementById("selectForExportAssetBtn")?.addEventListener("click", () => toggleExportSelection(asset.id));
   document.getElementById("sendToExporterBtn")?.addEventListener("click", () => routeAssetToExporter(asset.id));
-  document.getElementById("sendToGodotExporterBtn")?.addEventListener("click", () => routeAssetToExporter(asset.id, "godot"));
-  document.getElementById("sendToAsepriteExporterBtn")?.addEventListener("click", () => routeAssetToExporter(asset.id, "aseprite"));
   document.getElementById("saveAssetMetadataBtn")?.addEventListener("click", () => updateAssetMetadata(asset.id, {
     name: document.getElementById("assetNameInput")?.value || displayName,
     tags: document.getElementById("assetTagsInput")?.value || "",
@@ -1024,11 +1017,67 @@ async function sendAssetToPalette(asset) {
 
 
 
+
+function exportTargetLabel() {
+  const target = document.getElementById("exportTarget")?.value || selectedExportTarget();
+  return target === "aseprite" ? "Aseprite" : "Godot";
+}
+
+function renderExportSelectionPanel() {
+  const panel = document.getElementById("exportSelectionPanel");
+  if (!panel) return;
+
+  const items = selectedAssets();
+  const target = exportTargetLabel();
+
+  if (!items.length) {
+    panel.className = "export-selection-panel empty";
+    panel.innerHTML = `
+      <div class="export-selection-empty">
+        <strong>No assets loaded for export.</strong>
+        <span>Select assets in Asset Browser, then click Export.</span>
+      </div>
+    `;
+    return;
+  }
+
+  const typeSummary = formatCountSummary(assetCountSummary(items, "type"));
+  const statusSummary = formatCountSummary(assetCountSummary(items, "status"));
+  const tagSummary = selectedTagSummary(items, 10);
+
+  panel.className = "export-selection-panel";
+  panel.innerHTML = `
+    <div class="export-selection-header">
+      <div>
+        <h3>${items.length} Asset${items.length === 1 ? "" : "s"} Ready</h3>
+        <p>Review the export selection, choose Godot or Aseprite, then export from this panel.</p>
+      </div>
+      <strong>${escapeHtml(target)}</strong>
+    </div>
+
+    <div class="export-selection-preview">
+      ${items.slice(0, 12).map((asset) => `
+        <div class="export-preview-tile" title="${escapeHtml(assetDisplayName(asset))}">
+          <img src="${asset.image_url}" alt="${escapeHtml(assetDisplayName(asset))}">
+        </div>
+      `).join("")}
+      ${items.length > 12 ? `<div class="export-preview-more">+${items.length - 12}</div>` : ""}
+    </div>
+
+    <div class="metadata-grid export-selection-meta">
+      <div><span>Types</span><strong>${escapeHtml(typeSummary)}</strong></div>
+      <div><span>Status</span><strong>${escapeHtml(statusSummary)}</strong></div>
+    </div>
+
+    <div class="asset-tags export-selection-tags">
+      ${tagSummary.length ? tagSummary.map(([tag, count]) => `<span>${escapeHtml(tag)} × ${count}</span>`).join("") : ""}
+    </div>
+  `;
+}
+
 function applyExportTarget(target = null) {
   if (!target) return;
-  const sidebarTarget = document.getElementById("assetExportTarget");
   const exporterTarget = document.getElementById("exportTarget");
-  if (sidebarTarget) sidebarTarget.value = target;
   if (exporterTarget) exporterTarget.value = target;
 }
 
@@ -1040,7 +1089,7 @@ function routeSelectionToExporter(target = null) {
   applyExportTarget(target);
   updateExportSelectionStatus();
   setView("exporter");
-  setStatus(`Loaded ${exportSelection.size} selected asset(s) into Exporter${target ? ` for ${target}` : ""}.`);
+  setStatus(`Loaded ${exportSelection.size} selected asset(s) into Exporter.`);
 }
 
 function routeAssetToExporter(assetId, target = null) {
@@ -1054,7 +1103,7 @@ function routeAssetToExporter(assetId, target = null) {
   applyExportTarget(target);
   updateExportSelectionStatus();
   setView("exporter");
-  setStatus(`Loaded 1 asset into Exporter${target ? ` for ${target}` : ""}.`);
+  setStatus(`Loaded 1 asset into Exporter.`);
 }
 
 function clearExportSelection() {
@@ -1093,7 +1142,7 @@ async function exportAsset(assetId, target) {
 }
 
 function selectedExportTarget() {
-  return document.getElementById("assetExportTarget")?.value || document.getElementById("exportTarget")?.value || "godot";
+  return document.getElementById("exportTarget")?.value || "godot";
 }
 
 async function exportSelectedAssets() {
@@ -1178,21 +1227,21 @@ async function refreshExportStatus() {
         </div>
       `).join("")}
     `;
+    renderExportSelectionPanel();
   } catch (err) {
     panel.textContent = `Could not load export status: ${err.message}`;
   }
 }
 
 document.getElementById("exportSelectedBtn")?.addEventListener("click", exportSelectedAssets);
-document.getElementById("assetExportSelectedBtn")?.addEventListener("click", exportSelectedAssets);
 document.getElementById("exportAcceptedBtn")?.addEventListener("click", exportAcceptedAssets);
 function clearExportSelectionWithStatus() {
   clearExportSelection();
   setStatus("Selection cleared.");
 }
 document.getElementById("clearSelectedExportsBtn")?.addEventListener("click", clearExportSelectionWithStatus);
-document.getElementById("assetClearSelectedExportsBtn")?.addEventListener("click", clearExportSelectionWithStatus);
 document.getElementById("refreshExportsBtn")?.addEventListener("click", refreshExportStatus);
+document.getElementById("exportTarget")?.addEventListener("change", renderExportSelectionPanel);
 
 async function clearUnsavedCandidates() {
   if (!confirm("Delete all unsaved candidate assets? Accepted and favorited assets are kept.")) return;
