@@ -2575,7 +2575,7 @@ select option:hover {
   cursor: zoom-out;
 }
 
-/* PF-0016.7 Palette compare true zoom canvas */
+/* PF-0016.8 Palette compare true zoom canvas */
 .palette-compare-modal-stage {
   overflow: auto !important;
   display: grid !important;
@@ -2615,4 +2615,52 @@ select option:hover {
 }
 .palette-compare-modal-canvas .palette-compare-modal-divider {
   z-index: 3;
+}
+
+
+/* PF-0016.8 Palette Lab workflow/live editing foundation */
+.palette-source-card {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(94,162,255,.18);
+  border-radius: 12px;
+  background: rgba(3,7,12,.42);
+}
+.palette-source-card label {
+  margin: 0;
+  color: #9fb7d8;
+  font-size: 12px;
+}
+.palette-source-card .workspace-status {
+  min-height: 42px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+#changePaletteAssetBtn {
+  border-color: rgba(94,162,255,.28);
+}
+.palette-compare-modal-stage.panning {
+  cursor: grabbing !important;
+}
+.palette-compare-stage {
+  cursor: pointer;
+}
+.palette-compare-divider::after,
+.palette-compare-modal-divider::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2px solid rgba(255,255,255,.9);
+  background: rgba(77,163,255,.95);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 18px rgba(77,163,255,.55);
+}
+#processBtn::after {
+  content: "";
 }

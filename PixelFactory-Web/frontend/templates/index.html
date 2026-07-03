@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0016_6_palette_compare_zoom_fix" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0016_8_palette_workflow_live_edit" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.16 · PF-0016.7</div>
+          <div class="subtitle">by Wulf · Web v0.16 · PF-0016.8</div>
         </div>
       </div>
 
@@ -76,16 +76,13 @@
           <option value="actual">Actual Pixels</option>
         </select>
 
-        <button id="loadWorkspaceBtn" disabled>Load Asset From Browser</button>
-        <div id="workspaceStatus" class="workspace-status">Asset from browser: none</div>
+        <div class="palette-source-card">
+          <label>Current Asset</label>
+          <div id="workspaceStatus" class="workspace-status">No asset loaded</div>
+          <button id="changePaletteAssetBtn" type="button">Change Asset</button>
+        </div>
 
-        <label>Palette Source</label>
-        <select id="paletteAssetSource">
-          <option value="">Recent assets...</option>
-        </select>
-        <button id="loadPaletteAssetBtn" type="button">Load Selected Asset</button>
-
-        <button id="processBtn" class="pf-primary-action">Process / Update Preview</button>
+        <button id="processBtn" class="pf-primary-action">Refresh Preview</button>
         <button id="downloadBtn" disabled>Download PNG</button>
       </section>
 
@@ -479,7 +476,7 @@
       <div class="palette-compare-toolbar">
         <div>
           <div id="paletteCompareTitle" class="image-viewer-title">Before / After Compare</div>
-          <div id="paletteCompareMeta" class="image-viewer-meta">Fit to window</div>
+          <div id="paletteCompareMeta" class="image-viewer-meta">Fit to window · wheel zoom · Space+drag pan · double-click reset</div>
         </div>
         <div class="image-viewer-actions">
           <button id="compareZoomOutBtn" type="button">−</button>
@@ -538,6 +535,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0016_3_palette_compare_cleanup"></script>
+  <script src="/static/app.js?v=pf0016_8_palette_workflow_live_edit"></script>
 </body>
 </html>

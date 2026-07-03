@@ -1,3 +1,11 @@
+
+## PF-0016.8 — Palette Lab Workflow and Live Editing Foundation
+
+- Simplified Palette Lab sidebar asset loading into a single current asset / change asset flow.
+- Added automatic preview refresh when Palette Lab processing controls change.
+- Added compare viewer keyboard shortcuts and panning foundation.
+- Polished before/after compare slider handle.
+
 ## PF-0016.7 — Palette Compare Zoom Fix
 
 - Fixed compare viewer zoom so before/after layers scale together.
