@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0016_1_palette_workspace_workflow" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0016_4_palette_workspace_clarity" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.16 · PF-0016.3</div>
+          <div class="subtitle">by Wulf · Web v0.16 · PF-0016.4</div>
         </div>
       </div>
 
@@ -66,7 +66,7 @@
           <option value="actual">Actual Pixels</option>
         </select>
 
-        <button id="loadWorkspaceBtn" disabled>Load Current Workspace</button>
+        <button id="loadWorkspaceBtn" disabled>Load Routed Asset</button>
         <div id="workspaceStatus" class="workspace-status">Workspace: checking...</div>
 
         <label>Palette Source</label>
@@ -75,8 +75,7 @@
         </select>
         <button id="loadPaletteAssetBtn" type="button">Load Selected Asset</button>
 
-        <button id="processBtn">Process Preview</button>
-        <button class="pf-inline-muted" type="button" disabled title="Repair tools will live inside Palette Lab.">Pixel Repair Tools Soon</button>
+        <button id="processBtn" class="pf-primary-action">Process / Update Preview</button>
         <button id="downloadBtn" disabled>Download PNG</button>
       </section>
 
@@ -266,9 +265,9 @@
         <section class="palette-workspace-layout">
           <div class="preview-card palette-active-card">
             <div class="palette-active-main">
-              <div class="eyebrow">Current Workspace</div>
-              <h2>Current Canvas</h2>
-              <p id="paletteLoadedState">No asset loaded yet. Open an asset from Asset Browser or load the current workspace.</p>
+              <div class="eyebrow">Loaded Canvas</div>
+              <h2>Palette Lab Canvas</h2>
+              <p id="paletteLoadedState">No asset loaded yet. Open an asset from Asset Browser or load a routed asset.</p>
               <div id="paletteWorkspaceMeta" class="palette-meta-grid">
                 <div><span>Type</span><strong>—</strong></div>
                 <div><span>Status</span><strong>Empty</strong></div>
@@ -277,7 +276,7 @@
               </div>
             </div>
             <div class="palette-active-side">
-              <div id="paletteDirtyState" class="palette-dirty-state saved">● Saved</div>
+              <div id="paletteDirtyState" class="palette-dirty-state saved">● Clean</div>
               <div class="palette-active-actions">
                 <button type="button" data-start-view="assets">Browse Assets</button>
                 <button type="button" data-start-view="tile" class="pf-primary-action">New Tile</button>
@@ -477,7 +476,7 @@
           <button id="compareFitBtn" type="button">Fit</button>
           <button id="compareActualBtn" type="button">1:1</button>
           <button id="compareZoomInBtn" type="button">+</button>
-          <button id="compareProcessBtn" type="button" class="pf-primary-action">Process Preview</button>
+          <button id="compareProcessBtn" type="button" class="pf-primary-action">Process / Update</button>
           <button id="compareDownloadBtn" type="button">Download</button>
           <button id="compareCloseBtn" type="button">Close</button>
         </div>

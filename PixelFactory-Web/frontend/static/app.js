@@ -159,7 +159,7 @@ let processedBlobUrl = null;
 let workspace = { has_image: false };
 let paletteDirty = false;
 let paletteHistoryEntries = [];
-let paletteCurrentMeta = { type: "—", status: "Empty", recipe: "—", resolution: "—" };
+let paletteCurrentMeta = { type: "—", status: "No canvas loaded", recipe: "—", resolution: "—" };
 let paletteCompareZoom = 1;
 let paletteCompareMode = "fit";
 
@@ -168,7 +168,7 @@ function setPaletteDirty(isDirty, label = null) {
   if (!paletteDirtyState) return;
   paletteDirtyState.classList.toggle("modified", paletteDirty);
   paletteDirtyState.classList.toggle("saved", !paletteDirty);
-  paletteDirtyState.textContent = label || (paletteDirty ? "● Modified" : "● Saved");
+  paletteDirtyState.textContent = label || (paletteDirty ? "● Modified Preview" : "● Clean");
 }
 
 function updatePaletteMeta(meta = {}) {
@@ -235,6 +235,17 @@ function syncPaletteControlsFromCompare() {
   if (colors && comparePaletteColors) colors.value = comparePaletteColors.value;
   if (operation && compareOperation) operation.value = compareOperation.value;
   updateOperationStackLabels();
+}
+
+function syncOpenCompareControlsFromPalette() {
+  if (!paletteCompareModal || paletteCompareModal.classList.contains("hidden")) return;
+  syncCompareControlsFromPalette();
+}
+
+function processPreviewFromCompareViewer() {
+  syncPaletteControlsFromCompare();
+  setStatus("Updating Palette Lab preview from compare viewer...");
+  processBtn?.click();
 }
 
 function applyPaletteCompareMode({ center = false } = {}) {
@@ -333,7 +344,7 @@ function clearPaletteProcessedPreview({ addHistory = false } = {}) {
 
 function updatePaletteLoadedState({ filename = "Untitled image", source = "workspace", detail = "Ready for cleanup", meta = null } = {}) {
   if (!paletteLoadedState) return;
-  const sourceLabel = source === "upload" ? "Local upload" : source === "workspace" ? "Workspace asset" : source;
+  const sourceLabel = source === "upload" ? "Local upload" : source === "workspace" ? "Routed asset" : source;
   paletteLoadedState.innerHTML = `<strong>${escapeHtml(filename)}</strong><span>${escapeHtml(sourceLabel)} · ${escapeHtml(detail)}</span>`;
   if (meta) updatePaletteMeta(meta);
 }
@@ -362,11 +373,15 @@ compareActualBtn?.addEventListener("click", () => setPaletteCompareActual(1));
 compareZoomInBtn?.addEventListener("click", () => setPaletteCompareActual((paletteCompareMode === "fit" ? 1 : paletteCompareZoom) * 1.25));
 compareZoomOutBtn?.addEventListener("click", () => setPaletteCompareActual((paletteCompareMode === "fit" ? 1 : paletteCompareZoom) / 1.25));
 compareDownloadBtn?.addEventListener("click", () => downloadBtn?.click());
-compareProcessBtn?.addEventListener("click", () => {
-  syncPaletteControlsFromCompare();
-  processBtn?.click();
+compareProcessBtn?.addEventListener("click", processPreviewFromCompareViewer);
+[compareResizeScale, comparePaletteColors, compareOperation].forEach((control) => {
+  control?.addEventListener("change", syncPaletteControlsFromCompare);
+  control?.addEventListener("input", syncPaletteControlsFromCompare);
 });
-[compareResizeScale, comparePaletteColors, compareOperation].forEach((control) => control?.addEventListener("change", syncPaletteControlsFromCompare));
+[document.getElementById("resizeScale"), document.getElementById("paletteColors"), document.getElementById("operation")].forEach((control) => {
+  control?.addEventListener("change", syncOpenCompareControlsFromPalette);
+  control?.addEventListener("input", syncOpenCompareControlsFromPalette);
+});
 discardPalettePreviewBtn?.addEventListener("click", () => clearPaletteProcessedPreview({ addHistory: true }));
 downloadPaletteResultBtn?.addEventListener("click", () => downloadBtn?.click());
 document.getElementById("paletteColors")?.addEventListener("change", updateOperationStackLabels);
@@ -380,14 +395,14 @@ async function refreshWorkspace({ quiet = true } = {}) {
     workspace = data.workspace || { has_image: false };
     if (workspaceStatus) {
       workspaceStatus.textContent = workspace.has_image
-        ? `Workspace: ${workspace.asset_name || workspace.source || "image loaded"}`
-        : "Workspace: empty";
+        ? `Routed asset: ${workspace.asset_name || workspace.source || "image loaded"}`
+        : "Routed asset: empty";
     }
     loadWorkspaceBtn.disabled = !workspace.has_image;
-    if (!quiet && workspace.has_image) setStatus("Workspace refreshed.");
+    if (!quiet && workspace.has_image) setStatus("Routed asset refreshed.");
     return workspace;
   } catch (err) {
-    if (workspaceStatus) workspaceStatus.textContent = "Workspace: unavailable";
+    if (workspaceStatus) workspaceStatus.textContent = "Routed asset: unavailable";
     loadWorkspaceBtn.disabled = true;
     if (!quiet) setStatus(`Workspace error: ${err.message}`);
     return { has_image: false };
@@ -400,7 +415,7 @@ async function loadImageIntoPaletteFromUrl(url, filename = "workspace.png", sour
   const blob = await response.blob();
   selectedFile = new File([blob], filename, { type: "image/png" });
   selectedFileSource = source;
-  updatePaletteLoadedState({ filename, source, detail: "Loaded into Palette Lab", meta: { status: "Saved", resolution: "loading..." } });
+  updatePaletteLoadedState({ filename, source, detail: "Loaded into Palette Lab", meta: { status: "Clean", resolution: "loading..." } });
   originalPreview.src = `${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}`;
   originalPreview.classList.add("pf-viewable-image");
   originalPreview.dataset.viewerTitle = filename;
@@ -418,13 +433,13 @@ async function loadImageIntoPaletteFromUrl(url, filename = "workspace.png", sour
 async function loadWorkspaceIntoPalette() {
   const ws = await refreshWorkspace();
   if (!ws.has_image) {
-    setStatus("Workspace is empty. Generate or select an asset first.");
+    setStatus("No routed asset is available. Open an asset from Asset Browser first.");
     return;
   }
   try {
     await loadImageIntoPaletteFromUrl(ws.image_url, `${ws.asset_name || "workspace"}.png`, "workspace");
     setView("palette");
-    setStatus(`Loaded workspace into Palette Lab: ${ws.asset_name || "current image"}.`);
+    setStatus(`Loaded routed asset into Palette Lab: ${ws.asset_name || "current image"}.`);
   } catch (err) {
     setStatus(`Workspace load failed: ${err.message}`);
   }
@@ -464,7 +479,7 @@ async function hydratePaletteFromWorkspaceIfNeeded() {
   if (!ws.has_image) return;
   try {
     await loadImageIntoPaletteFromUrl(ws.image_url, `${ws.asset_name || "workspace"}.png`, "workspace");
-    setStatus(`Palette Lab loaded current workspace: ${ws.asset_name || "current image"}.`);
+    setStatus(`Palette Lab loaded routed asset: ${ws.asset_name || "current image"}.`);
   } catch (_) {
     // quiet hydration only
   }
@@ -478,7 +493,7 @@ imageInput.addEventListener("change", () => {
   if (!file) return;
   selectedFile = file;
   selectedFileSource = "upload";
-  updatePaletteLoadedState({ filename: file.name, source: "upload", detail: "Loaded into Palette Lab", meta: { type: "Upload", status: "Saved", recipe: "Manual", resolution: "loading..." } });
+  updatePaletteLoadedState({ filename: file.name, source: "upload", detail: "Loaded into Palette Lab", meta: { type: "Upload", status: "Clean", recipe: "Manual", resolution: "loading..." } });
   originalPreview.src = URL.createObjectURL(file);
   originalPreview.classList.add("pf-viewable-image");
   originalPreview.dataset.viewerTitle = file.name;
@@ -524,6 +539,7 @@ processBtn.addEventListener("click", async () => {
     if (discardPalettePreviewBtn) discardPalettePreviewBtn.disabled = false;
     setPaletteDirty(true);
     showPaletteCompare();
+    syncCompareControlsFromPalette();
     if (paletteCompareModal && !paletteCompareModal.classList.contains("hidden")) updateCompareModalImages();
     const operationLabel = document.getElementById("operation")?.selectedOptions?.[0]?.textContent || "Process";
     updatePaletteLoadedState({ filename: selectedFile?.name || "Processed preview", source: selectedFileSource || "workspace", detail: "Processed preview ready" });
@@ -700,7 +716,7 @@ generateCharacterBtn.addEventListener("click", async () => {
     await loadAssets();
     await refreshWorkspace();
     // The first returned generation is now the current workspace. Palette Lab will load it automatically when opened.
-    setStatus(`Character job complete. ${data.count} image(s) returned. Seed ${data.seed}. Current workspace is ready for Palette Lab.`);
+    setStatus(`Character job complete. ${data.count} image(s) returned. Seed ${data.seed}. A routed asset is ready for Palette Lab.`);
   } catch (err) {
     characterOutput.classList.add("empty");
     characterOutput.textContent = "Generation failed.";
@@ -812,7 +828,7 @@ generateTileBtn?.addEventListener("click", async () => {
     if (!data.assets) data.images.forEach((src, i) => addGeneratedImage(src, i, null, "tile", tileOutput));
     await loadAssets();
     await refreshWorkspace();
-    setStatus(`Tile job complete. ${data.count} tile candidate(s) returned. Seed ${data.seed}. Current workspace is ready for Palette Lab.`);
+    setStatus(`Tile job complete. ${data.count} tile candidate(s) returned. Seed ${data.seed}. A routed asset is ready for Palette Lab.`);
   } catch (err) {
     tileOutput.classList.add("empty");
     tileOutput.textContent = "Tile generation failed.";

@@ -172,6 +172,15 @@
 
 # Changelog
 
+## PF-0016.4 — Palette Lab workflow clarity
+
+- Renamed workspace language to routed asset / loaded canvas for clarity.
+- Made Palette Lab processing action more prominent.
+- Removed redundant disabled repair-tools sidebar button.
+- Synchronized compare viewer controls with Palette Lab sidebar controls.
+- Tightened compare modal control layout and image alignment.
+
+
 ## PF-0008 — Workspace Pipeline
 
 - Added temporary Workspace service.

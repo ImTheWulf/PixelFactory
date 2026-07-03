@@ -2423,3 +2423,60 @@ select option:hover {
 .palette-compare-modal-footer input {
   width: 100%;
 }
+
+
+/* PF-0016.4 Palette Lab workflow clarity */
+#processBtn {
+  min-height: 46px;
+  box-shadow: 0 10px 26px rgba(47,125,246,.18);
+}
+#loadWorkspaceBtn::after {
+  content: "";
+}
+.workspace-status {
+  border-color: rgba(94,162,255,.18);
+  color: #b7c9e4;
+}
+.palette-active-card {
+  min-height: 250px;
+}
+.palette-active-card .palette-active-main h2 {
+  margin-bottom: 8px;
+}
+.palette-dirty-state.saved {
+  color: #9bd7ff;
+}
+.palette-dirty-state.modified {
+  color: #ffd35f;
+}
+.palette-compare-modal-controls {
+  align-items: end;
+  grid-template-columns: repeat(3, minmax(160px, 1fr)) auto;
+}
+.palette-compare-modal-controls label {
+  min-height: 0;
+  align-self: end;
+}
+.palette-compare-modal-controls select {
+  min-height: 38px;
+  height: 38px;
+  padding: 8px 10px;
+}
+.palette-compare-modal-controls .compare-control-note {
+  color: var(--muted);
+  font-size: 12px;
+  align-self: center;
+}
+.palette-compare-modal-stage.fit img,
+.palette-compare-modal-stage img {
+  object-fit: contain;
+}
+.palette-compare-modal-processed img,
+.palette-compare-processed img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain;
+}
+.palette-panel-hint {
+  color: var(--muted);
+}
