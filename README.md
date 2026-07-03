@@ -2,7 +2,7 @@
 
 This `/docs` folder is the single source of truth for Pixel Factory planning, architecture, and project memory.
 
-Do not create a second documentation root like `docs/`. If older docs are found there, merge useful information into `/docs` and remove the duplicate folder.
+Do not create a second documentation root like `PixelFactory-Docs/`. If older docs are found there, merge useful information into `PixelFactory-Docs/` and remove the duplicate folder.
 
 ## Recommended Reading Order
 
