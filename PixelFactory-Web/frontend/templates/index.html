@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0016_4_palette_workspace_clarity" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0016_6_palette_compare_zoom_fix" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.16 · PF-0016.4</div>
+          <div class="subtitle">by Wulf · Web v0.16 · PF-0016.6</div>
         </div>
       </div>
 
@@ -45,8 +45,18 @@
 
         <label>Palette Colors</label>
         <select id="paletteColors">
+          <option value="2">2</option>
+          <option value="4">4</option>
+          <option value="6">6</option>
           <option value="8">8</option>
+          <option value="10">10</option>
+          <option value="12">12</option>
+          <option value="14">14</option>
           <option value="16">16</option>
+          <option value="18">18</option>
+          <option value="20">20</option>
+          <option value="22">22</option>
+          <option value="24">24</option>
           <option value="32">32</option>
           <option value="64" selected>64</option>
           <option value="128">128</option>
@@ -66,8 +76,8 @@
           <option value="actual">Actual Pixels</option>
         </select>
 
-        <button id="loadWorkspaceBtn" disabled>Load Routed Asset</button>
-        <div id="workspaceStatus" class="workspace-status">Workspace: checking...</div>
+        <button id="loadWorkspaceBtn" disabled>Load Asset From Browser</button>
+        <div id="workspaceStatus" class="workspace-status">Asset from browser: none</div>
 
         <label>Palette Source</label>
         <select id="paletteAssetSource">
@@ -267,7 +277,7 @@
             <div class="palette-active-main">
               <div class="eyebrow">Loaded Canvas</div>
               <h2>Palette Lab Canvas</h2>
-              <p id="paletteLoadedState">No asset loaded yet. Open an asset from Asset Browser or load a routed asset.</p>
+              <p id="paletteLoadedState">No asset loaded yet. Open an asset from Asset Browser or choose a recent asset.</p>
               <div id="paletteWorkspaceMeta" class="palette-meta-grid">
                 <div><span>Type</span><strong>—</strong></div>
                 <div><span>Status</span><strong>Empty</strong></div>
@@ -483,10 +493,10 @@
       </div>
       <div class="palette-compare-modal-controls">
         <label><span>Resize</span><select id="compareResizeScale"><option value="1">1x</option><option value="2">2x</option><option value="3">3x</option><option value="4">4x</option></select></label>
-        <label><span>Colors</span><select id="comparePaletteColors"><option value="8">8</option><option value="16">16</option><option value="32">32</option><option value="64">64</option></select></label>
+        <label><span>Colors</span><select id="comparePaletteColors"><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="14">14</option><option value="16">16</option><option value="18">18</option><option value="20">20</option><option value="22">22</option><option value="24">24</option><option value="32">32</option><option value="64">64</option><option value="128">128</option><option value="256">256</option></select></label>
         <label><span>Operation</span><select id="compareOperation"><option value="resize_palette">Palette + Nearest Resize</option><option value="palette">Palette Only</option><option value="resize">Nearest Resize Only</option></select></label>
       </div>
-      <div id="paletteCompareModalStage" class="palette-compare-modal-stage">
+      <div id="paletteCompareModalStage" class="palette-compare-modal-stage" title="Ctrl/Shift + mouse wheel to zoom">
         <img id="compareModalOriginal" alt="Compare original full view" />
         <div id="compareModalProcessedClip" class="palette-compare-modal-processed"><img id="compareModalProcessed" alt="Compare processed full view" /></div>
         <div id="compareModalDivider" class="palette-compare-modal-divider"></div>

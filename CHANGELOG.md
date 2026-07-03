@@ -1,3 +1,20 @@
+## PF-0016.6 — Palette Compare Zoom Fix
+
+- Fixed compare viewer zoom so before/after layers scale together.
+- Added output resolution feedback after Palette Lab processing.
+- Made processed preview history include operation, palette color count, and resize scale.
+- Tightened compare viewer behavior so resize/palette changes are easier to confirm.
+
+
+## PF-0016.5 — Palette Lab Live Compare Polish
+
+- Renamed routed workspace wording to clearer Asset from Browser language.
+- Added finer palette color options from 2 through 24 colors.
+- Expanded Palette Lab compare viewer to use nearly the full screen.
+- Added Ctrl/Shift + mouse wheel zoom inside the compare viewer.
+- Compare viewer controls now auto-update the processed preview with a short debounce.
+- Tightened compare viewer controls so they no longer take excessive vertical space.
+
 
 ## PF-0016.3 — Palette Compare Cleanup
 
