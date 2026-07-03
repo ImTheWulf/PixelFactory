@@ -2092,7 +2092,7 @@ select option:hover {
   }
 }
 
-/* PF-0016.1 Palette Lab workspace workflow */
+/* PF-0016.2 Palette Lab workspace workflow */
 .palette-active-main {
   display: grid;
   gap: 10px;
@@ -2276,4 +2276,93 @@ select option:hover {
   .palette-dirty-state {
     justify-self: start;
   }
+}
+
+
+/* PF-0016.2 Palette compare viewer */
+.palette-compare-card {
+  cursor: zoom-in;
+}
+.palette-compare-card input,
+.palette-compare-card button {
+  cursor: auto;
+}
+.image-viewer-stage.compare-mode {
+  overflow: hidden;
+  padding: 0;
+}
+.image-viewer-stage img.hidden,
+.viewer-compare.hidden,
+.viewer-palette-controls.hidden {
+  display: none !important;
+}
+.viewer-palette-controls {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(10, 14, 22, .96);
+}
+.viewer-palette-controls label {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.viewer-palette-controls select,
+.viewer-palette-controls button {
+  min-height: 38px;
+}
+.viewer-palette-controls button {
+  align-self: end;
+  border-color: rgba(59, 130, 246, .55);
+  background: linear-gradient(180deg, #2f7af0, #2365cb);
+  color: white;
+}
+.viewer-compare {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  padding: 18px;
+  gap: 14px;
+}
+.viewer-compare-stage {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #05070a;
+}
+.viewer-compare-stage img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+.viewer-compare-processed {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.viewer-compare-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(96, 165, 250, .95);
+  box-shadow: 0 0 18px rgba(96, 165, 250, .45);
+  transform: translateX(-1px);
+  pointer-events: none;
+}
+.viewer-compare input[type=range] {
+  width: 100%;
+}
+@media (max-width: 900px) {
+  .viewer-palette-controls { grid-template-columns: 1fr 1fr; }
 }

@@ -26,7 +26,8 @@ function setView(name, options = {}) {
   if (panel) panel.classList.remove("hidden");
 
   if (name === "palette") {
-    hydratePaletteFromWorkspaceIfNeeded();
+    // Palette Lab intentionally opens blank unless the user loads/sends an asset.
+    refreshWorkspace({ quiet: true }).catch(() => {});
   }
   if (name === "assets") {
     loadAssets(selectedAssetId).catch(() => {});
@@ -132,6 +133,7 @@ const compareProcessedClip = document.getElementById("compareProcessedClip");
 const compareDivider = document.getElementById("compareDivider");
 const discardPalettePreviewBtn = document.getElementById("discardPalettePreviewBtn");
 const downloadPaletteResultBtn = document.getElementById("downloadPaletteResultBtn");
+const compareOpenHint = document.getElementById("compareOpenHint");
 const opPaletteCount = document.getElementById("opPaletteCount");
 const opResizeScale = document.getElementById("opResizeScale");
 
@@ -142,6 +144,25 @@ let workspace = { has_image: false };
 let paletteDirty = false;
 let paletteHistoryEntries = [];
 let paletteCurrentMeta = { type: "—", status: "Empty", recipe: "—", resolution: "—" };
+
+function resetPaletteLabToBlank() {
+  selectedFile = null;
+  selectedFileSource = null;
+  if (processedBlobUrl) URL.revokeObjectURL(processedBlobUrl);
+  processedBlobUrl = null;
+  originalPreview?.removeAttribute("src");
+  processedPreview?.removeAttribute("src");
+  compareOriginalPreview?.removeAttribute("src");
+  compareProcessedPreview?.removeAttribute("src");
+  paletteComparePanel?.classList.add("hidden");
+  if (downloadBtn) downloadBtn.disabled = true;
+  if (downloadPaletteResultBtn) downloadPaletteResultBtn.disabled = true;
+  if (discardPalettePreviewBtn) discardPalettePreviewBtn.disabled = true;
+  updatePaletteLoadedState({ filename: "No asset loaded", source: "palette", detail: "Open an asset from Asset Browser, load the current workspace, or upload an image.", meta: { type: "—", status: "Empty", recipe: "—", resolution: "—" } });
+  paletteHistoryEntries = [];
+  renderPaletteHistory();
+  setPaletteDirty(false, "● Empty");
+}
 
 function setPaletteDirty(isDirty, label = null) {
   paletteDirty = Boolean(isDirty);
@@ -198,6 +219,7 @@ function showPaletteCompare() {
   if (compareOriginalPreview && originalSrc) compareOriginalPreview.src = originalSrc;
   if (compareProcessedPreview) compareProcessedPreview.src = processedBlobUrl;
   paletteComparePanel.classList.remove("hidden");
+  if (compareOpenHint) compareOpenHint.textContent = "Click compare preview to open full-screen workspace viewer";
   updateCompareSlider();
 }
 
@@ -363,14 +385,14 @@ imageInput.addEventListener("change", () => {
   setStatus(`Loaded ${file.name}`);
 });
 
-processBtn.addEventListener("click", async () => {
+async function processPalettePreview({ source = "palette" } = {}) {
   if (!selectedFile) {
     setStatus("Load an image first, or use the current workspace.");
-    return;
+    return false;
   }
 
   processBtn.disabled = true;
-  setStatus("Processing...");
+  setStatus(source === "viewer" ? "Processing from compare viewer..." : "Processing...");
 
   const form = new FormData();
   form.append("image", selectedFile);
@@ -397,12 +419,16 @@ processBtn.addEventListener("click", async () => {
     updatePaletteLoadedState({ filename: selectedFile?.name || "Processed preview", source: selectedFileSource || "workspace", detail: "Processed preview ready" });
     addPaletteHistory("Processed preview", operationLabel);
     setStatus("Processed preview ready.");
+    return true;
   } catch (err) {
     setStatus(`Error: ${err.message}`);
+    return false;
   } finally {
     processBtn.disabled = false;
   }
-});
+}
+
+processBtn.addEventListener("click", () => processPalettePreview());
 
 downloadBtn.addEventListener("click", () => {
   if (!processedBlobUrl) return;
@@ -1591,13 +1617,52 @@ const viewerZoomOutBtn = document.getElementById("viewerZoomOutBtn");
 const viewerPrevBtn = document.getElementById("viewerPrevBtn");
 const viewerNextBtn = document.getElementById("viewerNextBtn");
 const imageViewerStrip = document.getElementById("imageViewerStrip");
+const imageViewerCompare = document.getElementById("imageViewerCompare");
+const viewerCompareOriginal = document.getElementById("viewerCompareOriginal");
+const viewerCompareProcessed = document.getElementById("viewerCompareProcessed");
+const viewerCompareProcessedClip = document.getElementById("viewerCompareProcessedClip");
+const viewerCompareDivider = document.getElementById("viewerCompareDivider");
+const viewerCompareSlider = document.getElementById("viewerCompareSlider");
+const viewerPaletteControls = document.getElementById("viewerPaletteControls");
+const viewerResizeScale = document.getElementById("viewerResizeScale");
+const viewerPaletteColors = document.getElementById("viewerPaletteColors");
+const viewerOperation = document.getElementById("viewerOperation");
+const viewerProcessPaletteBtn = document.getElementById("viewerProcessPaletteBtn");
 
 let viewerCollection = [];
 let viewerIndex = -1;
 let viewerZoom = 1;
 let viewerMode = "fit";
+let viewerCompareMode = false;
 let viewerDragging = false;
 let viewerDragStart = { x: 0, y: 0, scrollLeft: 0, scrollTop: 0 };
+
+function updateViewerCompareSlider() {
+  const value = Number(viewerCompareSlider?.value || 50);
+  if (viewerCompareProcessedClip) viewerCompareProcessedClip.style.clipPath = `inset(0 ${100 - value}% 0 0)`;
+  if (viewerCompareDivider) viewerCompareDivider.style.left = `${value}%`;
+}
+
+function setViewerCompareMode(isCompare) {
+  viewerCompareMode = Boolean(isCompare);
+  imageViewerImage?.classList.toggle("hidden", viewerCompareMode);
+  imageViewerCompare?.classList.toggle("hidden", !viewerCompareMode);
+  viewerPaletteControls?.classList.toggle("hidden", !viewerCompareMode);
+  imageViewerStage?.classList.toggle("compare-mode", viewerCompareMode);
+}
+
+function syncViewerPaletteControlsFromSidebar() {
+  if (viewerResizeScale) viewerResizeScale.value = document.getElementById("resizeScale")?.value || "2";
+  if (viewerPaletteColors) viewerPaletteColors.value = document.getElementById("paletteColors")?.value || "64";
+  if (viewerOperation) viewerOperation.value = document.getElementById("operation")?.value || "palette_resize";
+}
+
+function syncSidebarFromViewerPaletteControls() {
+  if (viewerResizeScale && document.getElementById("resizeScale")) document.getElementById("resizeScale").value = viewerResizeScale.value;
+  if (viewerPaletteColors && document.getElementById("paletteColors")) document.getElementById("paletteColors").value = viewerPaletteColors.value;
+  if (viewerOperation && document.getElementById("operation")) document.getElementById("operation").value = viewerOperation.value;
+  updateOperationStackLabels();
+}
 
 function updateViewerMeta() {
   if (!imageViewerMeta) return;
@@ -1614,6 +1679,10 @@ function centerViewerScroll() {
 }
 
 function applyViewerMode({ center = false } = {}) {
+  if (viewerCompareMode) {
+    updateViewerMeta();
+    return;
+  }
   if (!imageViewerImage || !imageViewerStage) return;
   imageViewerStage.classList.toggle("fit", viewerMode === "fit");
   imageViewerStage.classList.toggle("actual", viewerMode !== "fit");
@@ -1681,6 +1750,7 @@ function openImageViewer(src, title = "Image", collection = null, index = 0) {
   viewerIndex = Math.max(0, Math.min(Number(index) || 0, viewerCollection.length - 1));
   imageViewerModal.classList.remove("hidden");
   imageViewerModal.setAttribute("aria-hidden", "false");
+  setViewerCompareMode(false);
   showViewerItem(viewerIndex);
 }
 
@@ -1689,6 +1759,28 @@ function openSelectedImageViewer(index = 0) {
   if (!items.length) return;
   const collection = viewerItemsFromAssets(items);
   openImageViewer(collection[index]?.src || collection[0].src, collection[index]?.title || collection[0].title, collection, index);
+}
+
+function openPaletteCompareViewer() {
+  const originalSrc = originalPreview?.getAttribute("src");
+  if (!originalSrc || !processedBlobUrl) return;
+  imageViewerModal.classList.remove("hidden");
+  imageViewerModal.setAttribute("aria-hidden", "false");
+  viewerCollection = [];
+  viewerIndex = -1;
+  setViewerCompareMode(true);
+  if (imageViewerTitle) imageViewerTitle.textContent = `${selectedFile?.name || "Palette preview"} — Compare`;
+  if (imageViewerMeta) imageViewerMeta.textContent = "Before / After Compare";
+  if (viewerCompareOriginal) viewerCompareOriginal.src = originalSrc;
+  if (viewerCompareProcessed) viewerCompareProcessed.src = processedBlobUrl;
+  if (viewerDownloadLink) {
+    viewerDownloadLink.href = processedBlobUrl;
+    viewerDownloadLink.download = "pixel_factory_processed.png";
+  }
+  if (viewerDownloadAllBtn) viewerDownloadAllBtn.classList.add("hidden");
+  if (imageViewerStrip) imageViewerStrip.classList.add("hidden");
+  syncViewerPaletteControlsFromSidebar();
+  updateViewerCompareSlider();
 }
 
 function downloadViewerCollection() {
@@ -1711,6 +1803,7 @@ function closeImageViewer() {
   imageViewerModal.classList.add("hidden");
   imageViewerModal.setAttribute("aria-hidden", "true");
   if (imageViewerImage) imageViewerImage.removeAttribute("src");
+  setViewerCompareMode(false);
   viewerCollection = [];
   viewerIndex = -1;
   renderViewerStrip();
@@ -1737,9 +1830,24 @@ viewerZoomInBtn?.addEventListener("click", () => setViewerActual(viewerZoom * 1.
 viewerZoomOutBtn?.addEventListener("click", () => setViewerActual(viewerZoom / 1.25));
 viewerPrevBtn?.addEventListener("click", () => showViewerItem(viewerIndex - 1));
 viewerNextBtn?.addEventListener("click", () => showViewerItem(viewerIndex + 1));
+viewerCompareSlider?.addEventListener("input", updateViewerCompareSlider);
+viewerProcessPaletteBtn?.addEventListener("click", async () => {
+  syncSidebarFromViewerPaletteControls();
+  const ok = await processPalettePreview({ source: "viewer" });
+  if (ok) {
+    if (viewerCompareProcessed) viewerCompareProcessed.src = processedBlobUrl;
+    if (viewerDownloadLink) viewerDownloadLink.href = processedBlobUrl;
+    updateViewerCompareSlider();
+  }
+});
+paletteComparePanel?.addEventListener("click", (event) => {
+  if (event.target === compareSlider) return;
+  openPaletteCompareViewer();
+});
 
 let viewerWheelNavAt = 0;
 imageViewerStage?.addEventListener("wheel", (event) => {
+  if (viewerCompareMode) return;
   if (!imageViewerImage?.src) return;
   event.preventDefault();
 
@@ -1798,6 +1906,7 @@ document.addEventListener("click", (event) => {
 // Startup
 (async function initPixelFactory() {
   applyPreviewMode();
+  resetPaletteLabToBlank();
   await refreshWorkspace();
   await loadAssets().catch(() => {});
   await checkComfy({ quiet: true });

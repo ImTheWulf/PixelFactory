@@ -1,4 +1,12 @@
 
+## PF-0016.2 — Palette Compare Viewer
+
+- Palette Lab now opens blank on startup instead of auto-loading the last workspace asset.
+- Renamed Load Workspace Image to Load Current Workspace.
+- Added full-screen before/after compare viewer from Palette Lab compare previews.
+- Added Palette Lab process controls inside the compare viewer.
+- Updated version label to PF-0016.2.
+
 ## PF-0016.1 — Palette Lab Workspace Workflow
 
 - Added current workspace metadata cards for type, status, recipe, and resolution.

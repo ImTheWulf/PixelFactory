@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.16 · PF-0016.1</div>
+          <div class="subtitle">by Wulf · Web v0.16 · PF-0016.2</div>
         </div>
       </div>
 
@@ -66,7 +66,7 @@
           <option value="actual">Actual Pixels</option>
         </select>
 
-        <button id="loadWorkspaceBtn" disabled>Load Workspace Image</button>
+        <button id="loadWorkspaceBtn" disabled>Load Current Workspace</button>
         <div id="workspaceStatus" class="workspace-status">Workspace: checking...</div>
 
         <label>Palette Source</label>
@@ -309,7 +309,7 @@
           <section id="paletteComparePanel" class="preview-card palette-compare-card hidden">
             <div class="section-title-row">
               <h2>Before / After Compare</h2>
-              <span class="palette-panel-hint">Drag slider to compare source and processed output</span>
+              <span id="compareOpenHint" class="palette-panel-hint">Drag slider to compare source and processed output</span>
             </div>
             <div class="palette-compare-shell">
               <div class="palette-compare-stage">
@@ -483,13 +483,27 @@
           <button id="viewerCloseBtn" type="button">Close</button>
         </div>
       </div>
+      <div id="viewerPaletteControls" class="viewer-palette-controls hidden">
+        <label>Resize <select id="viewerResizeScale"><option value="1">1x</option><option value="2">2x</option><option value="3">3x</option><option value="4">4x</option></select></label>
+        <label>Colors <select id="viewerPaletteColors"><option value="16">16</option><option value="32">32</option><option value="64">64</option><option value="128">128</option></select></label>
+        <label>Operation <select id="viewerOperation"><option value="palette_resize">Palette + Nearest Resize</option><option value="palette_only">Palette Only</option><option value="resize_only">Nearest Resize Only</option></select></label>
+        <button id="viewerProcessPaletteBtn" type="button">Process Preview</button>
+      </div>
       <div id="imageViewerStage" class="image-viewer-stage">
         <img id="imageViewerImage" alt="Full image preview" />
+        <div id="imageViewerCompare" class="viewer-compare hidden">
+          <div class="viewer-compare-stage">
+            <img id="viewerCompareOriginal" alt="Compare original" />
+            <div id="viewerCompareProcessedClip" class="viewer-compare-processed"><img id="viewerCompareProcessed" alt="Compare processed" /></div>
+            <div id="viewerCompareDivider" class="viewer-compare-divider"></div>
+          </div>
+          <input id="viewerCompareSlider" type="range" min="0" max="100" value="50" />
+        </div>
       </div>
       <div id="imageViewerStrip" class="image-viewer-strip hidden" aria-label="Selected image thumbnails"></div>
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0016_1_palette_workspace_workflow"></script>
+  <script src="/static/app.js?v=pf0016_2_palette_compare_viewer"></script>
 </body>
 </html>
