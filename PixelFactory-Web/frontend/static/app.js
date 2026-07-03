@@ -416,6 +416,12 @@ function applyPreviewMode() {
     if (viewport) {
       viewport.classList.toggle("fit-mode", mode === "fit");
       viewport.classList.toggle("actual-mode", mode === "actual");
+      if (mode === "actual") {
+        requestAnimationFrame(() => {
+          viewport.scrollLeft = Math.max(0, (viewport.scrollWidth - viewport.clientWidth) / 2);
+          viewport.scrollTop = Math.max(0, (viewport.scrollHeight - viewport.clientHeight) / 2);
+        });
+      }
     }
   });
 }
@@ -423,7 +429,8 @@ function applyPreviewMode() {
 previewMode?.addEventListener("change", applyPreviewMode);
 compareSlider?.addEventListener("input", updateCompareSlider);
 compareModalSlider?.addEventListener("input", updateCompareModalSlider);
-openCompareViewerBtn?.addEventListener("click", openPaletteCompareViewer);
+openCompareViewerBtn?.addEventListener("dblclick", openPaletteCompareViewer);
+openCompareViewerBtn?.addEventListener("click", () => setStatus("Double-click the compare preview to open the full-screen viewer."));
 compareCloseBtn?.addEventListener("click", closePaletteCompareViewer);
 document.querySelector("[data-compare-close]")?.addEventListener("click", closePaletteCompareViewer);
 compareFitBtn?.addEventListener("click", setPaletteCompareFit);

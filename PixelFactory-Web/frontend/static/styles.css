@@ -2691,3 +2691,69 @@ select option:hover {
 .palette-compare-modal-stage.zoomed {
   place-items: start !important;
 }
+
+
+/* PF-0016.10 Palette preview consistency */
+.viewport.fit-mode {
+  display: grid !important;
+  place-items: center !important;
+  overflow: hidden !important;
+}
+.viewport.fit-mode img.fit-image {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  image-rendering: pixelated;
+}
+.viewport.actual-mode {
+  display: grid !important;
+  place-items: center !important;
+  overflow: auto !important;
+}
+.viewport.actual-mode img.actual-image {
+  max-width: none !important;
+  max-height: none !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: unset !important;
+  margin: auto !important;
+  image-rendering: pixelated;
+}
+.palette-preview-card .palette-viewport {
+  display: grid;
+  place-items: center;
+}
+.palette-compare-stage {
+  cursor: zoom-in;
+}
+.palette-compare-stage::after {
+  content: "Double-click to compare";
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  color: #c9ddff;
+  background: rgba(8, 12, 20, .72);
+  border: 1px solid rgba(94, 162, 255, .22);
+  font-size: 11px;
+  font-weight: 800;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s ease;
+}
+.palette-compare-stage:hover::after {
+  opacity: 1;
+}
+.palette-compare-modal-stage {
+  overscroll-behavior: contain;
+}
+.palette-compare-toolbar .image-viewer-actions button,
+.palette-compare-toolbar .image-viewer-actions a {
+  min-width: 58px;
+}
+#processBtn {
+  min-height: 46px;
+}

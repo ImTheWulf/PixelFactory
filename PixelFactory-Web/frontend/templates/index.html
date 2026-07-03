@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0016_8_palette_workflow_live_edit" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0016_10_palette_preview_consistency" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.16 · PF-0016.9</div>
+          <div class="subtitle">by Wulf · Web v0.16 · PF-0016.10</div>
         </div>
       </div>
 
@@ -82,7 +82,7 @@
           <button id="changePaletteAssetBtn" type="button">Change Asset</button>
         </div>
 
-        <button id="processBtn" class="pf-primary-action">Refresh Preview</button>
+        <button id="processBtn" class="pf-primary-action">Update Preview</button>
         <button id="downloadBtn" disabled>Download PNG</button>
       </section>
 
@@ -318,7 +318,7 @@
               <span class="palette-panel-hint">Drag slider to compare source and processed output</span>
             </div>
             <div class="palette-compare-shell">
-              <button id="openCompareViewerBtn" class="palette-compare-stage" type="button" title="Open full-screen compare viewer">
+              <button id="openCompareViewerBtn" class="palette-compare-stage" type="button" title="Double-click to open full-screen compare viewer">
                 <img id="compareOriginalPreview" alt="Compare original" />
                 <div id="compareProcessedClip" class="palette-compare-processed"><img id="compareProcessedPreview" alt="Compare processed" /></div>
                 <div id="compareDivider" class="palette-compare-divider"></div>
@@ -535,6 +535,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0016_8_palette_workflow_live_edit"></script>
+  <script src="/static/app.js?v=pf0016_10_palette_preview_consistency"></script>
 </body>
 </html>

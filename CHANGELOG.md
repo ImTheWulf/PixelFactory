@@ -1,3 +1,10 @@
+## PF-0016.10 — Palette Preview Consistency
+
+- Unified Palette Lab preview fit/actual-pixels behavior across Original and Processed panels.
+- Changed Palette Lab action wording from Refresh Preview to Update Preview.
+- Compare panel now opens the full-screen compare viewer on double-click to avoid accidental opens.
+- Added compare preview hint and tighter viewport behavior for consistent image review.
+
 ## PF-0016.9 — Palette Compare Interaction Polish
 
 - Removed the compare divider handle so the before/after line stays clean.
