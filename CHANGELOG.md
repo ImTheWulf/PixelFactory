@@ -1,19 +1,26 @@
-## PF-0100 — Product Direction Notes
+## PF-0014.5 — Candidate Cleanup Hardening
 
-- Clarified Palette Lab as a post-generation cleanup tool.
-- Clarified Tile Studio as a staged texture-to-tile production workflow.
-- Documented chroma key background cleanup as a future pipeline feature.
-- Confirmed presets are broad style controls while recipes are curated generation strategies.
-- Added future direction for Tile Builder, Terrain Builder, Building Generation, and Portrait Studio.
+- Added a non-nested candidate cleanup API route at `/api/assets/clear-candidates`.
+- Hardened Clear Unsaved Candidates so it refreshes the UI and has a per-asset fallback if the bulk route returns no deletions.
+- Added no-store fetches and updated frontend cache-busting to avoid stale local JavaScript during testing.
+- Hardened Favorite so favoriting a Candidate explicitly promotes it to Accepted if needed.
 
-## PF-0100 — Documentation Consolidation
+## PF-0014.4 — Candidate Favorite and Cleanup Fix
 
-- Consolidated project documentation into `/docs`.
-- Removed `PixelFactory-Docs` as a separate documentation source.
-- Confirmed `PixelFactory-Web` as the active application.
-- Archived `PixelFactory-App` as prototype/reference only.
-- Confirmed Godot and Aseprite as the only export targets.
-- Established `/docs` as the project source of truth.
+- Fixed candidate cleanup so unsaved Candidate assets are deleted from metadata and image storage.
+- Kept Accepted and Favorite assets safe during cleanup.
+- Confirmed Favorite promotes Candidate assets to Accepted.
+- Standardized tile asset storage folders to `Incoming/Tiles` and `Accepted/Tiles`.
+
+## PF-0014 - Tile Studio Foundation
+
+- Enabled Tile Studio navigation and first-pass UI.
+- Added tile recipe loading and defaults.
+- Added Tile Studio seed, size, batch, and steps controls.
+- Added `/api/generate/tile` backend route.
+- Tile generations now save as `tile` assets with metadata.
+- First generated tile is sent to Workspace for Palette Lab cleanup.
+- Kept Tile Studio focused on base tile candidates only; seamless cleanup, variations, masks, and tilesheets remain future work.
 
 ## PF-0013.3c - Selected Export UI Cleanup
 
@@ -135,3 +142,21 @@ Quick favorite toggle and seed UI cleanup.
 - Added Asset Browser export checkboxes and inspector selection toggle.
 - Added Exporter controls for exporting selected assets and clearing selection.
 - Kept PF-0013 export scope PNG-first with JSON sidecars and manifests.
+
+## PF-0014.2 — Tile / Asset Workflow Cleanup
+
+- Kept Tile Studio generation results routed to Tile Studio.
+- Added Palette Lab source selection for recent assets.
+- Improved Palette Lab preview containment for larger generated assets.
+- Added Asset Browser type filter and sort controls.
+- Renamed user-facing Incoming language to Candidate language.
+- Added cleanup for unsaved candidate assets.
+- Made favorites automatically accept/save assets.
+
+
+## PF-0014.3 — Candidate Cleanup Fix
+
+- Fixed Clear Unsaved Candidates so it deletes unsaved candidate assets from disk and metadata.
+- Kept accepted and favorited assets safe during candidate cleanup.
+- Clears stale workspace state if the current workspace points to a deleted candidate.
+- Documented the PF-0014 generated dark multi-panel UI concept as the global Pixel Factory UI target.

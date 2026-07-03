@@ -1,3 +1,15 @@
+## PF-0014.4 Candidate Rules
+
+Candidates are generated assets that are not yet saved.
+
+Rules:
+
+- Favoriting a Candidate automatically accepts/saves it.
+- Accepted assets are never removed by candidate cleanup.
+- Favorite assets are never removed by candidate cleanup.
+- Clear Unsaved Candidates deletes only temporary Candidate assets.
+- Tile assets should be stored under `Tiles`, not singular `Tile`, going forward.
+
 # 00 — Project Memory
 
 > This is the canonical memory file for Pixel Factory. Read this first when continuing development.
@@ -5,59 +17,7 @@
 Pixel Factory is a **local-first 2D game asset production pipeline**. It is not just an AI image generator and it is not a generic ComfyUI frontend.
 
 The goal is to help a developer create usable 2D game assets, especially pixel-art assets, then process, organize, and export them cleanly into **Godot** and **Aseprite**.
-## Tile Studio Direction
 
-Tile Studio should become a staged production workflow, not just a single image generator.
-
-The long-term Tile Studio flow is:
-
-1. Generate base texture such as sand, stone, grass, dirt, wood, water, etc.
-2. Use that texture to create a usable tile.
-3. Make the tile seamless.
-4. Generate matching variations.
-5. Generate masks, overlays, or terrain pieces when needed.
-6. Clean up in Palette Lab.
-7. Export to Godot or Aseprite.
-
-Tile Studio should eventually support workflows similar to tilesheets and tilemaps found in 2D game asset packs on itch.io.
----
-
-## Chroma Key / Transparency Direction
-
-Some ComfyUI recipes should intentionally generate assets on a solid chroma key background.
-
-This allows Pixel Factory to remove the background later during Palette Lab or another cleanup stage.
-
-Possible uses:
-
-- props that do not fill the full grid
-- characters
-- trees
-- overlays
-- transparent tile decorations
-- UI icons
-
-The user should not need to manually understand chroma key cleanup. Pixel Factory should handle it as part of the pipeline.
----
-
-## Palette Lab Direction
-
-Palette Lab is a post-processing and cleanup tool used after generation.
-
-It is inspired by tools like Sprite Fusion Pixel Snapper. Its purpose is not to generate new assets, but to clean and prepare assets for production.
-
-Palette Lab should support things like:
-
-- pixel snapping
-- palette reduction
-- pixel size cleanup
-- nearest-neighbor scaling
-- chroma key removal
-- transparency cleanup
-- edge cleanup
-- final export preparation
-
-Palette Lab is used after Character Studio, Tile Studio, Prop generation, Building generation, or any other generation workflow.
 ---
 
 ## Core Product Identity
@@ -129,27 +89,6 @@ The next major direction is **Tile Studio**, especially top-down seamless tile g
 
 ---
 
-## Current Repository Structure
-
-PixelFactory-Web is the active application.
-
-PixelFactory-App was an early prototype and is no longer part of active development. It may remain archived only as historical reference.
-
-The active repository structure is:
-
-- docs/
-- PixelFactory-Web/
-- PixelFactory-Comfy/
-- PixelFactory-Presets/
-- PixelFactory-Projects/
-- tools/
-- _PixelFactory_Archive/
-- CHANGELOG.md
-- README.md
-
-The `/docs` folder is the only source of truth for project documentation.
-
----
 ## Current Pipeline Understanding
 
 ### 1. Generation
@@ -368,3 +307,51 @@ Every new feature should answer:
 4. Can it be simpler?
 
 If the feature does not clearly help someone build a 2D game faster, cleaner, or with less friction, it probably does not belong.
+
+## PF-0014 Active Coding Direction
+
+Tile Studio foundation is the next active coding milestone.
+
+The first implementation should stay small: generate base top-down tile candidates through existing ComfyUI workflow plumbing, save them as tile assets, and hand the first result to Workspace/Palette Lab.
+
+Do not add tile variations, terrain sets, masks, seamless processing, or tilesheet builders in PF-0014. Those are later stages.
+
+## PF-0014.2 Tile / Asset Workflow Cleanup
+
+Tile Studio results must stay inside Tile Studio. Character Studio results must stay inside Character Studio.
+
+Palette Lab remains a post-generation cleanup destination. It can load the current workspace or a selected recent asset so batch generations are not limited to only the first workspace image.
+
+Asset Browser language now treats generated unsaved results as **Candidates** instead of user-facing "Incoming" assets. Accepted and favorited assets are saved library assets. Favoriting an asset automatically accepts it.
+
+Unsaved candidates may be cleared from the Asset Browser without deleting accepted or favorited assets.
+
+
+---
+
+## PF-0014.3 Global UI Target + Candidate Cleanup
+
+The generated dark multi-panel UI concept from PF-0014 is now the global Pixel Factory UI target, not just a Tile Studio target.
+
+The target direction applies to the whole app:
+
+- modern dark interface
+- stronger Pixel Factory logo/brand area
+- left navigation with clear studio sections
+- top ComfyUI connection bar
+- center production workspace
+- right-side contextual browser/inspector panels where useful
+- clean spacing with no cramped panels, oversized empty gaps, or broken card layouts
+- consistent cards, icon buttons, badges, and filters
+- asset management that feels integrated into the active workflow
+
+PF-0014.3 also fixes candidate cleanup behavior. Clear Unsaved Candidates should delete only unsaved candidate assets, keep accepted/favorited assets, refresh the browser, and clear stale workspace state if the workspace came from a deleted candidate.
+
+## PF-0014.5 Candidate Flow Note
+
+Candidate cleanup must remove generated assets that are not Accepted and not Favorited.
+
+Favorite is treated as a save action. If a Candidate is favorited, it must be promoted to Accepted automatically.
+
+During local testing, frontend cache-busting matters because stale `app.js` can make UI buttons appear unchanged even after backend fixes.
+

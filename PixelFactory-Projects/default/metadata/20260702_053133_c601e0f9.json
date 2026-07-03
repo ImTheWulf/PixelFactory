@@ -2,7 +2,7 @@
   "id": "20260702_053133_c601e0f9",
   "name": "pixel_art_16_bit_pixel_art_snes_style_retro_rpg__01",
   "type": "character",
-  "status": "incoming",
+  "status": "accepted",
   "image_path": "Incoming/Characters/20260702_053133_c601e0f9.png",
   "created": "2026-07-02T05:31:33",
   "prompt": "pixel art, 16-bit pixel art, SNES style, retro RPG, crisp pixels, limited color palette, hand placed pixels, clean readable silhouette,\n\nsingle character, full body, centered, subject fills 65 percent of frame, eye level, walking toward camera,\n\n{prompt}",
@@ -31,5 +31,7 @@
   "active_image_path": "Incoming/Characters/20260702_053133_c601e0f9.png",
   "project_root": "C:/Users/Owner/Downloads/PixelFactory/PixelFactory-Projects/default",
   "favorite": true,
-  "updated": "2026-07-02T06:02:25"
+  "updated": "2026-07-02T06:02:25",
+  "accepted": "2026-07-03T02:12:45",
+  "accepted_image_path": "Accepted/Characters/20260702_053133_c601e0f9.png"
 }

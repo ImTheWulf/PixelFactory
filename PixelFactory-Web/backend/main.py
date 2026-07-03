@@ -39,7 +39,7 @@ asset_service = AssetService(PROJECT_ROOT)
 workspace_service = WorkspaceService(PROJECT_ROOT)
 export_service = ExportService(PROJECT_ROOT, asset_service)
 
-app = FastAPI(title="Pixel Factory by Wulf", version="0.13-pf0013.3-export-selection")
+app = FastAPI(title="Pixel Factory by Wulf", version="0.14-pf0014-2-tile-asset-workflow")
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
 
@@ -50,7 +50,7 @@ def index() -> str:
 
 @app.get("/api/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "app": "Pixel Factory Web", "version": "0.13", "milestone": "PF-0013.3 Export selected assets foundation"}
+    return {"status": "ok", "app": "Pixel Factory Web", "version": "0.14", "milestone": "PF-0014.2 Tile asset workflow cleanup"}
 
 
 def _read_image(data: bytes) -> Image.Image:
@@ -137,6 +137,18 @@ class CharacterGenerateRequest(BaseModel):
     steps: int = 24
 
 
+class TileGenerateRequest(BaseModel):
+    comfy_url: str = "http://127.0.0.1:8188"
+    recipe_id: str = "tile.cobblestone"
+    prompt: str
+    negative_prompt: str = "character, person, building scene, perspective, horizon, realistic, photorealistic, blurry, anti-aliased, text, watermark, border, frame"
+    seed: int = -1
+    width: int = 256
+    height: int = 256
+    batch_size: int = 4
+    steps: int = 24
+
+
 @app.post("/api/comfy/status")
 def comfy_status(req: ComfyStatusRequest) -> dict:
     return engine_service.comfy_status(req.url)
@@ -163,6 +175,15 @@ def list_workflows() -> dict:
 
 @app.get("/api/workflows/character/defaults")
 def character_defaults(recipe_id: str = "character.default") -> dict:
+    try:
+        recipe = recipe_service.load(recipe_id)
+        return recipe_service.generation_defaults(recipe)
+    except RecipeError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+
+@app.get("/api/workflows/tile/defaults")
+def tile_defaults(recipe_id: str = "tile.cobblestone") -> dict:
     try:
         recipe = recipe_service.load(recipe_id)
         return recipe_service.generation_defaults(recipe)
@@ -263,6 +284,91 @@ def generate_character(req: CharacterGenerateRequest) -> dict:
         raise HTTPException(status_code=500, detail=str(exc))
 
 
+@app.post("/api/generate/tile")
+def generate_tile(req: TileGenerateRequest) -> dict:
+    try:
+        safe_sizes = {256, 512, 768, 1024}
+        if req.width != req.height or req.width not in safe_sizes:
+            raise HTTPException(status_code=400, detail="Only safe square tile sizes are supported right now: 256, 512, 768, or 1024.")
+        recipe = recipe_service.load(req.recipe_id)
+        workflow_id = recipe.get("workflow", "tile")
+        ui_wf = workflow_service.load(workflow_id)
+        positive = recipe_service.merged_prompt(recipe, req.prompt)
+        negative = recipe_service.negative_prompt(recipe, req.negative_prompt)
+
+        actual_seed = int(req.seed) if int(req.seed) >= 0 else random.randint(1, 2_147_483_647)
+
+        patched = patch_character_workflow(
+            ui_wf,
+            positive=positive,
+            negative=negative,
+            seed=actual_seed,
+            width=req.width,
+            height=req.height,
+            batch_size=req.batch_size,
+            steps=req.steps,
+        )
+        api_prompt = comfy_ui_workflow_to_api(patched)
+        images = engine_service.run_comfy(req.comfy_url, api_prompt, timeout_seconds=600)
+        assets = [
+            _save_asset(
+                img,
+                asset_type=recipe.get("asset_type", "tile"),
+                name="",
+                prompt=req.prompt,
+                resolved_prompt=positive,
+                negative_prompt=negative,
+                seed=actual_seed,
+                requested_seed=req.seed,
+                workflow=workflow_id,
+                recipe_id=req.recipe_id,
+                recipe_name=recipe.get("display_name", req.recipe_id),
+                width=req.width,
+                height=req.height,
+                steps=req.steps,
+                batch_index=i,
+                engine=recipe.get("engine", "comfy"),
+                export_targets=recipe.get("export_targets", ["godot", "aseprite"]),
+                tags=recipe.get("tags", ["tile"]),
+            )
+            for i, img in enumerate(images)
+        ]
+        workspace = None
+        if images and assets:
+            workspace = workspace_service.set_from_bytes(
+                images[0],
+                {
+                    "source": "tile_generation",
+                    "asset_id": assets[0]["id"],
+                    "asset_name": assets[0].get("name", "Generated tile"),
+                    "asset_type": assets[0].get("type", "tile"),
+                    "recipe_id": req.recipe_id,
+                    "recipe_name": recipe.get("display_name", req.recipe_id),
+                    "workflow": workflow_id,
+                    "prompt": req.prompt,
+                    "width": req.width,
+                    "height": req.height,
+                    "seed": actual_seed,
+                },
+            )
+        return {
+            "ok": True,
+            "recipe": {"id": req.recipe_id, "display_name": recipe.get("display_name", req.recipe_id)},
+            "count": len(images),
+            "seed": actual_seed,
+            "requested_seed": req.seed,
+            "images": [_image_bytes_to_data_url(img) for img in images],
+            "assets": assets,
+            "workspace": workspace,
+        }
+    except (ComfyError, WorkflowError) as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+    except RecipeError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
 @app.get("/api/assets")
 def list_assets(status: str | None = None, asset_type: str | None = None, favorite: bool = False) -> dict:
     assets = asset_service.list(status=status, asset_type=asset_type, favorite=favorite)
@@ -328,6 +434,39 @@ def workspace_from_asset(asset_id: str) -> dict:
 def clear_workspace() -> dict:
     return {"ok": True, "workspace": workspace_service.clear()}
 
+
+
+def _clear_candidate_assets() -> dict:
+    result = asset_service.delete_candidates()
+
+    # If the current workspace came from one of the deleted candidates, clear it
+    # so Palette Lab does not keep previewing a stale candidate.
+    workspace = workspace_service.get()
+    if workspace.get("asset_id") in result.get("deleted_ids", []):
+        workspace_service.clear()
+        result["workspace_cleared"] = True
+    else:
+        result["workspace_cleared"] = False
+
+    return {"ok": True, **result}
+
+
+
+@app.post("/api/assets/clear-candidates")
+def clear_candidate_assets_short_route() -> dict:
+    # Explicit non-nested route used by the frontend so it cannot be confused
+    # with individual asset routes during local testing/cache mismatches.
+    return _clear_candidate_assets()
+
+@app.post("/api/assets/candidates/clear")
+def clear_candidate_assets() -> dict:
+    return _clear_candidate_assets()
+
+
+@app.delete("/api/assets/candidates")
+def delete_candidate_assets() -> dict:
+    # Backward-compatible route kept for any older UI code.
+    return _clear_candidate_assets()
 
 @app.delete("/api/assets/{asset_id}")
 def delete_asset(asset_id: str) -> dict:

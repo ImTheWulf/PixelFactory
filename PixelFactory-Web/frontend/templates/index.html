@@ -4,18 +4,18 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0013_3b" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0014_5_candidate_flow_hardened" />
 </head>
 <body>
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand">Pixel Factory</div>
-      <div class="subtitle">by Wulf · Web v0.13 · PF-0013.3c</div>
+      <div class="subtitle">by Wulf · Web v0.14 · PF-0014.5</div>
 
       <nav class="nav">
         <button class="nav-btn active" data-view="palette">Palette Lab</button>
         <button class="nav-btn" data-view="character">Character Studio</button>
-        <button class="nav-btn disabled">Tile Studio</button>
+        <button class="nav-btn" data-view="tile">Tile Studio</button>
         <button class="nav-btn disabled">Repair Bench</button>
         <button class="nav-btn" data-view="assets">Asset Browser</button>
         <button class="nav-btn" data-view="exporter">Exporter</button>
@@ -63,6 +63,12 @@
         <button id="loadWorkspaceBtn" disabled>Load Workspace Image</button>
         <div id="workspaceStatus" class="workspace-status">Workspace: checking...</div>
 
+        <label>Palette Source</label>
+        <select id="paletteAssetSource">
+          <option value="">Recent assets...</option>
+        </select>
+        <button id="loadPaletteAssetBtn" type="button">Load Selected Asset</button>
+
         <button id="processBtn">Process Preview</button>
         <button id="downloadBtn" disabled>Download PNG</button>
       </section>
@@ -104,7 +110,44 @@
         <button id="loadCharacterDefaultsBtn">Load Workflow Defaults</button>
         <button id="generateCharacterBtn">Generate Character</button>
       </section>
-
+      <section id="tileControls" class="panel view-controls hidden">
+        <div class="panel-title">Tile Generator</div>
+        <label>Recipe</label>
+        <select id="tileRecipe"></select>
+        <label>Seed</label>
+        <input id="tileSeed" type="number" value="-1" />
+        <div class="seed-actions">
+          <button id="tileRandomSeedBtn" type="button">Use Random Seed</button>
+          <button id="tileReuseSeedBtn" type="button" disabled>Reuse Last Seed</button>
+        </div>
+        <div id="tileLastSeedGroup" class="last-seed-group hidden">
+          <label>Last Tile Seed</label>
+          <input id="tileActualSeedDisplay" type="text" value="—" readonly />
+        </div>
+        <label>Output Size <span class="hint">square canvas</span></label>
+        <select id="tileSize">
+          <option value="256" selected>256 x 256 · draft tile</option>
+          <option value="512">512 x 512 · quality tile</option>
+          <option value="768">768 x 768</option>
+          <option value="1024">1024 x 1024</option>
+        </select>
+        <label>Batch</label>
+        <select id="tileBatch">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4" selected>4</option>
+        </select>
+        <label>Steps</label>
+        <select id="tileSteps">
+          <option value="8">8 quick</option>
+          <option value="16">16 draft</option>
+          <option value="24" selected>24 quality</option>
+          <option value="32">32 slow</option>
+        </select>
+        <button id="loadTileDefaultsBtn">Load Tile Defaults</button>
+        <button id="generateTileBtn">Generate Tile</button>
+      </section>
 
 
       <section id="exporterControls" class="panel view-controls hidden">
@@ -123,14 +166,31 @@
 
       <section id="assetsControls" class="panel view-controls hidden">
         <div class="panel-title">Asset Browser</div>
-        <label>Filter</label>
+        <label>Status</label>
         <select id="assetFilter">
-          <option value="">All assets</option>
-          <option value="incoming" selected>Incoming</option>
+          <option value="">All statuses</option>
+          <option value="incoming">Candidates</option>
           <option value="accepted">Accepted</option>
           <option value="favorite">Favorites</option>
         </select>
+        <label>Type</label>
+        <select id="assetTypeFilter">
+          <option value="">All types</option>
+          <option value="character">Characters</option>
+          <option value="tile">Tiles</option>
+          <option value="prop">Props</option>
+          <option value="building">Buildings</option>
+        </select>
+        <label>Sort</label>
+        <select id="assetSort">
+          <option value="newest" selected>Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="type">Type</option>
+          <option value="status">Status</option>
+          <option value="favorite">Favorites first</option>
+        </select>
         <button id="refreshAssetsBtn">Refresh Assets</button>
+        <button id="clearCandidateAssetsBtn" type="button">Clear Unsaved Candidates</button>
         <label>Export Target</label>
         <select id="assetExportTarget">
           <option value="godot">Godot</option>
@@ -196,13 +256,44 @@
         </section>
       </section>
 
+      <section id="tileView" class="view">
+        <header class="topbar">
+          <h1>Tile Studio</h1>
+          <p>PF-0014 foundation: generate top-down pixel tiles through curated ComfyUI recipes, save them as tile assets, and place the first result into the current workspace.</p>
+        </header>
+
+        <section class="tile-studio-grid">
+          <div class="prompt-card">
+            <h2>Tile Prompt</h2>
+            <textarea id="tilePrompt" spellcheck="false" placeholder="Example: sandy desert ground with tiny pebbles, top-down RPG floor tile"></textarea>
+          </div>
+          <div class="prompt-card">
+            <h2>Negative Prompt</h2>
+            <textarea id="tileNegative" spellcheck="false"></textarea>
+          </div>
+          <div class="preview-card tile-foundation-card">
+            <h2>Tile Studio Foundation</h2>
+            <p>This first pass focuses on one job: generate usable top-down tile candidates and store them correctly in the Pixel Factory pipeline.</p>
+            <div class="tile-stage-list">
+              <div><strong>Now:</strong> base tile generation, tile assets, workspace handoff, Palette Lab handoff.</div>
+              <div><strong>Next:</strong> seamless cleanup, texture-to-tile flow, variations, masks, and tilesheet building.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="preview-card output-card">
+          <h2>Generated Tiles</h2>
+          <div id="tileOutput" class="image-gallery empty">Run Tile Studio to generate tile candidates.</div>
+        </section>
+      </section>
+
       <section id="assetsView" class="view">
         <header class="topbar">
           <h1 id="assetBrowserTitle">Asset Browser</h1>
-          <p>Generated images become assets. Accept, set workspace, send to Palette Lab, export to Godot/Aseprite, download, or delete.</p>
+          <p>Browse generated candidates and saved assets. Accept, favorite, set workspace, send to Palette Lab, export to Godot/Aseprite, download, or delete.</p>
         </header>
 
-        <div class="asset-help">Incoming assets are generated candidates. Accepted assets are copied into the Accepted folder and keep their metadata/history.</div>
+        <div class="asset-help">Candidates are generated results waiting to be saved. Accepting or favoriting saves them into the Accepted library. Use Clear Unsaved Candidates to clean up test generations.</div>
         <section class="asset-layout">
           <div class="preview-card asset-list-card">
             <h2>Assets</h2>
@@ -255,6 +346,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0013_3"></script>
+  <script src="/static/app.js?v=pf0014_5_candidate_flow_hardened"></script>
 </body>
 </html>

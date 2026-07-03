@@ -1,20 +1,7 @@
 # 13 — Roadmap
 
 > This is the active planning document for Pixel Factory. It should stay focused and should not become a random wishlist.
-## Current Milestone
 
-### PF-0100 — Documentation Consolidation
-
-**Status:** In Progress
-
-Goals:
-
-- Make `/docs` the only documentation source of truth.
-- Remove redundant documentation folders.
-- Clarify PixelFactory-Web as the active app.
-- Clarify PixelFactory-App as archived prototype/reference.
-- Define hard rules for export targets.
-- Prepare the project for Tile Studio planning.
 ---
 
 ## Current Milestone: PF-0100 Documentation Consolidation
@@ -28,47 +15,6 @@ Goal:
 - Clarify recipes vs presets.
 - Clarify Godot + Aseprite only export scope.
 
----
-## Next Planned Milestone
-
-### PF-0014 — Tile Studio Foundation
-
-Focus:
-
-- Create the first Tile Studio UI.
-- Support simple base tile generation.
-- Keep the first version focused and small.
-- Prepare future support for texture-to-tile workflows.
-- Prepare future support for seamless tiles.
-- Prepare future support for tile variations.
-- Send final cleanup work to Palette Lab.
-
----
-
-### Future Milestones
-
-### Future — Tile Builder
-
-- Generate tilesheets from a base tile.
-- Create variations similar to 2D asset packs.
-- Support 16x16, 32x32, and other pixel asset sizes.
-- Prepare Godot-ready tile exports.
-
-### Future — Terrain Builder
-
-- Generate terrain transitions.
-- Generate paths.
-- Generate water edges.
-- Generate corners, edges, inner corners, and outer corners.
-
-### Future — Structure / Building Generation
-
-- Generate buildings, walls, roofs, windows, doors, bridges, ruins, and related structure pieces.
-
-### Future — Portrait Studio
-
-- Generate NPC portraits for dialogue.
-- Support emotional variants such as neutral, happy, angry, sad, hurt, or surprised.
 ---
 
 ## Completed / Recent
@@ -245,3 +191,15 @@ Scope:
 - Keep the application centered on 2D game asset production.
 - Put ideas in `14_FEATURES.md`, not directly into active roadmap.
 - Update `00_PROJECT_MEMORY.md` whenever a major product decision changes.
+
+## PF-0014.2 — Tile / Asset Workflow Cleanup
+
+Status: Added
+
+- Keep Tile Studio and Character Studio generation results isolated.
+- Improve Palette Lab asset loading after batch generation.
+- Rename user-facing incoming assets to candidates.
+- Add better Asset Browser filtering by status and type.
+- Make favoriting automatically accept/save the asset.
+- Add cleanup path for unsaved candidates.
+

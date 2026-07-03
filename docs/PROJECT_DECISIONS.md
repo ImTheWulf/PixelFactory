@@ -1,51 +1,91 @@
-## PF-0100 Documentation Source of Truth
+## Candidate Cleanup Rules
 
-**Decision:** `/docs` is the only active documentation folder.
+**Decision:** Favoriting a Candidate automatically accepts it, and candidate cleanup deletes only unsaved Candidates.
 
 **Status:** Accepted
 
-**Reason:** Splitting documentation between `/docs` and `PixelFactory-Docs` caused confusion and duplicated context. All project memory, roadmap, architecture, design rules, and milestone notes should now live inside `/docs`.
+**Reason:** A favorited asset is something the user intends to keep. Candidate cleanup should be safe and should never remove accepted or favorited assets.
+
+# PROJECT DECISIONS
+
+2026
+
+Godot only.
+
+Reason.
+
+----------
+
+Comfy hidden.
+
+Reason.
+
+----------
+
+Recipes execute.
+
+Presets configure.
+
+Reason.
+
+----------
+
+Workspace is temporary.
+
+Reason.
+
+## PF-0014 Tile Studio Starts Small
+
+**Decision:** PF-0014 only implements the Tile Studio foundation.
+
+**Status:** Accepted
+
+**Reason:** Tile Studio will eventually become a staged texture-to-tile production workflow, but the first coding step should only prove the base tile generation path, asset saving, and Workspace/Palette Lab handoff.
+
+## PF-0014.2 Candidate Asset Language
+
+**Decision:** User-facing generated unsaved assets should be called Candidates, not Incoming.
+
+**Status:** Accepted
+
+**Reason:** "Incoming" was misleading because generated assets already exist on disk. Candidate better communicates that the asset exists but has not been saved into the accepted library yet.
 
 ---
 
-## PixelFactory-Web Is the Active App
+## PF-0014.2 Favoriting Saves Assets
 
-**Decision:** PixelFactory-Web is the active implementation.
+**Decision:** Favoriting an asset automatically accepts it.
 
 **Status:** Accepted
 
-**Reason:** PixelFactory-App was only a prototype. The working product direction has moved into PixelFactory-Web.
+**Reason:** Favorite means the user wants to keep the asset. Pixel Factory should not allow a favorited item to remain only a disposable candidate.
+
 
 ---
 
-## Export Targets Are Limited
+## PF-0014.3 Global UI Concept Accepted
 
-**Decision:** Pixel Factory only supports Godot and Aseprite export targets.
-
-**Status:** Accepted
-
-**Reason:** The project is built around the user’s actual 2D game development workflow, not broad engine support.
-
-## Palette Lab Is Post-Processing
-
-**Decision:** Palette Lab is a cleanup and post-processing tool, not a generation tool.
+**Decision:** The PF-0014 generated dark multi-panel UI concept is the global Pixel Factory visual target.
 
 **Status:** Accepted
 
-**Reason:** Palette Lab should be used after assets are generated to clean pixels, reduce palettes, snap pixels, remove chroma key backgrounds, and prepare assets for export.
+**Reason:** The concept captures the desired product feel: modern, clean, game-dev focused, with strong navigation, clear studio workspaces, and integrated asset browsing. This direction applies to the whole application, not only Tile Studio.
 
-## Tile Studio Uses Staged Generation
+---
 
-**Decision:** Tile Studio should be built as a staged workflow.
+## Candidate Cleanup Must Be Real Deletion
 
-**Status:** Accepted
-
-**Reason:** Tile creation is more than generating one image. The intended workflow includes texture generation, tile generation, seamless cleanup, variations, masking, and export preparation.
-
-## Presets Are Broad, Recipes Are Curated
-
-**Decision:** Presets can be broad across asset types, but recipes must be curated for specific generation goals.
+**Decision:** Clear Unsaved Candidates must delete unsaved generated candidates from disk and metadata.
 
 **Status:** Accepted
 
-**Reason:** Presets such as fantasy, medieval, sci-fi, modern, or horror can apply across characters, props, buildings, and tiles. Recipes are more specific because they define how Pixel Factory asks ComfyUI to create a particular kind of asset.
+**Reason:** Candidate assets are temporary unless accepted or favorited. Accepted and favorited assets are saved. Unsaved candidates should be removable so the asset library does not become cluttered.
+
+## Favorite Saves Candidates
+
+**Decision:** Favoriting a Candidate automatically promotes it to Accepted.
+
+**Status:** Accepted
+
+**Reason:** Favorite is a keep/save signal. A favorited asset should never be removed by candidate cleanup.
+

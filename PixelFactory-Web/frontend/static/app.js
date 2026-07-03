@@ -72,6 +72,8 @@ const downloadBtn = document.getElementById("downloadBtn");
 const previewMode = document.getElementById("previewMode");
 const loadWorkspaceBtn = document.getElementById("loadWorkspaceBtn");
 const workspaceStatus = document.getElementById("workspaceStatus");
+const paletteAssetSource = document.getElementById("paletteAssetSource");
+const loadPaletteAssetBtn = document.getElementById("loadPaletteAssetBtn");
 
 let selectedFile = null;
 let selectedFileSource = null;
@@ -143,6 +145,34 @@ async function loadWorkspaceIntoPalette() {
   }
 }
 
+async function refreshPaletteAssetSources() {
+  if (!paletteAssetSource) return;
+  const response = await fetch("/api/assets");
+  const data = await response.json();
+  const items = data.assets || [];
+  paletteAssetSource.innerHTML = '<option value="">Recent assets...</option>';
+  items.slice(0, 80).forEach((asset) => {
+    const option = document.createElement("option");
+    option.value = asset.id;
+    option.textContent = `${asset.type || "asset"} · ${asset.name || asset.id}`;
+    paletteAssetSource.appendChild(option);
+  });
+}
+
+async function loadSelectedPaletteAsset() {
+  const assetId = paletteAssetSource?.value;
+  if (!assetId) {
+    setStatus("Choose an asset source first.");
+    return;
+  }
+  const asset = assets.find((item) => item.id === assetId) || (await fetch(`/api/assets/${assetId}`).then((r) => r.ok ? r.json() : null));
+  if (!asset) {
+    setStatus("Selected asset could not be loaded.");
+    return;
+  }
+  await sendAssetToPalette(asset);
+}
+
 async function hydratePaletteFromWorkspaceIfNeeded() {
   if (selectedFile) return;
   const ws = await refreshWorkspace();
@@ -156,6 +186,7 @@ async function hydratePaletteFromWorkspaceIfNeeded() {
 }
 
 loadWorkspaceBtn?.addEventListener("click", loadWorkspaceIntoPalette);
+loadPaletteAssetBtn?.addEventListener("click", loadSelectedPaletteAsset);
 
 imageInput.addEventListener("change", () => {
   const file = imageInput.files?.[0];
@@ -228,20 +259,24 @@ const actualSeedDisplay = document.getElementById("actualSeedDisplay");
 const lastSeedGroup = document.getElementById("lastSeedGroup");
 let lastActualSeed = null;
 
-async function loadRecipes() {
-  if (!characterRecipe) return;
-  const response = await fetch("/api/recipes?category=character");
+async function loadRecipeOptions(selectEl, category) {
+  if (!selectEl) return;
+  const response = await fetch(`/api/recipes?category=${encodeURIComponent(category)}`);
   const data = await response.json();
-  characterRecipe.innerHTML = "";
+  selectEl.innerHTML = "";
   (data.recipes || []).forEach((recipe) => {
     const option = document.createElement("option");
     option.value = recipe.id;
     option.textContent = recipe.display_name || recipe.id;
-    characterRecipe.appendChild(option);
+    selectEl.appendChild(option);
   });
-  if (!characterRecipe.value && characterRecipe.options.length) {
-    characterRecipe.selectedIndex = 0;
+  if (!selectEl.value && selectEl.options.length) {
+    selectEl.selectedIndex = 0;
   }
+}
+
+async function loadRecipes() {
+  return loadRecipeOptions(characterRecipe, "character");
 }
 
 async function loadCharacterDefaults() {
@@ -281,19 +316,19 @@ reuseSeedBtn?.addEventListener("click", () => {
 });
 
 
-function addGeneratedImage(src, index, asset = null) {
+function addGeneratedImage(src, index, asset = null, label = "character", outputEl = characterOutput) {
   const wrap = document.createElement("div");
   wrap.className = "generated-item";
   const img = document.createElement("img");
   img.src = asset?.image_url || src;
-  img.alt = `Generated character ${index + 1}`;
+  img.alt = `Generated ${label} ${index + 1}`;
   img.classList.add("pf-viewable-image");
-  img.dataset.viewerTitle = asset?.name || `Generated character ${index + 1}`;
+  img.dataset.viewerTitle = asset?.name || `Generated ${label} ${index + 1}`;
   const actions = document.createElement("div");
   actions.className = "generated-actions";
   const download = document.createElement("a");
   download.href = asset?.image_url || src;
-  download.download = `${asset?.name || `pixel_factory_character_${index + 1}`}.png`;
+  download.download = `${asset?.name || `pixel_factory_${label}_${index + 1}`}.png`;
   download.textContent = "Download";
   actions.appendChild(download);
   if (asset) {
@@ -311,7 +346,7 @@ function addGeneratedImage(src, index, asset = null) {
   }
   wrap.appendChild(img);
   wrap.appendChild(actions);
-  characterOutput.appendChild(wrap);
+  outputEl?.appendChild(wrap);
 }
 
 generateCharacterBtn.addEventListener("click", async () => {
@@ -376,7 +411,117 @@ generateCharacterBtn.addEventListener("click", async () => {
 
 loadRecipes().then(loadCharacterDefaults).catch(() => {});
 
+// Tile Studio
+const tileRecipe = document.getElementById("tileRecipe");
+const tilePrompt = document.getElementById("tilePrompt");
+const tileNegative = document.getElementById("tileNegative");
+const loadTileDefaultsBtn = document.getElementById("loadTileDefaultsBtn");
+const generateTileBtn = document.getElementById("generateTileBtn");
+const tileOutput = document.getElementById("tileOutput");
+const tileRandomSeedBtn = document.getElementById("tileRandomSeedBtn");
+const tileReuseSeedBtn = document.getElementById("tileReuseSeedBtn");
+const tileActualSeedDisplay = document.getElementById("tileActualSeedDisplay");
+const tileLastSeedGroup = document.getElementById("tileLastSeedGroup");
+let lastTileSeed = null;
 
+async function loadTileRecipes() {
+  return loadRecipeOptions(tileRecipe, "tile");
+}
+
+async function loadTileDefaults() {
+  if (!tileRecipe || !tilePrompt || !tileNegative) return;
+  const recipeId = tileRecipe.value || "tile.cobblestone";
+  setStatus(`Loading tile recipe ${recipeId}...`);
+  const response = await fetch(`/api/workflows/tile/defaults?recipe_id=${encodeURIComponent(recipeId)}`);
+  const data = await response.json();
+  tilePrompt.value = data.positive || "";
+  tileNegative.value = data.negative || "";
+  const safeSize = ["256", "512", "768", "1024"].includes(String(data.width)) ? String(data.width) : "256";
+  document.getElementById("tileSize").value = safeSize;
+  document.getElementById("tileBatch").value = String(data.batch_size || 4);
+  document.getElementById("tileSteps").value = String(data.steps || 24);
+  document.getElementById("tileSeed").value = String(data.seed ?? -1);
+  if (tileLastSeedGroup && lastTileSeed === null) tileLastSeedGroup.classList.add("hidden");
+  if (tileActualSeedDisplay && lastTileSeed !== null) tileActualSeedDisplay.value = String(lastTileSeed);
+  setStatus(`Tile recipe loaded: ${data.display_name || recipeId}`);
+}
+
+tileRecipe?.addEventListener("change", loadTileDefaults);
+loadTileDefaultsBtn?.addEventListener("click", loadTileDefaults);
+
+tileRandomSeedBtn?.addEventListener("click", () => {
+  const seed = makePixelFactorySeed();
+  document.getElementById("tileSeed").value = String(seed);
+  setStatus(`Random seed selected for next tile generation: ${seed}.`);
+});
+
+tileReuseSeedBtn?.addEventListener("click", () => {
+  if (lastTileSeed === null) return;
+  document.getElementById("tileSeed").value = String(lastTileSeed);
+  setStatus(`Reusing last tile seed ${lastTileSeed}.`);
+});
+
+generateTileBtn?.addEventListener("click", async () => {
+  if (!tilePrompt.value.trim()) {
+    setStatus("Tile prompt is empty.");
+    return;
+  }
+
+  generateTileBtn.disabled = true;
+  tileOutput.classList.remove("empty");
+  tileOutput.innerHTML = "Generating tile candidates in ComfyUI...";
+  setStatus("Queued Tile Studio job...");
+
+  const size = Number(document.getElementById("tileSize").value);
+  if (![256, 512, 768, 1024].includes(size)) {
+    setStatus("Only safe square tile generation sizes are enabled: 256, 512, 768, or 1024.");
+    generateTileBtn.disabled = false;
+    return;
+  }
+
+  const payload = {
+    comfy_url: comfyUrl.value,
+    recipe_id: tileRecipe?.value || "tile.cobblestone",
+    prompt: tilePrompt.value,
+    negative_prompt: tileNegative.value,
+    seed: Number(document.getElementById("tileSeed").value),
+    width: size,
+    height: size,
+    batch_size: Number(document.getElementById("tileBatch").value),
+    steps: Number(document.getElementById("tileSteps").value),
+  };
+
+  try {
+    const response = await fetch("/api/generate/tile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
+    tileOutput.innerHTML = "";
+    if (typeof data.seed !== "undefined") {
+      lastTileSeed = data.seed;
+      if (tileActualSeedDisplay) tileActualSeedDisplay.value = String(data.seed);
+      if (tileLastSeedGroup) tileLastSeedGroup.classList.remove("hidden");
+      if (tileReuseSeedBtn) tileReuseSeedBtn.disabled = false;
+      document.getElementById("tileSeed").value = String(data.seed);
+    }
+    (data.assets || []).forEach((asset, i) => addGeneratedImage(data.images?.[i], i, asset, "tile", tileOutput));
+    if (!data.assets) data.images.forEach((src, i) => addGeneratedImage(src, i, null, "tile", tileOutput));
+    await loadAssets();
+    await refreshWorkspace();
+    setStatus(`Tile job complete. ${data.count} tile candidate(s) returned. Seed ${data.seed}. Current workspace is ready for Palette Lab.`);
+  } catch (err) {
+    tileOutput.classList.add("empty");
+    tileOutput.textContent = "Tile generation failed.";
+    setStatus(`Tile generation error: ${err.message}`);
+  } finally {
+    generateTileBtn.disabled = false;
+  }
+});
+
+loadTileRecipes().then(loadTileDefaults).catch(() => {});
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -397,7 +542,7 @@ function assetDisplayName(asset) {
 }
 
 function assetStatusLabel(asset) {
-  return asset?.status === "accepted" ? "Accepted" : "Incoming";
+  return asset?.status === "accepted" ? "Accepted" : "Candidate";
 }
 
 function assetFolderLabel(asset) {
@@ -419,6 +564,9 @@ const assetGrid = document.getElementById("assetGrid");
 const assetInspector = document.getElementById("assetInspector");
 const refreshAssetsBtn = document.getElementById("refreshAssetsBtn");
 const assetFilter = document.getElementById("assetFilter");
+const assetTypeFilter = document.getElementById("assetTypeFilter");
+const assetSort = document.getElementById("assetSort");
+const clearCandidateAssetsBtn = document.getElementById("clearCandidateAssetsBtn");
 const assetBrowserTitle = document.getElementById("assetBrowserTitle");
 let assets = [];
 let selectedAssetId = null;
@@ -463,9 +611,24 @@ assetGrid?.addEventListener("click", async (event) => {
 });
 
 function assetStatusQuery() {
+  const params = new URLSearchParams();
   const status = assetFilter?.value || "";
-  if (status === "favorite") return "?favorite=true";
-  return status ? `?status=${encodeURIComponent(status)}` : "";
+  const assetType = assetTypeFilter?.value || "";
+  if (status === "favorite") params.set("favorite", "true");
+  else if (status) params.set("status", status);
+  if (assetType) params.set("asset_type", assetType);
+  const query = params.toString();
+  return query ? `?${query}` : "";
+}
+
+function sortAssetsForView(items) {
+  const mode = assetSort?.value || "newest";
+  const sorted = [...items];
+  if (mode === "oldest") sorted.reverse();
+  if (mode === "type") sorted.sort((a, b) => String(a.type || "").localeCompare(String(b.type || "")) || String(b.created || "").localeCompare(String(a.created || "")));
+  if (mode === "status") sorted.sort((a, b) => String(a.status || "").localeCompare(String(b.status || "")) || String(b.created || "").localeCompare(String(a.created || "")));
+  if (mode === "favorite") sorted.sort((a, b) => Number(Boolean(b.favorite)) - Number(Boolean(a.favorite)) || String(b.created || "").localeCompare(String(a.created || "")));
+  return sorted;
 }
 
 function updateAssetBrowserHeading() {
@@ -473,7 +636,7 @@ function updateAssetBrowserHeading() {
   const value = assetFilter?.value || "";
   const names = {
     "": "All Assets",
-    incoming: "Incoming Assets",
+    incoming: "Candidate Assets",
     accepted: "Accepted Assets",
     favorite: "Favorite Assets",
   };
@@ -483,10 +646,11 @@ function updateAssetBrowserHeading() {
 async function loadAssets(selectId = null) {
   if (!assetGrid) return;
   updateAssetBrowserHeading();
-  const response = await fetch(`/api/assets${assetStatusQuery()}`);
+  const response = await fetch(`/api/assets${assetStatusQuery()}`, { cache: "no-store" });
   const data = await response.json();
-  assets = data.assets || [];
+  assets = sortAssetsForView(data.assets || []);
   renderAssets(selectId);
+  refreshPaletteAssetSources().catch(() => {});
 }
 
 function renderAssets(selectId = null) {
@@ -647,14 +811,16 @@ async function updateAssetMetadata(assetId, changes) {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(changes),
+    cache: "no-store",
   });
+  const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    setStatus("Metadata update failed.");
+    setStatus(data.detail || "Metadata update failed.");
     return null;
   }
   setStatus("Asset metadata saved.");
   await loadAssets(assetId);
-  return true;
+  return data.asset || true;
 }
 
 async function toggleAssetFavorite(assetId) {
@@ -663,19 +829,37 @@ async function toggleAssetFavorite(assetId) {
 
   const nextFavorite = !asset.favorite;
   const wasSelected = selectedAssetId === assetId;
+  const wasCandidate = asset.status !== "accepted";
 
   // Optimistic UI update so the card responds immediately.
   asset.favorite = nextFavorite;
+  if (nextFavorite && wasCandidate) asset.status = "accepted";
   renderAssets(wasSelected ? assetId : selectedAssetId);
 
-  const ok = await updateAssetMetadata(assetId, { favorite: nextFavorite });
-  if (!ok) {
+  let updated = await updateAssetMetadata(assetId, { favorite: nextFavorite });
+  if (!updated) {
     asset.favorite = !nextFavorite;
+    if (nextFavorite && wasCandidate) asset.status = "incoming";
     await loadAssets(wasSelected ? assetId : selectedAssetId);
     return;
   }
 
-  setStatus(nextFavorite ? "Asset marked as favorite." : "Asset removed from favorites.");
+  // Safety fallback: favorite must promote a Candidate to Accepted. If the
+  // metadata route returns an older response for any reason, explicitly accept.
+  if (nextFavorite && wasCandidate && typeof updated === "object" && updated.status !== "accepted") {
+    const acceptResponse = await fetch(`/api/assets/${assetId}/accept`, { method: "POST", cache: "no-store" });
+    const acceptData = await acceptResponse.json().catch(() => ({}));
+    if (acceptResponse.ok && acceptData.asset) updated = acceptData.asset;
+  }
+
+  if (typeof updated === "object") {
+    asset.favorite = Boolean(updated.favorite);
+    asset.status = updated.status || asset.status;
+    asset.accepted_image_path = updated.accepted_image_path || asset.accepted_image_path;
+  }
+
+  await loadAssets(wasSelected ? assetId : selectedAssetId);
+  setStatus(nextFavorite ? "Asset favorited and saved to Accepted." : "Asset removed from favorites.");
 }
 
 async function acceptAsset(assetId) {
@@ -844,8 +1028,79 @@ document.getElementById("clearSelectedExportsBtn")?.addEventListener("click", cl
 document.getElementById("assetClearSelectedExportsBtn")?.addEventListener("click", clearExportSelection);
 document.getElementById("refreshExportsBtn")?.addEventListener("click", refreshExportStatus);
 
+function localCandidateAssetIds() {
+  return assets
+    .filter((asset) => asset.status !== "accepted" && !asset.favorite)
+    .map((asset) => asset.id)
+    .filter(Boolean);
+}
+
+async function clearUnsavedCandidates() {
+  const localCandidateIds = localCandidateAssetIds();
+  if (!confirm(`Delete ${localCandidateIds.length || "all"} unsaved candidate asset(s)? Accepted and favorited assets are kept.`)) return;
+  if (clearCandidateAssetsBtn) clearCandidateAssetsBtn.disabled = true;
+  setStatus("Clearing unsaved candidates...");
+
+  try {
+    let response = await fetch("/api/assets/clear-candidates", { method: "POST", cache: "no-store" });
+    if (response.status === 404 || response.status === 405) {
+      response = await fetch("/api/assets/candidates/clear", { method: "POST", cache: "no-store" });
+    }
+    if (response.status === 404 || response.status === 405) {
+      response = await fetch("/api/assets/candidates", { method: "DELETE", cache: "no-store" });
+    }
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.detail || data.error || `HTTP ${response.status}`);
+
+    let deletedIds = Array.isArray(data.deleted_ids) ? data.deleted_ids : [];
+
+    // Last-resort frontend fallback: if an older backend route says it deleted
+    // nothing, delete currently visible Candidate assets individually.
+    if (!deletedIds.length && localCandidateIds.length) {
+      const deletedFallback = [];
+      for (const assetId of localCandidateIds) {
+        const item = assets.find((asset) => asset.id === assetId);
+        if (!item || item.status === "accepted" || item.favorite) continue;
+        const deleteResponse = await fetch(`/api/assets/${assetId}`, { method: "DELETE", cache: "no-store" });
+        if (deleteResponse.ok) deletedFallback.push(assetId);
+      }
+      deletedIds = deletedFallback;
+      data.deleted = deletedFallback.length;
+    }
+
+    selectedAssetId = null;
+    exportSelection.clear();
+    if (deletedIds.length) {
+      const deleted = new Set(deletedIds);
+      assets = assets.filter((asset) => !deleted.has(asset.id));
+      renderAssets();
+    }
+
+    if (data.workspace_cleared) {
+      selectedFile = null;
+      selectedFileSource = null;
+      originalPreview?.removeAttribute("src");
+      processedPreview?.removeAttribute("src");
+      if (downloadBtn) downloadBtn.disabled = true;
+    }
+
+    await refreshWorkspace();
+    await loadAssets();
+    updateExportSelectionStatus();
+    setStatus(`Cleared ${data.deleted || deletedIds.length || 0} unsaved candidate asset(s). Kept ${data.kept || 0} saved asset(s).`);
+  } catch (err) {
+    setStatus(`Could not clear candidates: ${err.message}`);
+  } finally {
+    if (clearCandidateAssetsBtn) clearCandidateAssetsBtn.disabled = false;
+  }
+}
+
 refreshAssetsBtn?.addEventListener("click", () => loadAssets());
 assetFilter?.addEventListener("change", () => loadAssets());
+assetTypeFilter?.addEventListener("change", () => loadAssets());
+assetSort?.addEventListener("change", () => { assets = sortAssetsForView(assets); renderAssets(selectedAssetId); });
+clearCandidateAssetsBtn?.addEventListener("click", clearUnsavedCandidates);
 
 
 
