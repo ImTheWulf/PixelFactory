@@ -9,7 +9,15 @@ function setStatus(message) {
   statusEl.textContent = message;
 }
 
-function setView(name) {
+function setView(name, options = {}) {
+  const previousView = activeViewName;
+  const preserveSelection = Boolean(options.preserveSelection) || name === "exporter";
+
+  if (previousView === "assets" && name !== "assets" && !preserveSelection && exportSelection.size) {
+    exportSelection.clear();
+    selectedAssetId = null;
+  }
+
   activeViewName = name;
   navButtons.forEach((btn) => btn.classList.toggle("active", btn.dataset.view === name));
   views.forEach((view) => view.classList.toggle("active", view.id === `${name}View`));
@@ -778,9 +786,10 @@ function renderAssets(selectId = null) {
         toggleExportSelection(asset.id);
         return;
       }
-      // Regular click inspects the asset. If a multi-selection is active, keep
-      // that selection intact so browsing thumbnails does not destroy the export set.
-      selectAsset(asset.id, exportSelection.size === 0);
+
+      // A normal click leaves multi-select mode and inspects only this asset.
+      // Modifier-click is the explicit multi-select behavior.
+      selectAsset(asset.id, true);
     });
     card.querySelector(".asset-thumb-zoom")?.addEventListener("click", (event) => {
       event.stopPropagation();
@@ -1118,7 +1127,7 @@ function routeSelectionToExporter(target = null) {
   }
   applyExportTarget(target);
   updateExportSelectionStatus();
-  setView("exporter");
+  setView("exporter", { preserveSelection: true });
   setStatus(`Loaded ${exportSelection.size} selected asset(s) into Exporter.`);
 }
 
@@ -1132,7 +1141,7 @@ function routeAssetToExporter(assetId, target = null) {
   exportSelection.add(assetId);
   applyExportTarget(target);
   updateExportSelectionStatus();
-  setView("exporter");
+  setView("exporter", { preserveSelection: true });
   setStatus(`Loaded 1 asset into Exporter.`);
 }
 

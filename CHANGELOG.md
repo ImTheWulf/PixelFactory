@@ -1,3 +1,11 @@
+## PF-0015.7 — Selection Behavior Cleanup
+
+- Normal asset clicks now exit multi-select mode and inspect only the clicked asset.
+- Modifier-click remains the explicit multi-select behavior.
+- Selection state clears when leaving Asset Browser unless routing into Exporter.
+- Bottom multi-select bar no longer persists across unrelated studios.
+- Centered the main Exporter action button.
+
 
 ## PF-0015.6 — Selection and Export Cleanup
 
