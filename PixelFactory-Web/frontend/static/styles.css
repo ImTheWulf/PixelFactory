@@ -1581,7 +1581,7 @@ select option:hover {
 }
 
 
-/* PF-0015.3 export routing cleanup */
+/* PF-0015.4 export routing cleanup */
 .export-layout {
   grid-template-columns: minmax(480px, 860px);
 }
@@ -1691,4 +1691,50 @@ select option:hover {
 #selectionBarExporterBtn {
   border-color: rgba(94,162,255,.55);
   color: #d9eaff;
+}
+
+
+/* PF-0015.4 exporter panel actions */
+.export-target-picker {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.export-target-picker button {
+  min-height: 38px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 12px;
+  background: rgba(255,255,255,.035);
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.export-target-picker button.active {
+  border-color: rgba(94,162,255,.72);
+  color: #e8f2ff;
+  background: linear-gradient(180deg, rgba(47,125,246,.24), rgba(47,125,246,.10));
+  box-shadow: 0 0 0 1px rgba(47,125,246,.20) inset;
+}
+
+.export-panel-actions {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.export-panel-actions button {
+  min-height: 38px;
+}
+
+.export-selection-empty .export-panel-actions {
+  grid-template-columns: 1fr 1fr;
+  margin-top: 8px;
+}
+
+@media (max-width: 1100px) {
+  .export-panel-actions {
+    grid-template-columns: 1fr;
+  }
 }

@@ -1,3 +1,10 @@
+## PF-0015.4 — Exporter Panel Actions
+
+- Added export target controls directly inside the Exporter selection panel.
+- Added Export Selected, Export All Accepted, and Clear Selection actions to the main Exporter panel.
+- Updated Exporter language from Incoming assets to Candidate assets.
+- Kept Asset Browser export routing focused on sending assets into the Exporter.
+
 
 ## PF-0015.3 — Export Routing Cleanup
 

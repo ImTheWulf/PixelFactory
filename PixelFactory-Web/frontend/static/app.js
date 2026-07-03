@@ -1028,7 +1028,8 @@ function renderExportSelectionPanel() {
   if (!panel) return;
 
   const items = selectedAssets();
-  const target = exportTargetLabel();
+  const target = selectedExportTarget();
+  const targetLabel = target === "aseprite" ? "Aseprite" : "Godot";
 
   if (!items.length) {
     panel.className = "export-selection-panel empty";
@@ -1036,8 +1037,14 @@ function renderExportSelectionPanel() {
       <div class="export-selection-empty">
         <strong>No assets loaded for export.</strong>
         <span>Select assets in Asset Browser, then click Export.</span>
+        <div class="export-panel-actions">
+          <button id="exportPanelBrowseAssetsBtn" type="button">Browse Assets</button>
+          <button id="exportPanelRefreshBtn" type="button">Refresh Export Status</button>
+        </div>
       </div>
     `;
+    document.getElementById("exportPanelBrowseAssetsBtn")?.addEventListener("click", () => setView("assets"));
+    document.getElementById("exportPanelRefreshBtn")?.addEventListener("click", refreshExportStatus);
     return;
   }
 
@@ -1050,9 +1057,14 @@ function renderExportSelectionPanel() {
     <div class="export-selection-header">
       <div>
         <h3>${items.length} Asset${items.length === 1 ? "" : "s"} Ready</h3>
-        <p>Review the export selection, choose Godot or Aseprite, then export from this panel.</p>
+        <p>Review the loaded selection, choose the export target, then export from here.</p>
       </div>
-      <strong>${escapeHtml(target)}</strong>
+      <strong>${escapeHtml(targetLabel)}</strong>
+    </div>
+
+    <div class="export-target-picker" role="group" aria-label="Export target">
+      <button id="exportPanelTargetGodot" type="button" class="${target === "godot" ? "active" : ""}" data-export-target="godot">Godot</button>
+      <button id="exportPanelTargetAseprite" type="button" class="${target === "aseprite" ? "active" : ""}" data-export-target="aseprite">Aseprite</button>
     </div>
 
     <div class="export-selection-preview">
@@ -1072,9 +1084,24 @@ function renderExportSelectionPanel() {
     <div class="asset-tags export-selection-tags">
       ${tagSummary.length ? tagSummary.map(([tag, count]) => `<span>${escapeHtml(tag)} × ${count}</span>`).join("") : ""}
     </div>
-  `;
-}
 
+    <div class="export-panel-actions">
+      <button id="exportPanelSelectedBtn" type="button" class="pf-primary-action">Export Selected to ${escapeHtml(targetLabel)}</button>
+      <button id="exportPanelAcceptedBtn" type="button">Export All Accepted to ${escapeHtml(targetLabel)}</button>
+      <button id="exportPanelClearBtn" type="button">Clear Selection</button>
+    </div>
+  `;
+
+  document.querySelectorAll("[data-export-target]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      applyExportTarget(btn.dataset.exportTarget);
+      renderExportSelectionPanel();
+    });
+  });
+  document.getElementById("exportPanelSelectedBtn")?.addEventListener("click", exportSelectedAssets);
+  document.getElementById("exportPanelAcceptedBtn")?.addEventListener("click", exportAcceptedAssets);
+  document.getElementById("exportPanelClearBtn")?.addEventListener("click", clearExportSelectionWithStatus);
+}
 function applyExportTarget(target = null) {
   if (!target) return;
   const exporterTarget = document.getElementById("exportTarget");
@@ -1148,11 +1175,13 @@ function selectedExportTarget() {
 async function exportSelectedAssets() {
   const target = selectedExportTarget();
   const btn = document.getElementById("exportSelectedBtn");
+  const panelBtn = document.getElementById("exportPanelSelectedBtn");
   if (!exportSelection.size) {
     setStatus("Select one or more assets first.");
     return;
   }
   if (btn) btn.disabled = true;
+  if (panelBtn) panelBtn.disabled = true;
   try {
     const response = await fetch(`/api/exports/${target}/assets`, {
       method: "POST",
@@ -1168,6 +1197,8 @@ async function exportSelectedAssets() {
     setStatus(`Export selected failed: ${err.message}`);
     await refreshExportStatus();
   } finally {
+    if (btn) btn.disabled = false;
+    if (panelBtn) panelBtn.disabled = false;
     updateExportSelectionStatus();
   }
 }
@@ -1175,7 +1206,9 @@ async function exportSelectedAssets() {
 async function exportAcceptedAssets() {
   const target = document.getElementById("exportTarget")?.value || "godot";
   const btn = document.getElementById("exportAcceptedBtn");
+  const panelBtn = document.getElementById("exportPanelAcceptedBtn");
   if (btn) btn.disabled = true;
+  if (panelBtn) panelBtn.disabled = true;
   try {
     const response = await fetch(`/api/exports/${target}/accepted`, { method: "POST" });
     const data = await response.json().catch(() => ({}));
@@ -1188,6 +1221,7 @@ async function exportAcceptedAssets() {
     await refreshExportStatus();
   } finally {
     if (btn) btn.disabled = false;
+    if (panelBtn) panelBtn.disabled = false;
   }
 }
 
@@ -1202,7 +1236,7 @@ async function refreshExportStatus() {
       <div class="export-summary-grid">
         <div><span>Selected assets</span><strong>${escapeHtml(exportSelection.size)}</strong></div>
         <div><span>Accepted assets</span><strong>${escapeHtml(data.accepted_count ?? 0)}</strong></div>
-        <div><span>Incoming assets</span><strong>${escapeHtml(data.incoming_count ?? 0)}</strong></div>
+        <div><span>Candidate assets</span><strong>${escapeHtml(data.incoming_count ?? 0)}</strong></div>
         <div><span>Exports root</span><strong>${escapeHtml(data.exports_root || "Exports")}</strong></div>
       </div>
       ${Object.entries(targets).map(([key, info]) => `
@@ -1241,7 +1275,7 @@ function clearExportSelectionWithStatus() {
 }
 document.getElementById("clearSelectedExportsBtn")?.addEventListener("click", clearExportSelectionWithStatus);
 document.getElementById("refreshExportsBtn")?.addEventListener("click", refreshExportStatus);
-document.getElementById("exportTarget")?.addEventListener("change", renderExportSelectionPanel);
+document.getElementById("exportTarget")?.addEventListener("change", updateExportSelectionStatus);
 
 async function clearUnsavedCandidates() {
   if (!confirm("Delete all unsaved candidate assets? Accepted and favorited assets are kept.")) return;
