@@ -344,10 +344,37 @@ function setPaletteCompareFit() {
   applyPaletteCompareMode({ center: true });
 }
 
-function setPaletteCompareActual(zoom = 1) {
+function setPaletteCompareActual(zoom = 1, options = {}) {
   paletteCompareMode = "zoomed";
   paletteCompareZoom = Math.max(0.25, Math.min(12, zoom));
-  applyPaletteCompareMode({ center: true });
+  applyPaletteCompareMode({ center: options.center !== false });
+}
+
+function setPaletteCompareZoomAtPoint(nextZoom, clientX, clientY) {
+  if (!paletteCompareModalStage || !compareModalCanvas) {
+    setPaletteCompareActual(nextZoom);
+    return;
+  }
+  const stage = paletteCompareModalStage;
+  const canvas = compareModalCanvas;
+  const stageRect = stage.getBoundingClientRect();
+  const canvasRect = canvas.getBoundingClientRect();
+  const relX = canvasRect.width > 0 ? (clientX - canvasRect.left) / canvasRect.width : 0.5;
+  const relY = canvasRect.height > 0 ? (clientY - canvasRect.top) / canvasRect.height : 0.5;
+  const viewportX = clientX - stageRect.left;
+  const viewportY = clientY - stageRect.top;
+
+  paletteCompareMode = "zoomed";
+  paletteCompareZoom = Math.max(0.25, Math.min(12, nextZoom));
+  applyPaletteCompareMode({ center: false });
+
+  requestAnimationFrame(() => {
+    const newCanvasRect = canvas.getBoundingClientRect();
+    const canvasLeftInScroll = canvas.offsetLeft;
+    const canvasTopInScroll = canvas.offsetTop;
+    stage.scrollLeft = Math.max(0, canvasLeftInScroll + relX * newCanvasRect.width - viewportX);
+    stage.scrollTop = Math.max(0, canvasTopInScroll + relY * newCanvasRect.height - viewportY);
+  });
 }
 
 function showPaletteCompare() {
@@ -408,7 +435,7 @@ paletteCompareModalStage?.addEventListener("wheel", (event) => {
   event.preventDefault();
   const base = paletteCompareMode === "fit" ? 1 : paletteCompareZoom;
   const next = event.deltaY < 0 ? base * 1.12 : base / 1.12;
-  setPaletteCompareActual(next);
+  setPaletteCompareZoomAtPoint(next, event.clientX, event.clientY);
 }, { passive: false });
 
 paletteCompareModalStage?.addEventListener("dblclick", () => setPaletteCompareFit());

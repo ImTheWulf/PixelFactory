@@ -2664,3 +2664,30 @@ select option:hover {
 #processBtn::after {
   content: "";
 }
+
+
+/* PF-0016.9 Palette compare interaction polish */
+.viewport.actual-mode {
+  display: grid !important;
+  place-items: center !important;
+  overflow: auto;
+}
+.viewport.actual-mode img.actual-image {
+  margin: auto;
+}
+.palette-compare-divider::after,
+.palette-compare-modal-divider::after {
+  display: none !important;
+}
+.palette-compare-divider,
+.palette-compare-modal-divider {
+  width: 1px;
+  background: rgba(96, 165, 250, .9);
+  box-shadow: 0 0 14px rgba(96, 165, 250, .38);
+}
+.palette-compare-modal-stage {
+  scroll-behavior: auto;
+}
+.palette-compare-modal-stage.zoomed {
+  place-items: start !important;
+}

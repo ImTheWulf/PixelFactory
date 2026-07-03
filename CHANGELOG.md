@@ -1,3 +1,9 @@
+## PF-0016.9 — Palette Compare Interaction Polish
+
+- Removed the compare divider handle so the before/after line stays clean.
+- Improved compare viewer wheel zoom so zooming anchors near the cursor instead of jumping to the top-left.
+- Centered Palette Lab actual-pixels preview mode so images do not snap left when switching modes.
+
 
 ## PF-0016.8 — Palette Lab Workflow and Live Editing Foundation
 
