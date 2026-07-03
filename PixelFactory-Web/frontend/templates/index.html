@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.15 · PF-0015.4</div>
+          <div class="subtitle">by Wulf · Web v0.15 · PF-0015.5</div>
         </div>
       </div>
 
@@ -159,16 +159,9 @@
 
       <section id="exporterControls" class="panel view-controls hidden">
         <div class="panel-title">Exporter</div>
-        <label>Target</label>
-        <select id="exportTarget">
-          <option value="godot">Godot</option>
-          <option value="aseprite">Aseprite</option>
-        </select>
-        <button id="exportSelectedBtn" type="button">Export Selected Assets</button>
-        <button id="exportAcceptedBtn" type="button">Export Accepted Assets</button>
-        <button id="clearSelectedExportsBtn" type="button">Clear Selection</button>
+        <div class="workspace-status" id="exportSelectionStatus">Export selection: 0</div>
         <button id="refreshExportsBtn" type="button">Refresh Export Status</button>
-        <div id="exportSelectionStatus" class="workspace-status">Selected for export: 0</div>
+        <p class="panel-hint">Choose Godot or Aseprite and run exports from the main Exporter panel.</p>
       </section>
 
       <section id="assetsControls" class="panel view-controls hidden">

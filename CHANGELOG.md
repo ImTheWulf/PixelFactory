@@ -1,3 +1,11 @@
+## PF-0015.5 — Exporter selection cleanup
+
+- Cleaned Exporter to use one focused export action for loaded selections.
+- Removed redundant Export All Accepted and Clear Selection actions from the main Exporter panel.
+- Kept Godot/Aseprite target choice inside the Exporter panel.
+- Hid the bottom multi-select bar while viewing Exporter so selection routing does not duplicate Exporter controls.
+- Removed Clear Selection from the multi-select inspector and added selected download/accept utility actions.
+
 ## PF-0015.4 — Exporter Panel Actions
 
 - Added export target controls directly inside the Exporter selection panel.

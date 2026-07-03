@@ -1581,7 +1581,7 @@ select option:hover {
 }
 
 
-/* PF-0015.4 export routing cleanup */
+/* PF-0015.5 export routing cleanup */
 .export-layout {
   grid-template-columns: minmax(480px, 860px);
 }
@@ -1694,7 +1694,7 @@ select option:hover {
 }
 
 
-/* PF-0015.4 exporter panel actions */
+/* PF-0015.5 exporter panel actions */
 .export-target-picker {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1737,4 +1737,19 @@ select option:hover {
   .export-panel-actions {
     grid-template-columns: 1fr;
   }
+}
+
+.export-panel-actions-clean {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, .9fr);
+}
+
+.panel-hint {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.multi-actions {
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
 }

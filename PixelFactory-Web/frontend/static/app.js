@@ -2,12 +2,15 @@ const statusEl = document.getElementById("status");
 const navButtons = document.querySelectorAll(".nav-btn[data-view]");
 const views = document.querySelectorAll(".view");
 const controlPanels = document.querySelectorAll(".view-controls");
+let activeViewName = "start";
+let exportTargetState = "godot";
 
 function setStatus(message) {
   statusEl.textContent = message;
 }
 
 function setView(name) {
+  activeViewName = name;
   navButtons.forEach((btn) => btn.classList.toggle("active", btn.dataset.view === name));
   views.forEach((view) => view.classList.toggle("active", view.id === `${name}View`));
   controlPanels.forEach((panel) => panel.classList.add("hidden"));
@@ -24,6 +27,7 @@ function setView(name) {
     updateExportSelectionStatus();
     refreshExportStatus();
   }
+  updateSelectionBar();
 }
 
 navButtons.forEach((btn) => btn.addEventListener("click", () => setView(btn.dataset.view)));
@@ -648,7 +652,8 @@ function updateSelectionBar(items = selectedAssets()) {
   if (!bar || !countEl || !metaEl) return;
 
   const count = exportSelection.size;
-  bar.classList.toggle("hidden", count === 0);
+  const shouldHide = count === 0 || activeViewName === "exporter";
+  bar.classList.toggle("hidden", shouldHide);
   countEl.textContent = `${count} selected`;
   metaEl.textContent = count ? formatCountSummary(assetCountSummary(items, "type")) : "Shift-click assets to multi-select.";
 }
@@ -820,8 +825,9 @@ function renderMultiSelectionInspector() {
     </section>
 
     <div class="asset-actions multi-actions">
+      ${items.some((asset) => asset.status !== "accepted") ? '<button id="multiAcceptSelectedBtn" type="button">Accept Selected</button>' : ""}
       <button id="multiSendExporterBtn" type="button">Export</button>
-      <button id="multiClearSelectionBtn" type="button">Clear Selection</button>
+      <button id="multiDownloadSelectedBtn" type="button">Download Selected</button>
     </div>
 
     <section class="inspector-section">
@@ -832,8 +838,9 @@ function renderMultiSelectionInspector() {
     </section>
   `;
 
+  document.getElementById("multiAcceptSelectedBtn")?.addEventListener("click", acceptSelectedAssets);
   document.getElementById("multiSendExporterBtn")?.addEventListener("click", () => routeSelectionToExporter());
-  document.getElementById("multiClearSelectionBtn")?.addEventListener("click", clearExportSelection);
+  document.getElementById("multiDownloadSelectedBtn")?.addEventListener("click", downloadSelectedAssets);
 }
 
 function renderGenerationSettings(asset) {
@@ -1019,7 +1026,7 @@ async function sendAssetToPalette(asset) {
 
 
 function exportTargetLabel() {
-  const target = document.getElementById("exportTarget")?.value || selectedExportTarget();
+  const target = selectedExportTarget();
   return target === "aseprite" ? "Aseprite" : "Godot";
 }
 
@@ -1085,10 +1092,9 @@ function renderExportSelectionPanel() {
       ${tagSummary.length ? tagSummary.map(([tag, count]) => `<span>${escapeHtml(tag)} × ${count}</span>`).join("") : ""}
     </div>
 
-    <div class="export-panel-actions">
-      <button id="exportPanelSelectedBtn" type="button" class="pf-primary-action">Export Selected to ${escapeHtml(targetLabel)}</button>
-      <button id="exportPanelAcceptedBtn" type="button">Export All Accepted to ${escapeHtml(targetLabel)}</button>
-      <button id="exportPanelClearBtn" type="button">Clear Selection</button>
+    <div class="export-panel-actions export-panel-actions-clean">
+      <button id="exportPanelSelectedBtn" type="button" class="pf-primary-action">Export to ${escapeHtml(targetLabel)}</button>
+      <button id="exportPanelBrowseAssetsBtn" type="button">Change Selection in Asset Browser</button>
     </div>
   `;
 
@@ -1099,13 +1105,13 @@ function renderExportSelectionPanel() {
     });
   });
   document.getElementById("exportPanelSelectedBtn")?.addEventListener("click", exportSelectedAssets);
-  document.getElementById("exportPanelAcceptedBtn")?.addEventListener("click", exportAcceptedAssets);
-  document.getElementById("exportPanelClearBtn")?.addEventListener("click", clearExportSelectionWithStatus);
+  document.getElementById("exportPanelBrowseAssetsBtn")?.addEventListener("click", () => setView("assets"));
 }
 function applyExportTarget(target = null) {
   if (!target) return;
+  exportTargetState = target === "aseprite" ? "aseprite" : "godot";
   const exporterTarget = document.getElementById("exportTarget");
-  if (exporterTarget) exporterTarget.value = target;
+  if (exporterTarget) exporterTarget.value = exportTargetState;
 }
 
 function routeSelectionToExporter(target = null) {
@@ -1169,7 +1175,7 @@ async function exportAsset(assetId, target) {
 }
 
 function selectedExportTarget() {
-  return document.getElementById("exportTarget")?.value || "godot";
+  return document.getElementById("exportTarget")?.value || exportTargetState || "godot";
 }
 
 async function exportSelectedAssets() {
@@ -1204,7 +1210,7 @@ async function exportSelectedAssets() {
 }
 
 async function exportAcceptedAssets() {
-  const target = document.getElementById("exportTarget")?.value || "godot";
+  const target = selectedExportTarget();
   const btn = document.getElementById("exportAcceptedBtn");
   const panelBtn = document.getElementById("exportPanelAcceptedBtn");
   if (btn) btn.disabled = true;
@@ -1268,14 +1274,11 @@ async function refreshExportStatus() {
 }
 
 document.getElementById("exportSelectedBtn")?.addEventListener("click", exportSelectedAssets);
-document.getElementById("exportAcceptedBtn")?.addEventListener("click", exportAcceptedAssets);
 function clearExportSelectionWithStatus() {
   clearExportSelection();
   setStatus("Selection cleared.");
 }
-document.getElementById("clearSelectedExportsBtn")?.addEventListener("click", clearExportSelectionWithStatus);
 document.getElementById("refreshExportsBtn")?.addEventListener("click", refreshExportStatus);
-document.getElementById("exportTarget")?.addEventListener("change", updateExportSelectionStatus);
 
 async function clearUnsavedCandidates() {
   if (!confirm("Delete all unsaved candidate assets? Accepted and favorited assets are kept.")) return;

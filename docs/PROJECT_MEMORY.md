@@ -378,3 +378,8 @@ Asset Browser should select assets and route them into Exporter.
 Asset Browser should not expose separate direct Godot/Aseprite export actions in the inspector because that duplicates the Exporter panel. The Exporter panel is where export target, selected asset preview, and export action should live.
 
 Palette Lab remains a single-asset workspace for now. Batch Palette Lab processing can come later if needed.
+
+
+## PF-0015.5 Exporter Cleanup
+
+Exporter is the only place where selected assets are actually exported. Asset Browser routes single or multi-selected assets into Exporter. The Exporter panel should stay focused: choose Godot or Aseprite, review the loaded selection, then run one export action. Redundant Export All Accepted and Clear Selection controls should not clutter the main Exporter panel.
