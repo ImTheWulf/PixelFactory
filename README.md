@@ -1,46 +1,28 @@
-# PixelFactoryByWulf
+# Pixel Factory Docs
 
-A modular pixel-art asset production toolkit.
+This `/docs` folder is the single source of truth for Pixel Factory planning, architecture, and project memory.
 
-## Main Direction
+Do not create a second documentation root like `docs/`. If older docs are found there, merge useful information into `/docs` and remove the duplicate folder.
 
-- `PixelFactory-Web/` is the new long-term local web UI.
-- `PixelFactory-Comfy/` stores ComfyUI workflows and model notes.
-- `PixelFactory-App/` is the older PySide prototype kept for reference.
+## Recommended Reading Order
 
-## Start Here
+1. `00_PROJECT_MEMORY.md`
+2. `01_VISION.md`
+3. `02_MANIFESTO.md`
+4. `03_ARCHITECTURE.md`
+5. `04_PIPELINE.md`
+6. `05_RECIPES_AND_PRESETS.md`
+7. `06_TILE_STUDIO.md`
+8. `13_ROADMAP.md`
+9. `14_FEATURES.md`
 
-1. Open `docs/reference/GIT_START_HERE.md` for Git/GitHub notes.
-2. Open `PixelFactory-Web/README.md` to run the new browser-based Palette Lab.
+## Reference / Historical Docs
 
+Older issue and architecture notes have been preserved inside:
 
-## Current Milestone
+- `docs/architecture/`
+- `docs/issues/`
+- `docs/milestones/`
+- `docs/reference/`
 
-PF-0008 Workspace Pipeline: latest generations are placed into a temporary workspace for Palette Lab and future repair/export tools.
-
-## PF-0009 — Universal Image Viewer
-
-- Added shared full-screen image viewer modal.
-- Added Fit / 1:1 / Zoom controls.
-- Added click-to-view behavior for Palette Lab previews, generated images, and asset inspector previews.
-- Fixed Palette Lab preview mode CSS to avoid squashing images.
-
-
-
-## PF-0010.1 Asset State Clarity Patch
-
-- Clear Incoming / Accepted asset badges.
-- Inspector shows current image path, original image path, accepted copy path, and project root.
-- Accepted assets use the accepted copy as their active image.
-- Generated assets keep stable default names.
-- Character generation is locked to safe square sizes: 512, 768, 1024.
-
-## PF-0012.2
-
-Quick favorite toggle and seed UI cleanup.
-
-
-## Documentation
-
-The canonical documentation lives in `/docs`.
-Do not use `docs/`; it was consolidated into `/docs` during PF-0100.
+These are not redundant doc roots. They are archives/reference material inside the canonical `/docs` folder.

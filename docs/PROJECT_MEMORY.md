@@ -57,7 +57,6 @@ Pixel Factory is inspired by tools and workflows like PixelLab, Retro Diffusion,
 - Not a multi-engine exporter.
 - Not a Photoshop clone.
 - Not an everything-app.
-
 ---
 
 ## Current Application Direction
@@ -275,6 +274,14 @@ Supported external tools:
 Nothing else is planned.
 
 Do not add “future export targets” to the roadmap unless the owner requests them.
+
+---
+
+## Archived
+
+Past Archived tools & project:
+
+- PixelFactory-App was an early prototype. It has been moved out of the repo. PixelFactory-Web is the active application.
 
 ---
 
