@@ -35,12 +35,40 @@ Goal:
 
 Focus:
 
-- Start Tile Studio layout.
-- Define top-down tile workflow.
-- Prepare seamless tile generation direction.
-- Prepare variation tile workflow.
-- Keep export focused on Godot and Aseprite only.
+- Create the first Tile Studio UI.
+- Support simple base tile generation.
+- Keep the first version focused and small.
+- Prepare future support for texture-to-tile workflows.
+- Prepare future support for seamless tiles.
+- Prepare future support for tile variations.
+- Send final cleanup work to Palette Lab.
 
+---
+
+### Future Milestones
+
+### Future — Tile Builder
+
+- Generate tilesheets from a base tile.
+- Create variations similar to 2D asset packs.
+- Support 16x16, 32x32, and other pixel asset sizes.
+- Prepare Godot-ready tile exports.
+
+### Future — Terrain Builder
+
+- Generate terrain transitions.
+- Generate paths.
+- Generate water edges.
+- Generate corners, edges, inner corners, and outer corners.
+
+### Future — Structure / Building Generation
+
+- Generate buildings, walls, roofs, windows, doors, bridges, ruins, and related structure pieces.
+
+### Future — Portrait Studio
+
+- Generate NPC portraits for dialogue.
+- Support emotional variants such as neutral, happy, angry, sad, hurt, or surprised.
 ---
 
 ## Completed / Recent

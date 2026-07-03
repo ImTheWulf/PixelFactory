@@ -5,7 +5,59 @@
 Pixel Factory is a **local-first 2D game asset production pipeline**. It is not just an AI image generator and it is not a generic ComfyUI frontend.
 
 The goal is to help a developer create usable 2D game assets, especially pixel-art assets, then process, organize, and export them cleanly into **Godot** and **Aseprite**.
+## Tile Studio Direction
 
+Tile Studio should become a staged production workflow, not just a single image generator.
+
+The long-term Tile Studio flow is:
+
+1. Generate base texture such as sand, stone, grass, dirt, wood, water, etc.
+2. Use that texture to create a usable tile.
+3. Make the tile seamless.
+4. Generate matching variations.
+5. Generate masks, overlays, or terrain pieces when needed.
+6. Clean up in Palette Lab.
+7. Export to Godot or Aseprite.
+
+Tile Studio should eventually support workflows similar to tilesheets and tilemaps found in 2D game asset packs on itch.io.
+---
+
+## Chroma Key / Transparency Direction
+
+Some ComfyUI recipes should intentionally generate assets on a solid chroma key background.
+
+This allows Pixel Factory to remove the background later during Palette Lab or another cleanup stage.
+
+Possible uses:
+
+- props that do not fill the full grid
+- characters
+- trees
+- overlays
+- transparent tile decorations
+- UI icons
+
+The user should not need to manually understand chroma key cleanup. Pixel Factory should handle it as part of the pipeline.
+---
+
+## Palette Lab Direction
+
+Palette Lab is a post-processing and cleanup tool used after generation.
+
+It is inspired by tools like Sprite Fusion Pixel Snapper. Its purpose is not to generate new assets, but to clean and prepare assets for production.
+
+Palette Lab should support things like:
+
+- pixel snapping
+- palette reduction
+- pixel size cleanup
+- nearest-neighbor scaling
+- chroma key removal
+- transparency cleanup
+- edge cleanup
+- final export preparation
+
+Palette Lab is used after Character Studio, Tile Studio, Prop generation, Building generation, or any other generation workflow.
 ---
 
 ## Core Product Identity

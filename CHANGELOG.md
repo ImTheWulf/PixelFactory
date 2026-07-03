@@ -1,3 +1,11 @@
+## PF-0100 — Product Direction Notes
+
+- Clarified Palette Lab as a post-generation cleanup tool.
+- Clarified Tile Studio as a staged texture-to-tile production workflow.
+- Documented chroma key background cleanup as a future pipeline feature.
+- Confirmed presets are broad style controls while recipes are curated generation strategies.
+- Added future direction for Tile Builder, Terrain Builder, Building Generation, and Portrait Studio.
+
 ## PF-0100 — Documentation Consolidation
 
 - Consolidated project documentation into `/docs`.
