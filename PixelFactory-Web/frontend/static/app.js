@@ -770,8 +770,7 @@ function selectAsset(assetId) {
     <div class="asset-actions">
       ${asset.status === "accepted" ? "" : '<button id="acceptAssetBtn">Accept</button>'}
       <button id="favoriteAssetBtn">${asset.favorite ? "Unfavorite" : "Favorite"}</button>
-      <button id="paletteAssetBtn">Palette Lab</button>
-      <button id="workspaceAssetBtn">Set Workspace</button>
+      <button id="paletteAssetBtn">Open in Palette Lab</button>
       <button id="selectForExportAssetBtn">${exportSelection.has(asset.id) ? "Unselect Export" : "Select Export"}</button>
       <button id="exportGodotAssetBtn">Export Godot</button>
       <button id="exportAsepriteAssetBtn">Export Aseprite</button>
@@ -818,7 +817,6 @@ function selectAsset(assetId) {
   document.getElementById("acceptAssetBtn")?.addEventListener("click", () => acceptAsset(asset.id));
   document.getElementById("favoriteAssetBtn")?.addEventListener("click", () => toggleAssetFavorite(asset.id));
   document.getElementById("paletteAssetBtn").addEventListener("click", () => sendAssetToPalette(asset));
-  document.getElementById("workspaceAssetBtn").addEventListener("click", () => setWorkspaceFromAsset(asset));
   document.getElementById("deleteAssetBtn").addEventListener("click", () => deleteAsset(asset.id));
   document.getElementById("selectForExportAssetBtn")?.addEventListener("click", () => toggleExportSelection(asset.id));
   document.getElementById("exportGodotAssetBtn")?.addEventListener("click", () => exportAsset(asset.id, "godot"));
@@ -897,19 +895,15 @@ async function deleteAsset(assetId) {
 }
 
 async function setWorkspaceFromAsset(asset) {
-  const response = await fetch(`/api/workspace/from-asset/${asset.id}`, { method: "POST" });
-  if (!response.ok) {
-    setStatus("Could not set workspace from asset.");
-    return;
-  }
-  await refreshWorkspace();
-  setStatus(`Workspace set to ${assetDisplayName(asset)}.`);
+  // Legacy alias kept for older callers. In the current Pixel Factory flow,
+  // Palette Lab is the active workspace/canvas destination.
+  return sendAssetToPalette(asset);
 }
 
 async function sendAssetToPalette(asset) {
   const response = await fetch(`/api/workspace/from-asset/${asset.id}`, { method: "POST" });
   if (!response.ok) {
-    setStatus("Could not load asset into workspace.");
+    setStatus("Could not open asset in Palette Lab.");
     return;
   }
   await refreshWorkspace();

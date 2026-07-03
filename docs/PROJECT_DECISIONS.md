@@ -89,3 +89,11 @@ Reason.
 
 **Reason:** Favorite is a keep/save signal. A favorited asset should never be removed by candidate cleanup.
 
+## Palette Lab Is the User-Facing Workspace
+
+**Decision:** Asset actions should say **Open in Palette Lab** instead of **Set Workspace**.
+
+**Status:** Accepted
+
+**Reason:** The Workspace service is internal plumbing. In the current application, Palette Lab is the user-facing place where selected assets are opened for post-processing, cleanup, scaling, and future pixel touch-up work.
+

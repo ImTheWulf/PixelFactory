@@ -354,3 +354,20 @@ Pixel Factory now has a Reload UI button in the global top bar near the ComfyUI 
 This button does not restart the backend or ComfyUI. It reloads the browser UI with a cache-busting timestamp so stale frontend JavaScript/CSS is less likely to confuse local testing.
 
 Use Reload UI when a recently patched frontend change does not appear to be running in the browser.
+
+## PF-0014.7 Palette Lab Workspace Routing
+
+Palette Lab is currently the active workspace/canvas destination in Pixel Factory.
+
+The old **Set Workspace** language is too abstract for the current UI. Asset Browser actions should use **Open in Palette Lab** or **Send to Palette Lab** language.
+
+Expected behavior:
+
+1. User selects an asset.
+2. User clicks **Open in Palette Lab**.
+3. Pixel Factory sets that asset as the current workspace internally.
+4. Pixel Factory navigates to Palette Lab.
+5. Palette Lab immediately loads the selected asset.
+
+The backend Workspace service can remain as implementation plumbing, but user-facing UI should treat Palette Lab as the practical editing/touch-up workspace until a separate canvas system exists.
+

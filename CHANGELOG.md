@@ -1,3 +1,10 @@
+## PF-0014.7 — Palette Lab Workspace Routing
+
+- Renamed Asset Browser action from **Set Workspace** to **Open in Palette Lab**.
+- Removed duplicate inspector workspace button.
+- Routed legacy workspace action through the Palette Lab open flow.
+- Updated docs to clarify Palette Lab as the current user-facing workspace/canvas destination.
+
 ## PF-0014.6 — Reload UI Cache Control
 
 - Added a top-bar Reload UI button beside the ComfyUI Check control.
