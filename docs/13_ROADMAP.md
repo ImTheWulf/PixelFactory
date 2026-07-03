@@ -210,3 +210,7 @@ Status: Complete
 - Add top-bar Reload UI button near ComfyUI controls.
 - Use cache-busting reload for local frontend testing.
 - Keep wording clear: Reload UI refreshes the frontend only, not the backend or ComfyUI.
+
+## PF-0016.1 — Palette Lab Workspace Workflow
+
+Status: Added foundation for workspace metadata, dirty state, history, operation stack, and before/after compare.

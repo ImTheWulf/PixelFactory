@@ -121,16 +121,104 @@ const workspaceStatus = document.getElementById("workspaceStatus");
 const paletteAssetSource = document.getElementById("paletteAssetSource");
 const loadPaletteAssetBtn = document.getElementById("loadPaletteAssetBtn");
 const paletteLoadedState = document.getElementById("paletteLoadedState");
+const paletteWorkspaceMeta = document.getElementById("paletteWorkspaceMeta");
+const paletteDirtyState = document.getElementById("paletteDirtyState");
+const paletteHistory = document.getElementById("paletteHistory");
+const paletteComparePanel = document.getElementById("paletteComparePanel");
+const compareSlider = document.getElementById("compareSlider");
+const compareOriginalPreview = document.getElementById("compareOriginalPreview");
+const compareProcessedPreview = document.getElementById("compareProcessedPreview");
+const compareProcessedClip = document.getElementById("compareProcessedClip");
+const compareDivider = document.getElementById("compareDivider");
+const discardPalettePreviewBtn = document.getElementById("discardPalettePreviewBtn");
+const downloadPaletteResultBtn = document.getElementById("downloadPaletteResultBtn");
+const opPaletteCount = document.getElementById("opPaletteCount");
+const opResizeScale = document.getElementById("opResizeScale");
 
 let selectedFile = null;
 let selectedFileSource = null;
 let processedBlobUrl = null;
 let workspace = { has_image: false };
+let paletteDirty = false;
+let paletteHistoryEntries = [];
+let paletteCurrentMeta = { type: "—", status: "Empty", recipe: "—", resolution: "—" };
 
-function updatePaletteLoadedState({ filename = "Untitled image", source = "workspace", detail = "Ready for cleanup" } = {}) {
+function setPaletteDirty(isDirty, label = null) {
+  paletteDirty = Boolean(isDirty);
+  if (!paletteDirtyState) return;
+  paletteDirtyState.classList.toggle("modified", paletteDirty);
+  paletteDirtyState.classList.toggle("saved", !paletteDirty);
+  paletteDirtyState.textContent = label || (paletteDirty ? "● Modified" : "● Saved");
+}
+
+function updatePaletteMeta(meta = {}) {
+  paletteCurrentMeta = { ...paletteCurrentMeta, ...meta };
+  if (!paletteWorkspaceMeta) return;
+  const rows = [
+    ["Type", paletteCurrentMeta.type || "—"],
+    ["Status", paletteCurrentMeta.status || "—"],
+    ["Recipe", paletteCurrentMeta.recipe || "—"],
+    ["Resolution", paletteCurrentMeta.resolution || "—"],
+  ];
+  paletteWorkspaceMeta.innerHTML = rows.map(([label, value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("");
+}
+
+function addPaletteHistory(label, detail = "") {
+  const stamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  paletteHistoryEntries.unshift({ label, detail, stamp });
+  paletteHistoryEntries = paletteHistoryEntries.slice(0, 8);
+  renderPaletteHistory();
+}
+
+function renderPaletteHistory() {
+  if (!paletteHistory) return;
+  if (!paletteHistoryEntries.length) {
+    paletteHistory.innerHTML = "<li>No asset loaded.</li>";
+    return;
+  }
+  paletteHistory.innerHTML = paletteHistoryEntries
+    .map((entry) => `<li><strong>${escapeHtml(entry.label)}</strong><span>${escapeHtml(entry.detail || entry.stamp)}</span></li>`)
+    .join("");
+}
+
+function updateOperationStackLabels() {
+  if (opPaletteCount) opPaletteCount.textContent = `${document.getElementById("paletteColors")?.value || 64} colors`;
+  if (opResizeScale) opResizeScale.textContent = `${document.getElementById("resizeScale")?.value || 2}x`;
+}
+
+function updateCompareSlider() {
+  const value = Number(compareSlider?.value || 50);
+  if (compareProcessedClip) compareProcessedClip.style.clipPath = `inset(0 ${100 - value}% 0 0)`;
+  if (compareDivider) compareDivider.style.left = `${value}%`;
+}
+
+function showPaletteCompare() {
+  if (!paletteComparePanel || !selectedFile || !processedBlobUrl) return;
+  const originalSrc = originalPreview.getAttribute("src");
+  if (compareOriginalPreview && originalSrc) compareOriginalPreview.src = originalSrc;
+  if (compareProcessedPreview) compareProcessedPreview.src = processedBlobUrl;
+  paletteComparePanel.classList.remove("hidden");
+  updateCompareSlider();
+}
+
+function clearPaletteProcessedPreview({ addHistory = false } = {}) {
+  processedPreview.removeAttribute("src");
+  if (processedBlobUrl) URL.revokeObjectURL(processedBlobUrl);
+  processedBlobUrl = null;
+  downloadBtn.disabled = true;
+  if (downloadPaletteResultBtn) downloadPaletteResultBtn.disabled = true;
+  if (discardPalettePreviewBtn) discardPalettePreviewBtn.disabled = true;
+  paletteComparePanel?.classList.add("hidden");
+  setPaletteDirty(false);
+  updatePaletteLoadedState({ filename: selectedFile?.name || "Current Canvas", source: selectedFileSource || "workspace", detail: selectedFile ? "Loaded into Palette Lab" : "No asset loaded" });
+  if (addHistory) addPaletteHistory("Discarded preview", "Returned to original source image");
+}
+
+function updatePaletteLoadedState({ filename = "Untitled image", source = "workspace", detail = "Ready for cleanup", meta = null } = {}) {
   if (!paletteLoadedState) return;
   const sourceLabel = source === "upload" ? "Local upload" : source === "workspace" ? "Workspace asset" : source;
   paletteLoadedState.innerHTML = `<strong>${escapeHtml(filename)}</strong><span>${escapeHtml(sourceLabel)} · ${escapeHtml(detail)}</span>`;
+  if (meta) updatePaletteMeta(meta);
 }
 
 function applyPreviewMode() {
@@ -147,6 +235,12 @@ function applyPreviewMode() {
 }
 
 previewMode?.addEventListener("change", applyPreviewMode);
+compareSlider?.addEventListener("input", updateCompareSlider);
+discardPalettePreviewBtn?.addEventListener("click", () => clearPaletteProcessedPreview({ addHistory: true }));
+downloadPaletteResultBtn?.addEventListener("click", () => downloadBtn?.click());
+document.getElementById("paletteColors")?.addEventListener("change", updateOperationStackLabels);
+document.getElementById("resizeScale")?.addEventListener("change", updateOperationStackLabels);
+updateOperationStackLabels();
 
 async function refreshWorkspace({ quiet = true } = {}) {
   try {
@@ -175,12 +269,18 @@ async function loadImageIntoPaletteFromUrl(url, filename = "workspace.png", sour
   const blob = await response.blob();
   selectedFile = new File([blob], filename, { type: "image/png" });
   selectedFileSource = source;
-  updatePaletteLoadedState({ filename, source, detail: "Loaded into Palette Lab" });
+  updatePaletteLoadedState({ filename, source, detail: "Loaded into Palette Lab", meta: { status: "Saved", resolution: "loading..." } });
   originalPreview.src = `${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}`;
   originalPreview.classList.add("pf-viewable-image");
   originalPreview.dataset.viewerTitle = filename;
   processedPreview.removeAttribute("src");
   downloadBtn.disabled = true;
+  if (downloadPaletteResultBtn) downloadPaletteResultBtn.disabled = true;
+  if (discardPalettePreviewBtn) discardPalettePreviewBtn.disabled = true;
+  paletteComparePanel?.classList.add("hidden");
+  setPaletteDirty(false);
+  addPaletteHistory("Loaded asset", filename);
+  originalPreview.onload = () => updatePaletteMeta({ resolution: `${originalPreview.naturalWidth} × ${originalPreview.naturalHeight}` });
   applyPreviewMode();
 }
 
@@ -247,12 +347,18 @@ imageInput.addEventListener("change", () => {
   if (!file) return;
   selectedFile = file;
   selectedFileSource = "upload";
-  updatePaletteLoadedState({ filename: file.name, source: "upload", detail: "Loaded into Palette Lab" });
+  updatePaletteLoadedState({ filename: file.name, source: "upload", detail: "Loaded into Palette Lab", meta: { type: "Upload", status: "Saved", recipe: "Manual", resolution: "loading..." } });
   originalPreview.src = URL.createObjectURL(file);
   originalPreview.classList.add("pf-viewable-image");
   originalPreview.dataset.viewerTitle = file.name;
   processedPreview.removeAttribute("src");
   downloadBtn.disabled = true;
+  if (downloadPaletteResultBtn) downloadPaletteResultBtn.disabled = true;
+  if (discardPalettePreviewBtn) discardPalettePreviewBtn.disabled = true;
+  paletteComparePanel?.classList.add("hidden");
+  setPaletteDirty(false);
+  addPaletteHistory("Loaded upload", file.name);
+  originalPreview.onload = () => updatePaletteMeta({ resolution: `${originalPreview.naturalWidth} × ${originalPreview.naturalHeight}` });
   applyPreviewMode();
   setStatus(`Loaded ${file.name}`);
 });
@@ -283,7 +389,13 @@ processBtn.addEventListener("click", async () => {
     processedPreview.dataset.viewerTitle = "Processed preview";
     applyPreviewMode();
     downloadBtn.disabled = false;
+    if (downloadPaletteResultBtn) downloadPaletteResultBtn.disabled = false;
+    if (discardPalettePreviewBtn) discardPalettePreviewBtn.disabled = false;
+    setPaletteDirty(true);
+    showPaletteCompare();
+    const operationLabel = document.getElementById("operation")?.selectedOptions?.[0]?.textContent || "Process";
     updatePaletteLoadedState({ filename: selectedFile?.name || "Processed preview", source: selectedFileSource || "workspace", detail: "Processed preview ready" });
+    addPaletteHistory("Processed preview", operationLabel);
     setStatus("Processed preview ready.");
   } catch (err) {
     setStatus(`Error: ${err.message}`);
@@ -300,6 +412,7 @@ downloadBtn.addEventListener("click", () => {
   document.body.appendChild(a);
   a.click();
   a.remove();
+  addPaletteHistory("Downloaded result", "pixel_factory_processed.png");
 });
 
 // Character Studio
@@ -1148,6 +1261,12 @@ async function sendAssetToPalette(asset) {
   }
   await refreshWorkspace();
   await loadWorkspaceIntoPalette();
+  updatePaletteMeta({
+    type: asset.type || "asset",
+    status: assetStatusLabel(asset),
+    recipe: asset.recipe || asset.recipe_id || asset.generation?.recipe || "—",
+  });
+  addPaletteHistory("Opened from Asset Browser", assetDisplayName(asset));
   setStatus(`Opened ${assetDisplayName(asset)} in Palette Lab.`);
 }
 

@@ -2091,3 +2091,189 @@ select option:hover {
     min-width: 0;
   }
 }
+
+/* PF-0016.1 Palette Lab workspace workflow */
+.palette-active-main {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.palette-active-side {
+  display: grid;
+  gap: 10px;
+  min-width: 320px;
+}
+
+.palette-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.palette-meta-grid div,
+.palette-operation-stack label,
+.palette-history-list li {
+  background: rgba(3, 7, 12, .58);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.palette-meta-grid div {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+}
+
+.palette-meta-grid span,
+.palette-operation-stack span,
+.palette-operation-stack em,
+.palette-history-list span {
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+}
+
+.palette-meta-grid strong {
+  color: var(--text);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.palette-dirty-state {
+  justify-self: end;
+  width: fit-content;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.08);
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: .02em;
+}
+
+.palette-dirty-state.saved {
+  color: #9bd7ff;
+  background: rgba(59, 130, 246, .12);
+  border-color: rgba(59, 130, 246, .24);
+}
+
+.palette-dirty-state.modified {
+  color: #f8d777;
+  background: rgba(245, 158, 11, .12);
+  border-color: rgba(245, 158, 11, .28);
+}
+
+.palette-compare-card {
+  min-height: auto;
+}
+
+.palette-compare-shell {
+  display: grid;
+  gap: 12px;
+}
+
+.palette-compare-stage {
+  position: relative;
+  height: min(58vh, 560px);
+  min-height: 320px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #06090e;
+}
+
+.palette-compare-stage img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.palette-compare-processed {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.palette-compare-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(96, 165, 250, .95);
+  box-shadow: 0 0 18px rgba(96, 165, 250, .45);
+  transform: translateX(-1px);
+  pointer-events: none;
+}
+
+#compareSlider {
+  width: 100%;
+}
+
+.palette-workflow-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr);
+  gap: 18px;
+}
+
+.palette-operation-card,
+.palette-history-card {
+  min-height: auto;
+}
+
+.palette-operation-stack {
+  display: grid;
+  gap: 8px;
+}
+
+.palette-operation-stack label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  color: var(--text);
+  font-weight: 750;
+}
+
+.palette-operation-stack input {
+  margin-right: 8px;
+}
+
+.palette-history-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.palette-history-list li {
+  padding: 10px 12px;
+  display: grid;
+  gap: 3px;
+}
+
+.palette-history-list strong {
+  color: var(--text);
+  font-size: 13px;
+}
+
+@media (max-width: 1180px) {
+  .palette-meta-grid,
+  .palette-workflow-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .palette-active-side {
+    min-width: 0;
+  }
+
+  .palette-dirty-state {
+    justify-self: start;
+  }
+}

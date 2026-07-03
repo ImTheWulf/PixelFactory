@@ -1,3 +1,13 @@
+
+## PF-0016.1 — Palette Lab Workspace Workflow
+
+- Added current workspace metadata cards for type, status, recipe, and resolution.
+- Added saved/modified dirty state for Palette Lab previews.
+- Added Palette Lab history list for load/process/download/discard actions.
+- Added an operation stack foundation for palette reduction, resize, and future cleanup tools.
+- Added before/after compare panel with slider after processing.
+- Added Download Result and Discard Preview workspace actions.
+
 ## PF-0016 — Palette Lab Workspace Foundation
 
 - Upgraded Palette Lab into a clearer workspace/canvas foundation.

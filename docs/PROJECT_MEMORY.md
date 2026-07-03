@@ -383,3 +383,16 @@ Palette Lab remains a single-asset workspace for now. Batch Palette Lab processi
 ## PF-0015.5 Exporter Cleanup
 
 Exporter is the only place where selected assets are actually exported. Asset Browser routes single or multi-selected assets into Exporter. The Exporter panel should stay focused: choose Godot or Aseprite, review the loaded selection, then run one export action. Redundant Export All Accepted and Clear Selection controls should not clutter the main Exporter panel.
+
+## PF-0016.1 Palette Lab Workspace Workflow
+
+Palette Lab now has a stronger workspace/editor foundation:
+
+- current canvas metadata
+- saved/modified state
+- operation stack
+- history list
+- before/after compare slider
+- discard/download result actions
+
+This continues the direction that Palette Lab is the user-facing workspace/canvas for post-generation cleanup.

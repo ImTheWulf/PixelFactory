@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0016_palette_lab_workspace" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0016_1_palette_workspace_workflow" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.16 · PF-0016</div>
+          <div class="subtitle">by Wulf · Web v0.16 · PF-0016.1</div>
         </div>
       </div>
 
@@ -265,14 +265,27 @@
 
         <section class="palette-workspace-layout">
           <div class="preview-card palette-active-card">
-            <div>
-              <div class="eyebrow">Loaded Asset</div>
+            <div class="palette-active-main">
+              <div class="eyebrow">Current Workspace</div>
               <h2>Current Canvas</h2>
               <p id="paletteLoadedState">No asset loaded yet. Open an asset from Asset Browser or load the current workspace.</p>
+              <div id="paletteWorkspaceMeta" class="palette-meta-grid">
+                <div><span>Type</span><strong>—</strong></div>
+                <div><span>Status</span><strong>Empty</strong></div>
+                <div><span>Recipe</span><strong>—</strong></div>
+                <div><span>Resolution</span><strong>—</strong></div>
+              </div>
             </div>
-            <div class="palette-active-actions">
-              <button type="button" data-start-view="assets">Browse Assets</button>
-              <button type="button" data-start-view="tile" class="pf-primary-action">New Tile</button>
+            <div class="palette-active-side">
+              <div id="paletteDirtyState" class="palette-dirty-state saved">● Saved</div>
+              <div class="palette-active-actions">
+                <button type="button" data-start-view="assets">Browse Assets</button>
+                <button type="button" data-start-view="tile" class="pf-primary-action">New Tile</button>
+              </div>
+              <div class="palette-active-actions">
+                <button type="button" id="discardPalettePreviewBtn" disabled>Discard Preview</button>
+                <button type="button" id="downloadPaletteResultBtn" disabled class="pf-primary-action">Download Result</button>
+              </div>
             </div>
           </div>
 
@@ -293,10 +306,50 @@
             </div>
           </section>
 
+          <section id="paletteComparePanel" class="preview-card palette-compare-card hidden">
+            <div class="section-title-row">
+              <h2>Before / After Compare</h2>
+              <span class="palette-panel-hint">Drag slider to compare source and processed output</span>
+            </div>
+            <div class="palette-compare-shell">
+              <div class="palette-compare-stage">
+                <img id="compareOriginalPreview" alt="Compare original" />
+                <div id="compareProcessedClip" class="palette-compare-processed"><img id="compareProcessedPreview" alt="Compare processed" /></div>
+                <div id="compareDivider" class="palette-compare-divider"></div>
+              </div>
+              <input id="compareSlider" type="range" min="0" max="100" value="50" />
+            </div>
+          </section>
+
+          <section class="palette-workflow-grid">
+            <div class="preview-card palette-operation-card">
+              <div class="section-title-row">
+                <h2>Operation Stack</h2>
+                <span class="palette-panel-hint">Current processing plan</span>
+              </div>
+              <div id="paletteOperationStack" class="palette-operation-stack">
+                <label><input type="checkbox" checked disabled /> Palette reduction <span id="opPaletteCount">64 colors</span></label>
+                <label><input type="checkbox" checked disabled /> Nearest-neighbor resize <span id="opResizeScale">2x</span></label>
+                <label><input type="checkbox" disabled /> Pixel Snap <em>coming</em></label>
+                <label><input type="checkbox" disabled /> Chroma Key <em>coming</em></label>
+              </div>
+            </div>
+
+            <div class="preview-card palette-history-card">
+              <div class="section-title-row">
+                <h2>History</h2>
+                <span class="palette-panel-hint">Workspace actions</span>
+              </div>
+              <ol id="paletteHistory" class="palette-history-list">
+                <li>No asset loaded.</li>
+              </ol>
+            </div>
+          </section>
+
           <section class="preview-card palette-tool-dock">
             <div class="section-title-row">
               <h2>Cleanup Tools</h2>
-              <span class="palette-panel-hint">PF-0016 foundation</span>
+              <span class="palette-panel-hint">Workspace repair tools</span>
             </div>
             <div class="palette-tool-grid">
               <button type="button" class="palette-tool-card" disabled><strong>Pixel Snap</strong><span>Future pixel-size cleanup.</span></button>
@@ -437,6 +490,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0016_palette_lab_workspace"></script>
+  <script src="/static/app.js?v=pf0016_1_palette_workspace_workflow"></script>
 </body>
 </html>
