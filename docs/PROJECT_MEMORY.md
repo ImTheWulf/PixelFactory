@@ -77,6 +77,27 @@ The next major direction is **Tile Studio**, especially top-down seamless tile g
 
 ---
 
+## Current Repository Structure
+
+PixelFactory-Web is the active application.
+
+PixelFactory-App was an early prototype and is no longer part of active development. It may remain archived only as historical reference.
+
+The active repository structure is:
+
+- docs/
+- PixelFactory-Web/
+- PixelFactory-Comfy/
+- PixelFactory-Presets/
+- PixelFactory-Projects/
+- tools/
+- _PixelFactory_Archive/
+- CHANGELOG.md
+- README.md
+
+The `/docs` folder is the only source of truth for project documentation.
+
+---
 ## Current Pipeline Understanding
 
 ### 1. Generation

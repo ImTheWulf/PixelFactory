@@ -1,27 +1,27 @@
-# PROJECT DECISIONS
+## PF-0100 Documentation Source of Truth
 
-2026
+**Decision:** `/docs` is the only active documentation folder.
 
-Godot only.
+**Status:** Accepted
 
-Reason.
+**Reason:** Splitting documentation between `/docs` and `PixelFactory-Docs` caused confusion and duplicated context. All project memory, roadmap, architecture, design rules, and milestone notes should now live inside `/docs`.
 
-----------
+---
 
-Comfy hidden.
+## PixelFactory-Web Is the Active App
 
-Reason.
+**Decision:** PixelFactory-Web is the active implementation.
 
-----------
+**Status:** Accepted
 
-Recipes execute.
+**Reason:** PixelFactory-App was only a prototype. The working product direction has moved into PixelFactory-Web.
 
-Presets configure.
+---
 
-Reason.
+## Export Targets Are Limited
 
-----------
+**Decision:** Pixel Factory only supports Godot and Aseprite export targets.
 
-Workspace is temporary.
+**Status:** Accepted
 
-Reason.
+**Reason:** The project is built around the user’s actual 2D game development workflow, not broad engine support.

@@ -1,7 +1,20 @@
 # 13 — Roadmap
 
 > This is the active planning document for Pixel Factory. It should stay focused and should not become a random wishlist.
+## Current Milestone
 
+### PF-0100 — Documentation Consolidation
+
+**Status:** In Progress
+
+Goals:
+
+- Make `/docs` the only documentation source of truth.
+- Remove redundant documentation folders.
+- Clarify PixelFactory-Web as the active app.
+- Clarify PixelFactory-App as archived prototype/reference.
+- Define hard rules for export targets.
+- Prepare the project for Tile Studio planning.
 ---
 
 ## Current Milestone: PF-0100 Documentation Consolidation
@@ -14,6 +27,19 @@ Goal:
 - Clarify long-term product direction.
 - Clarify recipes vs presets.
 - Clarify Godot + Aseprite only export scope.
+
+---
+## Next Planned Milestone
+
+### PF-0014 — Tile Studio Foundation
+
+Focus:
+
+- Start Tile Studio layout.
+- Define top-down tile workflow.
+- Prepare seamless tile generation direction.
+- Prepare variation tile workflow.
+- Keep export focused on Godot and Aseprite only.
 
 ---
 

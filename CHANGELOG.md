@@ -1,3 +1,12 @@
+## PF-0100 — Documentation Consolidation
+
+- Consolidated project documentation into `/docs`.
+- Removed `PixelFactory-Docs` as a separate documentation source.
+- Confirmed `PixelFactory-Web` as the active application.
+- Archived `PixelFactory-App` as prototype/reference only.
+- Confirmed Godot and Aseprite as the only export targets.
+- Established `/docs` as the project source of truth.
+
 ## PF-0013.3c - Selected Export UI Cleanup
 
 - Fixed export checkbox click propagation so selection stays visible after card interactions.
