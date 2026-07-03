@@ -1960,3 +1960,134 @@ select option:hover {
   max-width: 460px;
   width: 100%;
 }
+
+
+/* PF-0016 Palette Lab workspace foundation */
+.palette-workspace-layout {
+  padding: 24px 32px 32px;
+  display: grid;
+  gap: 18px;
+}
+
+.palette-active-card {
+  min-height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.palette-active-card h2 {
+  margin: 0 0 6px;
+  color: var(--text);
+  font-size: 22px;
+  letter-spacing: -.025em;
+}
+
+#paletteLoadedState {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  color: var(--muted);
+}
+
+#paletteLoadedState strong {
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+#paletteLoadedState span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.palette-active-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 280px;
+}
+
+.palette-active-actions button {
+  flex: 1;
+}
+
+.palette-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(320px, 1fr));
+  gap: 18px;
+}
+
+.palette-preview-card {
+  min-height: 520px;
+}
+
+.palette-viewport {
+  height: min(62vh, 620px);
+  min-height: 360px;
+  background:
+    linear-gradient(45deg, rgba(255,255,255,.025) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255,255,255,.025) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(255,255,255,.025) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(255,255,255,.025) 75%),
+    #070a0f;
+  background-size: 22px 22px;
+  background-position: 0 0, 0 11px, 11px -11px, -11px 0;
+}
+
+.palette-panel-hint {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.palette-tool-dock {
+  min-height: auto;
+}
+
+.palette-tool-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.palette-tool-card {
+  min-height: 86px;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 5px;
+  text-align: left;
+  opacity: .78;
+}
+
+.palette-tool-card strong {
+  color: var(--text);
+}
+
+.palette-tool-card span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+#paletteControls .file-label,
+#paletteControls button {
+  min-height: 40px;
+}
+
+@media (max-width: 1180px) {
+  .palette-preview-grid,
+  .palette-tool-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .palette-active-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .palette-active-actions {
+    width: 100%;
+    min-width: 0;
+  }
+}

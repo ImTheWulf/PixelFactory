@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0015_10_viewer_selection_controls" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0016_palette_lab_workspace" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.15 · PF-0015.10</div>
+          <div class="subtitle">by Wulf · Web v0.16 · PF-0016</div>
         </div>
       </div>
 
@@ -255,20 +255,56 @@
       </section>
 
       <section id="paletteView" class="view">
-        <header class="topbar">
-          <h1>Palette Lab</h1>
-          <p>Deterministic cleanup tools. No diffusion. No hallucination.</p>
+        <header class="topbar pf-page-hero">
+          <div>
+            <div class="eyebrow">Pixel Workspace</div>
+            <h1>Palette Lab</h1>
+            <p>Post-generation pixel cleanup workspace. Snap, reduce, repair, preview, then download or export the clean result.</p>
+          </div>
         </header>
 
-        <section class="preview-grid">
-          <div class="preview-card">
-            <h2>Original</h2>
-            <div class="viewport"><img id="originalPreview" alt="Original preview" /></div>
+        <section class="palette-workspace-layout">
+          <div class="preview-card palette-active-card">
+            <div>
+              <div class="eyebrow">Loaded Asset</div>
+              <h2>Current Canvas</h2>
+              <p id="paletteLoadedState">No asset loaded yet. Open an asset from Asset Browser or load the current workspace.</p>
+            </div>
+            <div class="palette-active-actions">
+              <button type="button" data-start-view="assets">Browse Assets</button>
+              <button type="button" data-start-view="tile" class="pf-primary-action">New Tile</button>
+            </div>
           </div>
-          <div class="preview-card">
-            <h2>Processed</h2>
-            <div class="viewport"><img id="processedPreview" alt="Processed preview" /></div>
-          </div>
+
+          <section class="palette-preview-grid">
+            <div class="preview-card palette-preview-card">
+              <div class="section-title-row">
+                <h2>Original</h2>
+                <span class="palette-panel-hint">Source image</span>
+              </div>
+              <div class="viewport palette-viewport"><img id="originalPreview" alt="Original preview" /></div>
+            </div>
+            <div class="preview-card palette-preview-card">
+              <div class="section-title-row">
+                <h2>Processed</h2>
+                <span class="palette-panel-hint">Output preview</span>
+              </div>
+              <div class="viewport palette-viewport"><img id="processedPreview" alt="Processed preview" /></div>
+            </div>
+          </section>
+
+          <section class="preview-card palette-tool-dock">
+            <div class="section-title-row">
+              <h2>Cleanup Tools</h2>
+              <span class="palette-panel-hint">PF-0016 foundation</span>
+            </div>
+            <div class="palette-tool-grid">
+              <button type="button" class="palette-tool-card" disabled><strong>Pixel Snap</strong><span>Future pixel-size cleanup.</span></button>
+              <button type="button" class="palette-tool-card" disabled><strong>Repair Bench</strong><span>Future one-click artifact cleanup.</span></button>
+              <button type="button" class="palette-tool-card" disabled><strong>Chroma Key</strong><span>Future solid-background removal.</span></button>
+              <button type="button" class="palette-tool-card" disabled><strong>Edge Cleanup</strong><span>Future transparent-edge polish.</span></button>
+            </div>
+          </section>
         </section>
       </section>
 
@@ -401,6 +437,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0015_10_viewer_selection_controls"></script>
+  <script src="/static/app.js?v=pf0016_palette_lab_workspace"></script>
 </body>
 </html>

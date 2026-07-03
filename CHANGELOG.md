@@ -1,3 +1,11 @@
+## PF-0016 — Palette Lab Workspace Foundation
+
+- Upgraded Palette Lab into a clearer workspace/canvas foundation.
+- Added loaded asset state inside Palette Lab.
+- Added Palette Lab workspace action card with Browse Assets and New Tile shortcuts.
+- Added cleanup tool dock for future Pixel Snap, Repair Bench, Chroma Key, and Edge Cleanup.
+- Polished original/processed preview panels for workspace use.
+
 ## PF-0015.10 — Viewer and Selection Controls
 
 - Empty Asset Browser space now clears the active selection.

@@ -120,11 +120,18 @@ const loadWorkspaceBtn = document.getElementById("loadWorkspaceBtn");
 const workspaceStatus = document.getElementById("workspaceStatus");
 const paletteAssetSource = document.getElementById("paletteAssetSource");
 const loadPaletteAssetBtn = document.getElementById("loadPaletteAssetBtn");
+const paletteLoadedState = document.getElementById("paletteLoadedState");
 
 let selectedFile = null;
 let selectedFileSource = null;
 let processedBlobUrl = null;
 let workspace = { has_image: false };
+
+function updatePaletteLoadedState({ filename = "Untitled image", source = "workspace", detail = "Ready for cleanup" } = {}) {
+  if (!paletteLoadedState) return;
+  const sourceLabel = source === "upload" ? "Local upload" : source === "workspace" ? "Workspace asset" : source;
+  paletteLoadedState.innerHTML = `<strong>${escapeHtml(filename)}</strong><span>${escapeHtml(sourceLabel)} · ${escapeHtml(detail)}</span>`;
+}
 
 function applyPreviewMode() {
   const mode = previewMode?.value || "fit";
@@ -168,6 +175,7 @@ async function loadImageIntoPaletteFromUrl(url, filename = "workspace.png", sour
   const blob = await response.blob();
   selectedFile = new File([blob], filename, { type: "image/png" });
   selectedFileSource = source;
+  updatePaletteLoadedState({ filename, source, detail: "Loaded into Palette Lab" });
   originalPreview.src = `${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}`;
   originalPreview.classList.add("pf-viewable-image");
   originalPreview.dataset.viewerTitle = filename;
@@ -239,6 +247,7 @@ imageInput.addEventListener("change", () => {
   if (!file) return;
   selectedFile = file;
   selectedFileSource = "upload";
+  updatePaletteLoadedState({ filename: file.name, source: "upload", detail: "Loaded into Palette Lab" });
   originalPreview.src = URL.createObjectURL(file);
   originalPreview.classList.add("pf-viewable-image");
   originalPreview.dataset.viewerTitle = file.name;
@@ -274,6 +283,7 @@ processBtn.addEventListener("click", async () => {
     processedPreview.dataset.viewerTitle = "Processed preview";
     applyPreviewMode();
     downloadBtn.disabled = false;
+    updatePaletteLoadedState({ filename: selectedFile?.name || "Processed preview", source: selectedFileSource || "workspace", detail: "Processed preview ready" });
     setStatus("Processed preview ready.");
   } catch (err) {
     setStatus(`Error: ${err.message}`);
