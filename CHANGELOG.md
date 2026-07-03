@@ -1,3 +1,10 @@
+## PF-0015.10 — Viewer and Selection Controls
+
+- Empty Asset Browser space now clears the active selection.
+- Image viewer now supports Download All for multi-image collections.
+- Shift + mouse wheel now moves previous/next through selected viewer images.
+- Updated cache-buster and version label.
+
 ## PF-0015.9 — Multi-select Action Polish
 
 - Standardized multi-select inspector action button sizing.

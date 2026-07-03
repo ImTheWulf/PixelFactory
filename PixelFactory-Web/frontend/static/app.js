@@ -685,6 +685,20 @@ function updateSelectionBar(items = selectedAssets()) {
   metaEl.textContent = count ? formatCountSummary(assetCountSummary(items, "type")) : "Shift-click assets to multi-select.";
 }
 
+function clearAssetSelection({ status = "Selection cleared.", rerender = true } = {}) {
+  exportSelection.clear();
+  selectedAssetId = null;
+  updateExportSelectionStatus();
+  if (rerender) {
+    renderAssets();
+    if (assetInspector) {
+      assetInspector.className = "asset-inspector empty";
+      assetInspector.textContent = "Select an asset.";
+    }
+  }
+  if (status) setStatus(status);
+}
+
 function updateExportSelectionStatus() {
   const count = exportSelection.size;
   const label = `Export selection: ${count}`;
@@ -725,6 +739,12 @@ assetGrid?.addEventListener("click", async (event) => {
   const assetId = favoriteButton.dataset.assetId || card?.dataset.assetId;
   if (!assetId) return;
   await toggleAssetFavorite(assetId);
+});
+
+assetGrid?.addEventListener("click", (event) => {
+  // Clicking empty grid space exits selection mode. Cards and card controls manage their own clicks.
+  if (event.target.closest(".asset-card")) return;
+  clearAssetSelection({ status: "Selection cleared." });
 });
 
 function assetStatusQuery() {
@@ -1416,7 +1436,7 @@ async function clearUnsavedCandidates() {
 
 refreshAssetsBtn?.addEventListener("click", () => loadAssets());
 document.getElementById("selectionBarViewBtn")?.addEventListener("click", () => openSelectedImageViewer(0));
-document.getElementById("selectionBarClearBtn")?.addEventListener("click", clearExportSelection);
+document.getElementById("selectionBarClearBtn")?.addEventListener("click", () => clearAssetSelection({ status: "Selection cleared." }));
 document.getElementById("selectionBarExporterBtn")?.addEventListener("click", () => routeSelectionToExporter());
 
 assetFilter?.addEventListener("change", () => loadAssets());
@@ -1433,6 +1453,7 @@ const imageViewerStage = document.getElementById("imageViewerStage");
 const imageViewerTitle = document.getElementById("imageViewerTitle");
 const imageViewerMeta = document.getElementById("imageViewerMeta");
 const viewerDownloadLink = document.getElementById("viewerDownloadLink");
+const viewerDownloadAllBtn = document.getElementById("viewerDownloadAllBtn");
 const viewerCloseBtn = document.getElementById("viewerCloseBtn");
 const viewerFitBtn = document.getElementById("viewerFitBtn");
 const viewerActualBtn = document.getElementById("viewerActualBtn");
@@ -1503,6 +1524,10 @@ function renderViewerStrip() {
   }
   if (viewerPrevBtn) viewerPrevBtn.disabled = !hasCollection;
   if (viewerNextBtn) viewerNextBtn.disabled = !hasCollection;
+  if (viewerDownloadAllBtn) {
+    viewerDownloadAllBtn.disabled = !hasCollection;
+    viewerDownloadAllBtn.classList.toggle("hidden", !hasCollection);
+  }
 }
 
 function showViewerItem(index) {
@@ -1537,6 +1562,21 @@ function openSelectedImageViewer(index = 0) {
   openImageViewer(collection[index]?.src || collection[0].src, collection[index]?.title || collection[0].title, collection, index);
 }
 
+function downloadViewerCollection() {
+  if (!viewerCollection.length) return;
+  viewerCollection.forEach((item, index) => {
+    setTimeout(() => {
+      const link = document.createElement("a");
+      link.href = item.src;
+      link.download = `${(item.title || "pixel_factory_image").replace(/[^a-z0-9_\-]+/gi, "_")}.png`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    }, index * 120);
+  });
+  setStatus(`Downloading ${viewerCollection.length} image(s).`);
+}
+
 function closeImageViewer() {
   if (!imageViewerModal) return;
   imageViewerModal.classList.add("hidden");
@@ -1560,6 +1600,7 @@ function setViewerFit() {
 }
 
 viewerCloseBtn?.addEventListener("click", closeImageViewer);
+viewerDownloadAllBtn?.addEventListener("click", downloadViewerCollection);
 document.querySelector("[data-viewer-close]")?.addEventListener("click", closeImageViewer);
 viewerFitBtn?.addEventListener("click", setViewerFit);
 viewerActualBtn?.addEventListener("click", () => setViewerActual(1));
@@ -1568,9 +1609,21 @@ viewerZoomOutBtn?.addEventListener("click", () => setViewerActual(viewerZoom / 1
 viewerPrevBtn?.addEventListener("click", () => showViewerItem(viewerIndex - 1));
 viewerNextBtn?.addEventListener("click", () => showViewerItem(viewerIndex + 1));
 
+let viewerWheelNavAt = 0;
 imageViewerStage?.addEventListener("wheel", (event) => {
   if (!imageViewerImage?.src) return;
   event.preventDefault();
+
+  // Shift + mouse wheel navigates the active selected image collection.
+  if (event.shiftKey && viewerCollection.length > 1) {
+    const now = Date.now();
+    if (now - viewerWheelNavAt > 180) {
+      viewerWheelNavAt = now;
+      showViewerItem(viewerIndex + (event.deltaY > 0 ? 1 : -1));
+    }
+    return;
+  }
+
   const direction = event.deltaY < 0 ? 1.15 : 1 / 1.15;
   setViewerActual((viewerMode === "fit" ? 1 : viewerZoom) * direction, { center: viewerMode === "fit" });
 }, { passive: false });
