@@ -1,3 +1,11 @@
+## PF-0015.1 — Export Routing and UI Control Polish
+
+- Routed asset inspector export actions into the Exporter instead of exporting immediately.
+- Selecting Godot or Aseprite export setup now loads the asset into the Exporter with the selected target.
+- Improved dropdown/select contrast for dark theme consistency.
+- Moved Repair Bench direction under Palette Lab as a future one-click repair/cleanup tool.
+- Updated version label to PF-0015.1.
+
 ## PF-0015 — Global Design Foundation
 
 - Added Start screen as the default application landing view.

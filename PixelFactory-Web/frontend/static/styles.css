@@ -1385,3 +1385,38 @@ button:hover, .asset-actions a:hover {
   .start-layout { grid-template-columns: 1fr; }
   .start-hero-card { grid-row: auto; min-height: 360px; }
 }
+
+
+/* PF-0015.1 export routing + control polish */
+select {
+  color: var(--text);
+  background-color: var(--panel-2);
+  color-scheme: dark;
+}
+
+select option {
+  color: #eef5ff;
+  background: #1b2029;
+}
+
+select option:checked,
+select option:hover {
+  color: #ffffff;
+  background: #243248;
+}
+
+.pf-inline-muted {
+  border-color: rgba(77, 163, 255, .22);
+  color: var(--muted);
+  background: rgba(11, 13, 17, .75);
+  cursor: not-allowed;
+}
+
+.export-route-btn {
+  border-color: rgba(77, 163, 255, .38);
+  color: #d6ebff;
+}
+
+.export-route-btn:hover {
+  border-color: var(--accent);
+}

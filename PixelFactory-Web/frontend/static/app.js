@@ -779,8 +779,9 @@ function selectAsset(assetId) {
       <button id="favoriteAssetBtn">${asset.favorite ? "Unfavorite" : "Favorite"}</button>
       <button id="paletteAssetBtn">Open in Palette Lab</button>
       <button id="selectForExportAssetBtn">${exportSelection.has(asset.id) ? "Unselect Export" : "Select Export"}</button>
-      <button id="exportGodotAssetBtn">Export Godot</button>
-      <button id="exportAsepriteAssetBtn">Export Aseprite</button>
+      <button id="sendToExporterBtn" class="export-route-btn">Send to Exporter</button>
+      <button id="sendToGodotExporterBtn" class="export-route-btn">Godot Export Setup</button>
+      <button id="sendToAsepriteExporterBtn" class="export-route-btn">Aseprite Export Setup</button>
       <a href="${asset.image_url}" download="${escapeHtml(asset.name)}.png">Download</a>
       <button id="deleteAssetBtn">Delete</button>
     </div>
@@ -826,8 +827,9 @@ function selectAsset(assetId) {
   document.getElementById("paletteAssetBtn")?.addEventListener("click", () => sendAssetToPalette(asset));
   document.getElementById("deleteAssetBtn").addEventListener("click", () => deleteAsset(asset.id));
   document.getElementById("selectForExportAssetBtn")?.addEventListener("click", () => toggleExportSelection(asset.id));
-  document.getElementById("exportGodotAssetBtn")?.addEventListener("click", () => exportAsset(asset.id, "godot"));
-  document.getElementById("exportAsepriteAssetBtn")?.addEventListener("click", () => exportAsset(asset.id, "aseprite"));
+  document.getElementById("sendToExporterBtn")?.addEventListener("click", () => routeAssetToExporter(asset.id));
+  document.getElementById("sendToGodotExporterBtn")?.addEventListener("click", () => routeAssetToExporter(asset.id, "godot"));
+  document.getElementById("sendToAsepriteExporterBtn")?.addEventListener("click", () => routeAssetToExporter(asset.id, "aseprite"));
   document.getElementById("saveAssetMetadataBtn")?.addEventListener("click", () => updateAssetMetadata(asset.id, {
     name: document.getElementById("assetNameInput")?.value || displayName,
     tags: document.getElementById("assetTagsInput")?.value || "",
@@ -920,6 +922,29 @@ async function sendAssetToPalette(asset) {
   await refreshWorkspace();
   await loadWorkspaceIntoPalette();
   setStatus(`Opened ${assetDisplayName(asset)} in Palette Lab.`);
+}
+
+
+
+function routeAssetToExporter(assetId, target = null) {
+  if (!assetId) {
+    setStatus("Select an asset before opening the Exporter.");
+    return;
+  }
+
+  exportSelection.clear();
+  exportSelection.add(assetId);
+
+  if (target) {
+    const sidebarTarget = document.getElementById("assetExportTarget");
+    const exporterTarget = document.getElementById("exportTarget");
+    if (sidebarTarget) sidebarTarget.value = target;
+    if (exporterTarget) exporterTarget.value = target;
+  }
+
+  updateExportSelectionStatus();
+  setView("exporter");
+  setStatus(`Loaded 1 asset into Exporter${target ? ` for ${target}` : ""}.`);
 }
 
 
