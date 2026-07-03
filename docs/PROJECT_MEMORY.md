@@ -347,11 +347,10 @@ The target direction applies to the whole app:
 
 PF-0014.3 also fixes candidate cleanup behavior. Clear Unsaved Candidates should delete only unsaved candidate assets, keep accepted/favorited assets, refresh the browser, and clear stale workspace state if the workspace came from a deleted candidate.
 
-## PF-0014.5 Candidate Flow Note
+## PF-0014.6 Reload UI Cache Control
 
-Candidate cleanup must remove generated assets that are not Accepted and not Favorited.
+Pixel Factory now has a Reload UI button in the global top bar near the ComfyUI status controls.
 
-Favorite is treated as a save action. If a Candidate is favorited, it must be promoted to Accepted automatically.
+This button does not restart the backend or ComfyUI. It reloads the browser UI with a cache-busting timestamp so stale frontend JavaScript/CSS is less likely to confuse local testing.
 
-During local testing, frontend cache-busting matters because stale `app.js` can make UI buttons appear unchanged even after backend fixes.
-
+Use Reload UI when a recently patched frontend change does not appear to be running in the browser.

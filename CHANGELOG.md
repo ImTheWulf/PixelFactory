@@ -1,9 +1,8 @@
-## PF-0014.5 — Candidate Cleanup Hardening
+## PF-0014.6 — Reload UI Cache Control
 
-- Added a non-nested candidate cleanup API route at `/api/assets/clear-candidates`.
-- Hardened Clear Unsaved Candidates so it refreshes the UI and has a per-asset fallback if the bulk route returns no deletions.
-- Added no-store fetches and updated frontend cache-busting to avoid stale local JavaScript during testing.
-- Hardened Favorite so favoriting a Candidate explicitly promotes it to Accepted if needed.
+- Added a top-bar Reload UI button beside the ComfyUI Check control.
+- Reload UI appends a cache-busting timestamp query parameter so stale frontend files are easier to flush during local testing.
+- Updated frontend asset cache-buster strings and visible PF version label to PF-0014.6.
 
 ## PF-0014.4 — Candidate Favorite and Cleanup Fix
 

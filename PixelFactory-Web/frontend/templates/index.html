@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0014_5_candidate_flow_hardened" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0014_6_reload_ui" />
 </head>
 <body>
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand">Pixel Factory</div>
-      <div class="subtitle">by Wulf · Web v0.14 · PF-0014.5</div>
+      <div class="subtitle">by Wulf · Web v0.14 · PF-0014.6</div>
 
       <nav class="nav">
         <button class="nav-btn active" data-view="palette">Palette Lab</button>
@@ -212,7 +212,10 @@
           <div id="comfyStatus" class="engine-status disconnected">Disconnected</div>
         </div>
         <input id="comfyUrl" class="engine-url" type="text" value="http://127.0.0.1:8188" aria-label="ComfyUI URL" />
-        <button id="checkComfyBtn" class="engine-check-btn">Check</button>
+        <div class="engine-actions">
+          <button id="checkComfyBtn" class="engine-check-btn">Check</button>
+          <button id="reloadUiBtn" class="engine-reload-btn" type="button" title="Reload Pixel Factory UI and bypass stale browser cache">↻ Reload UI</button>
+        </div>
       </div>
 
       <section id="paletteView" class="view active">
@@ -346,6 +349,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0014_5_candidate_flow_hardened"></script>
+  <script src="/static/app.js?v=pf0014_6_reload_ui"></script>
 </body>
 </html>

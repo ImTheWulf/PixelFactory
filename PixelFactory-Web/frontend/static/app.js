@@ -28,6 +28,7 @@ navButtons.forEach((btn) => btn.addEventListener("click", () => setView(btn.data
 // Comfy status
 const comfyUrl = document.getElementById("comfyUrl");
 const checkComfyBtn = document.getElementById("checkComfyBtn");
+const reloadUiBtn = document.getElementById("reloadUiBtn");
 const comfyStatus = document.getElementById("comfyStatus");
 
 async function checkComfy({ quiet = false } = {}) {
@@ -62,6 +63,32 @@ async function checkComfy({ quiet = false } = {}) {
 }
 
 checkComfyBtn.addEventListener("click", () => checkComfy());
+
+function reloadPixelFactoryUi() {
+  try {
+    sessionStorage.setItem("pf-reload-scroll", String(window.scrollY || 0));
+  } catch (_) {
+    // sessionStorage can be unavailable in some locked-down browser contexts.
+  }
+
+  const url = new URL(window.location.href);
+  url.searchParams.set("v", String(Date.now()));
+  window.location.replace(url.toString());
+}
+
+function restoreReloadScrollPosition() {
+  try {
+    const savedScroll = sessionStorage.getItem("pf-reload-scroll");
+    if (!savedScroll) return;
+    sessionStorage.removeItem("pf-reload-scroll");
+    window.requestAnimationFrame(() => window.scrollTo(0, Number(savedScroll) || 0));
+  } catch (_) {
+    // Ignore cache-refresh scroll restore failures.
+  }
+}
+
+reloadUiBtn?.addEventListener("click", reloadPixelFactoryUi);
+restoreReloadScrollPosition();
 
 // Palette Lab
 const imageInput = document.getElementById("imageInput");
@@ -646,7 +673,7 @@ function updateAssetBrowserHeading() {
 async function loadAssets(selectId = null) {
   if (!assetGrid) return;
   updateAssetBrowserHeading();
-  const response = await fetch(`/api/assets${assetStatusQuery()}`, { cache: "no-store" });
+  const response = await fetch(`/api/assets${assetStatusQuery()}`);
   const data = await response.json();
   assets = sortAssetsForView(data.assets || []);
   renderAssets(selectId);
@@ -811,7 +838,6 @@ async function updateAssetMetadata(assetId, changes) {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(changes),
-    cache: "no-store",
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
@@ -829,36 +855,26 @@ async function toggleAssetFavorite(assetId) {
 
   const nextFavorite = !asset.favorite;
   const wasSelected = selectedAssetId === assetId;
-  const wasCandidate = asset.status !== "accepted";
 
   // Optimistic UI update so the card responds immediately.
   asset.favorite = nextFavorite;
-  if (nextFavorite && wasCandidate) asset.status = "accepted";
   renderAssets(wasSelected ? assetId : selectedAssetId);
 
-  let updated = await updateAssetMetadata(assetId, { favorite: nextFavorite });
+  const updated = await updateAssetMetadata(assetId, { favorite: nextFavorite });
   if (!updated) {
     asset.favorite = !nextFavorite;
-    if (nextFavorite && wasCandidate) asset.status = "incoming";
     await loadAssets(wasSelected ? assetId : selectedAssetId);
     return;
   }
 
-  // Safety fallback: favorite must promote a Candidate to Accepted. If the
-  // metadata route returns an older response for any reason, explicitly accept.
-  if (nextFavorite && wasCandidate && typeof updated === "object" && updated.status !== "accepted") {
-    const acceptResponse = await fetch(`/api/assets/${assetId}/accept`, { method: "POST", cache: "no-store" });
-    const acceptData = await acceptResponse.json().catch(() => ({}));
-    if (acceptResponse.ok && acceptData.asset) updated = acceptData.asset;
-  }
-
+  // Favoriting a Candidate promotes it to Accepted on the backend. Reflect that
+  // immediately in the local copy before the next render/refresh completes.
   if (typeof updated === "object") {
     asset.favorite = Boolean(updated.favorite);
     asset.status = updated.status || asset.status;
     asset.accepted_image_path = updated.accepted_image_path || asset.accepted_image_path;
   }
 
-  await loadAssets(wasSelected ? assetId : selectedAssetId);
   setStatus(nextFavorite ? "Asset favorited and saved to Accepted." : "Asset removed from favorites.");
 }
 
@@ -1028,55 +1044,22 @@ document.getElementById("clearSelectedExportsBtn")?.addEventListener("click", cl
 document.getElementById("assetClearSelectedExportsBtn")?.addEventListener("click", clearExportSelection);
 document.getElementById("refreshExportsBtn")?.addEventListener("click", refreshExportStatus);
 
-function localCandidateAssetIds() {
-  return assets
-    .filter((asset) => asset.status !== "accepted" && !asset.favorite)
-    .map((asset) => asset.id)
-    .filter(Boolean);
-}
-
 async function clearUnsavedCandidates() {
-  const localCandidateIds = localCandidateAssetIds();
-  if (!confirm(`Delete ${localCandidateIds.length || "all"} unsaved candidate asset(s)? Accepted and favorited assets are kept.`)) return;
+  if (!confirm("Delete all unsaved candidate assets? Accepted and favorited assets are kept.")) return;
   if (clearCandidateAssetsBtn) clearCandidateAssetsBtn.disabled = true;
   setStatus("Clearing unsaved candidates...");
 
   try {
-    let response = await fetch("/api/assets/clear-candidates", { method: "POST", cache: "no-store" });
+    let response = await fetch("/api/assets/candidates/clear", { method: "POST" });
+    // Fallback for cached older routes during local testing.
     if (response.status === 404 || response.status === 405) {
-      response = await fetch("/api/assets/candidates/clear", { method: "POST", cache: "no-store" });
+      response = await fetch("/api/assets/candidates", { method: "DELETE" });
     }
-    if (response.status === 404 || response.status === 405) {
-      response = await fetch("/api/assets/candidates", { method: "DELETE", cache: "no-store" });
-    }
-
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.detail || data.error || `HTTP ${response.status}`);
 
-    let deletedIds = Array.isArray(data.deleted_ids) ? data.deleted_ids : [];
-
-    // Last-resort frontend fallback: if an older backend route says it deleted
-    // nothing, delete currently visible Candidate assets individually.
-    if (!deletedIds.length && localCandidateIds.length) {
-      const deletedFallback = [];
-      for (const assetId of localCandidateIds) {
-        const item = assets.find((asset) => asset.id === assetId);
-        if (!item || item.status === "accepted" || item.favorite) continue;
-        const deleteResponse = await fetch(`/api/assets/${assetId}`, { method: "DELETE", cache: "no-store" });
-        if (deleteResponse.ok) deletedFallback.push(assetId);
-      }
-      deletedIds = deletedFallback;
-      data.deleted = deletedFallback.length;
-    }
-
     selectedAssetId = null;
     exportSelection.clear();
-    if (deletedIds.length) {
-      const deleted = new Set(deletedIds);
-      assets = assets.filter((asset) => !deleted.has(asset.id));
-      renderAssets();
-    }
-
     if (data.workspace_cleared) {
       selectedFile = null;
       selectedFileSource = null;
@@ -1084,11 +1067,10 @@ async function clearUnsavedCandidates() {
       processedPreview?.removeAttribute("src");
       if (downloadBtn) downloadBtn.disabled = true;
     }
-
     await refreshWorkspace();
     await loadAssets();
     updateExportSelectionStatus();
-    setStatus(`Cleared ${data.deleted || deletedIds.length || 0} unsaved candidate asset(s). Kept ${data.kept || 0} saved asset(s).`);
+    setStatus(`Cleared ${data.deleted || 0} unsaved candidate asset(s). Kept ${data.kept || 0} saved asset(s).`);
   } catch (err) {
     setStatus(`Could not clear candidates: ${err.message}`);
   } finally {

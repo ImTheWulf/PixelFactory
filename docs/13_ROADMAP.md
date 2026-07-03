@@ -203,3 +203,10 @@ Status: Added
 - Make favoriting automatically accept/save the asset.
 - Add cleanup path for unsaved candidates.
 
+## PF-0014.6 — Reload UI Cache Control
+
+Status: Complete
+
+- Add top-bar Reload UI button near ComfyUI controls.
+- Use cache-busting reload for local frontend testing.
+- Keep wording clear: Reload UI refreshes the frontend only, not the backend or ComfyUI.
