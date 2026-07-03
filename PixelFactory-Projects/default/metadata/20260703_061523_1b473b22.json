@@ -2,7 +2,7 @@
   "id": "20260703_061523_1b473b22",
   "name": "top_down_pixel_art_game_tile_seamless_repeating__02",
   "type": "tile",
-  "status": "incoming",
+  "status": "accepted",
   "image_path": "Incoming/Tiles/20260703_061523_1b473b22.png",
   "created": "2026-07-03T06:15:23",
   "prompt": "top-down pixel art game tile, seamless repeating texture, orthographic view, flat lighting, crisp pixels, limited color palette, {prompt}",
@@ -26,5 +26,11 @@
     "tile",
     "cobblestone",
     "pixel-art"
-  ]
+  ],
+  "active_image_path": "Accepted/Tiles/20260703_061523_1b473b22.png",
+  "project_root": "C:/Users/Owner/Downloads/PixelFactory/PixelFactory-Projects/default",
+  "favorite": true,
+  "accepted": "2026-07-03T07:11:23",
+  "accepted_image_path": "Accepted/Tiles/20260703_061523_1b473b22.png",
+  "updated": "2026-07-03T07:11:26"
 }

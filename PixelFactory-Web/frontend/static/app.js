@@ -649,6 +649,15 @@ function formatCountSummary(counts) {
     .join(" · ");
 }
 
+function formatStatusSummary(items) {
+  const counts = {};
+  items.forEach((asset) => {
+    const label = assetStatusLabel(asset).toLowerCase();
+    counts[label] = (counts[label] || 0) + 1;
+  });
+  return formatCountSummary(counts);
+}
+
 function selectedTagSummary(items, limit = 8) {
   const counts = {};
   items.forEach((item) => {
@@ -825,7 +834,7 @@ function renderMultiSelectionInspector() {
   }
 
   const typeSummary = formatCountSummary(assetCountSummary(items, "type"));
-  const statusSummary = formatCountSummary(assetCountSummary(items, "status"));
+  const statusSummary = formatStatusSummary(items);
   const tagSummary = selectedTagSummary(items);
 
   assetInspector.className = "asset-inspector multi";
@@ -849,7 +858,7 @@ function renderMultiSelectionInspector() {
       ${items.some((asset) => asset.status !== "accepted") ? '<button id="multiAcceptSelectedBtn" type="button">Accept Selected</button>' : ""}
       <button id="multiFavoriteSelectedBtn" type="button">Favorite Selected</button>
       <button id="multiDownloadSelectedBtn" type="button">Download Selected</button>
-      <button id="multiSendExporterBtn" type="button" class="export-route-btn">Export</button>
+      <button id="multiSendExporterBtn" type="button" class="export-route-btn">Export Selected</button>
     </div>
 
     <section class="inspector-section">
@@ -1141,11 +1150,12 @@ function renderExportSelectionPanel() {
       </div>
     `;
       document.getElementById("exportPanelRefreshBtn")?.addEventListener("click", refreshExportStatus);
+      document.getElementById("exportPanelBrowseAssetsBtn")?.addEventListener("click", () => setView("assets"));
     return;
   }
 
   const typeSummary = formatCountSummary(assetCountSummary(items, "type"));
-  const statusSummary = formatCountSummary(assetCountSummary(items, "status"));
+  const statusSummary = formatStatusSummary(items);
   const tagSummary = selectedTagSummary(items, 10);
 
   panel.className = "export-selection-panel";
@@ -1405,6 +1415,7 @@ async function clearUnsavedCandidates() {
 }
 
 refreshAssetsBtn?.addEventListener("click", () => loadAssets());
+document.getElementById("selectionBarViewBtn")?.addEventListener("click", () => openSelectedImageViewer(0));
 document.getElementById("selectionBarClearBtn")?.addEventListener("click", clearExportSelection);
 document.getElementById("selectionBarExporterBtn")?.addEventListener("click", () => routeSelectionToExporter());
 

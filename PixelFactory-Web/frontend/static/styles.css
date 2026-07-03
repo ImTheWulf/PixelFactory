@@ -1917,3 +1917,46 @@ select option:hover {
   background: rgba(86, 118, 160, .92);
   border-color: rgba(255,255,255,.08);
 }
+
+/* PF-0015.9 inspector action sizing + selection bar polish */
+.multi-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.multi-actions button,
+.multi-actions a {
+  width: 100%;
+  min-height: 44px;
+  justify-content: center;
+}
+
+.multi-actions .export-route-btn {
+  grid-column: auto;
+}
+
+.multi-actions button:only-child,
+.multi-actions a:only-child {
+  grid-column: 1 / -1;
+}
+
+.asset-selection-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(118px, 1fr));
+  gap: 8px;
+}
+
+.asset-selection-actions button {
+  min-width: 0;
+  min-height: 42px;
+}
+
+.export-selection-panel .export-panel-actions-clean {
+  justify-content: center;
+}
+
+.export-selection-panel .export-panel-actions-clean .pf-primary-action {
+  max-width: 460px;
+  width: 100%;
+}

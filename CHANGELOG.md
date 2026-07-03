@@ -1,3 +1,11 @@
+## PF-0015.9 — Multi-select Action Polish
+
+- Standardized multi-select inspector action button sizing.
+- Renamed multi-select export action to Export Selected.
+- Added View Images to the bottom selection bar.
+- Hooked Exporter empty-state Browse Assets button to return to Asset Browser.
+- Cleaned Candidate wording in multi-select status summaries.
+
 ## PF-0015.8 — Candidate Actions and Selection Viewer
 
 - Renamed Clear Unsaved Candidates to Delete Unsaved Candidates in the UI.
