@@ -402,6 +402,3 @@ Palette Lab should not auto-load stale workspace assets on startup or when openi
 
 The before/after compare should use a dedicated full-screen compare viewer, not the generic image viewer. The compare viewer should keep original and processed previews aligned and allow resize, palette color, and operation changes before processing again.
 
-## PF-0016.10 Palette Preview Consistency
-
-Palette Lab preview panels should share the same viewport behavior. Original, Processed, and Compare should not each feel like separate image viewers. Fit mode should fill the available panel consistently while preserving aspect ratio, and Actual Pixels should center the image at natural size. The compare panel opens the full-screen compare viewer by double-clicking to avoid accidental opens while adjusting controls.

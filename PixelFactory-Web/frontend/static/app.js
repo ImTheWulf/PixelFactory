@@ -269,6 +269,18 @@ function getCompareBaseSize() {
   return { width: Math.max(1, naturalWidth), height: Math.max(1, naturalHeight) };
 }
 
+function getPaletteCompareStageCenter() {
+  if (!paletteCompareModalStage) return { x: 0.5, y: 0.5 };
+  const rect = paletteCompareModalStage.getBoundingClientRect();
+  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+}
+
+function centerPaletteCompareCanvas() {
+  if (!paletteCompareModalStage) return;
+  paletteCompareModalStage.scrollLeft = Math.max(0, (paletteCompareModalStage.scrollWidth - paletteCompareModalStage.clientWidth) / 2);
+  paletteCompareModalStage.scrollTop = Math.max(0, (paletteCompareModalStage.scrollHeight - paletteCompareModalStage.clientHeight) / 2);
+}
+
 function applyPaletteCompareMode({ center = false } = {}) {
   if (!paletteCompareModalStage || !compareModalCanvas) return;
   const { width, height } = getCompareBaseSize();
@@ -296,10 +308,7 @@ function applyPaletteCompareMode({ center = false } = {}) {
     paletteCompareMeta.textContent = `${scaleLabel} · Source ${sourceLabel}${resLabel}`;
   }
   if (center) {
-    requestAnimationFrame(() => {
-      paletteCompareModalStage.scrollLeft = Math.max(0, (paletteCompareModalStage.scrollWidth - paletteCompareModalStage.clientWidth) / 2);
-      paletteCompareModalStage.scrollTop = Math.max(0, (paletteCompareModalStage.scrollHeight - paletteCompareModalStage.clientHeight) / 2);
-    });
+    requestAnimationFrame(centerPaletteCompareCanvas);
   }
 }
 
@@ -345,24 +354,22 @@ function setPaletteCompareFit() {
 }
 
 function setPaletteCompareActual(zoom = 1, options = {}) {
-  paletteCompareMode = "zoomed";
-  paletteCompareZoom = Math.max(0.25, Math.min(12, zoom));
-  applyPaletteCompareMode({ center: options.center !== false });
+  const point = options.point || getPaletteCompareStageCenter();
+  setPaletteCompareZoomAtPoint(zoom, point.x, point.y);
 }
 
 function setPaletteCompareZoomAtPoint(nextZoom, clientX, clientY) {
-  if (!paletteCompareModalStage || !compareModalCanvas) {
-    setPaletteCompareActual(nextZoom);
-    return;
-  }
+  if (!paletteCompareModalStage || !compareModalCanvas) return;
   const stage = paletteCompareModalStage;
   const canvas = compareModalCanvas;
   const stageRect = stage.getBoundingClientRect();
   const canvasRect = canvas.getBoundingClientRect();
-  const relX = canvasRect.width > 0 ? (clientX - canvasRect.left) / canvasRect.width : 0.5;
-  const relY = canvasRect.height > 0 ? (clientY - canvasRect.top) / canvasRect.height : 0.5;
-  const viewportX = clientX - stageRect.left;
-  const viewportY = clientY - stageRect.top;
+
+  const insideCanvas = clientX >= canvasRect.left && clientX <= canvasRect.right && clientY >= canvasRect.top && clientY <= canvasRect.bottom;
+  const relX = insideCanvas && canvasRect.width > 0 ? (clientX - canvasRect.left) / canvasRect.width : 0.5;
+  const relY = insideCanvas && canvasRect.height > 0 ? (clientY - canvasRect.top) / canvasRect.height : 0.5;
+  const viewportX = insideCanvas ? clientX - stageRect.left : stageRect.width / 2;
+  const viewportY = insideCanvas ? clientY - stageRect.top : stageRect.height / 2;
 
   paletteCompareMode = "zoomed";
   paletteCompareZoom = Math.max(0.25, Math.min(12, nextZoom));
@@ -372,8 +379,10 @@ function setPaletteCompareZoomAtPoint(nextZoom, clientX, clientY) {
     const newCanvasRect = canvas.getBoundingClientRect();
     const canvasLeftInScroll = canvas.offsetLeft;
     const canvasTopInScroll = canvas.offsetTop;
-    stage.scrollLeft = Math.max(0, canvasLeftInScroll + relX * newCanvasRect.width - viewportX);
-    stage.scrollTop = Math.max(0, canvasTopInScroll + relY * newCanvasRect.height - viewportY);
+    const maxLeft = Math.max(0, stage.scrollWidth - stage.clientWidth);
+    const maxTop = Math.max(0, stage.scrollHeight - stage.clientHeight);
+    stage.scrollLeft = Math.min(maxLeft, Math.max(0, canvasLeftInScroll + relX * newCanvasRect.width - viewportX));
+    stage.scrollTop = Math.min(maxTop, Math.max(0, canvasTopInScroll + relY * newCanvasRect.height - viewportY));
   });
 }
 
@@ -416,12 +425,6 @@ function applyPreviewMode() {
     if (viewport) {
       viewport.classList.toggle("fit-mode", mode === "fit");
       viewport.classList.toggle("actual-mode", mode === "actual");
-      if (mode === "actual") {
-        requestAnimationFrame(() => {
-          viewport.scrollLeft = Math.max(0, (viewport.scrollWidth - viewport.clientWidth) / 2);
-          viewport.scrollTop = Math.max(0, (viewport.scrollHeight - viewport.clientHeight) / 2);
-        });
-      }
     }
   });
 }
@@ -429,8 +432,7 @@ function applyPreviewMode() {
 previewMode?.addEventListener("change", applyPreviewMode);
 compareSlider?.addEventListener("input", updateCompareSlider);
 compareModalSlider?.addEventListener("input", updateCompareModalSlider);
-openCompareViewerBtn?.addEventListener("dblclick", openPaletteCompareViewer);
-openCompareViewerBtn?.addEventListener("click", () => setStatus("Double-click the compare preview to open the full-screen viewer."));
+openCompareViewerBtn?.addEventListener("click", openPaletteCompareViewer);
 compareCloseBtn?.addEventListener("click", closePaletteCompareViewer);
 document.querySelector("[data-compare-close]")?.addEventListener("click", closePaletteCompareViewer);
 compareFitBtn?.addEventListener("click", setPaletteCompareFit);

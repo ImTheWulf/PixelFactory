@@ -1,9 +1,9 @@
-## PF-0016.10 — Palette Preview Consistency
 
-- Unified Palette Lab preview fit/actual-pixels behavior across Original and Processed panels.
-- Changed Palette Lab action wording from Refresh Preview to Update Preview.
-- Compare panel now opens the full-screen compare viewer on double-click to avoid accidental opens.
-- Added compare preview hint and tighter viewport behavior for consistent image review.
+## PF-0016.11 — Palette Compare Zoom Origin
+
+- Improved Palette Lab compare viewer zoom origin so first zoom does not jump to the top-left.
+- Kept compare canvas centered when smaller than the viewport.
+- Reviewed Sprite Fusion Pixel Snapper as the target direction for Palette Lab pixel snap/repair integration.
 
 ## PF-0016.9 — Palette Compare Interaction Polish
 

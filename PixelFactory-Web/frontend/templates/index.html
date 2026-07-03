@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0016_10_palette_preview_consistency" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0016_11_compare_zoom_origin" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.16 · PF-0016.10</div>
+          <div class="subtitle">by Wulf · Web v0.16 · PF-0016.11</div>
         </div>
       </div>
 
@@ -82,7 +82,7 @@
           <button id="changePaletteAssetBtn" type="button">Change Asset</button>
         </div>
 
-        <button id="processBtn" class="pf-primary-action">Update Preview</button>
+        <button id="processBtn" class="pf-primary-action">Refresh Preview</button>
         <button id="downloadBtn" disabled>Download PNG</button>
       </section>
 
@@ -318,7 +318,7 @@
               <span class="palette-panel-hint">Drag slider to compare source and processed output</span>
             </div>
             <div class="palette-compare-shell">
-              <button id="openCompareViewerBtn" class="palette-compare-stage" type="button" title="Double-click to open full-screen compare viewer">
+              <button id="openCompareViewerBtn" class="palette-compare-stage" type="button" title="Open full-screen compare viewer">
                 <img id="compareOriginalPreview" alt="Compare original" />
                 <div id="compareProcessedClip" class="palette-compare-processed"><img id="compareProcessedPreview" alt="Compare processed" /></div>
                 <div id="compareDivider" class="palette-compare-divider"></div>
@@ -493,7 +493,7 @@
         <label><span>Colors</span><select id="comparePaletteColors"><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="14">14</option><option value="16">16</option><option value="18">18</option><option value="20">20</option><option value="22">22</option><option value="24">24</option><option value="32">32</option><option value="64">64</option><option value="128">128</option><option value="256">256</option></select></label>
         <label><span>Operation</span><select id="compareOperation"><option value="resize_palette">Palette + Nearest Resize</option><option value="palette">Palette Only</option><option value="resize">Nearest Resize Only</option></select></label>
       </div>
-      <div id="paletteCompareModalStage" class="palette-compare-modal-stage" title="Ctrl/Shift + mouse wheel to zoom">
+      <div id="paletteCompareModalStage" class="palette-compare-modal-stage" title="Mouse wheel zoom · Space+drag pan · double-click fit">
         <div id="compareModalCanvas" class="palette-compare-modal-canvas">
           <img id="compareModalOriginal" alt="Compare original full view" />
           <div id="compareModalProcessedClip" class="palette-compare-modal-processed"><img id="compareModalProcessed" alt="Compare processed full view" /></div>
@@ -535,6 +535,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0016_10_palette_preview_consistency"></script>
+  <script src="/static/app.js?v=pf0016_11_compare_zoom_origin"></script>
 </body>
 </html>
