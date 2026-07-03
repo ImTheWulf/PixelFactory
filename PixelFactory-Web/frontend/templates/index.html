@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.16 · PF-0016.6</div>
+          <div class="subtitle">by Wulf · Web v0.16 · PF-0016.7</div>
         </div>
       </div>
 
@@ -497,9 +497,11 @@
         <label><span>Operation</span><select id="compareOperation"><option value="resize_palette">Palette + Nearest Resize</option><option value="palette">Palette Only</option><option value="resize">Nearest Resize Only</option></select></label>
       </div>
       <div id="paletteCompareModalStage" class="palette-compare-modal-stage" title="Ctrl/Shift + mouse wheel to zoom">
-        <img id="compareModalOriginal" alt="Compare original full view" />
-        <div id="compareModalProcessedClip" class="palette-compare-modal-processed"><img id="compareModalProcessed" alt="Compare processed full view" /></div>
-        <div id="compareModalDivider" class="palette-compare-modal-divider"></div>
+        <div id="compareModalCanvas" class="palette-compare-modal-canvas">
+          <img id="compareModalOriginal" alt="Compare original full view" />
+          <div id="compareModalProcessedClip" class="palette-compare-modal-processed"><img id="compareModalProcessed" alt="Compare processed full view" /></div>
+          <div id="compareModalDivider" class="palette-compare-modal-divider"></div>
+        </div>
       </div>
       <div class="palette-compare-modal-footer">
         <span>Original</span>

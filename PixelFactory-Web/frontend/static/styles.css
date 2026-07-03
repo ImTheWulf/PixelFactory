@@ -2574,3 +2574,45 @@ select option:hover {
 .palette-compare-modal-stage.zoomed {
   cursor: zoom-out;
 }
+
+/* PF-0016.7 Palette compare true zoom canvas */
+.palette-compare-modal-stage {
+  overflow: auto !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 16px !important;
+  cursor: zoom-in;
+}
+.palette-compare-modal-stage.zoomed {
+  place-items: start !important;
+  cursor: zoom-out;
+}
+.palette-compare-modal-canvas {
+  position: relative;
+  flex: 0 0 auto;
+  min-width: 1px;
+  min-height: 1px;
+  background: #05080d;
+}
+.palette-compare-modal-canvas > img,
+.palette-compare-modal-canvas .palette-compare-modal-processed > img {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: fill !important;
+  image-rendering: pixelated !important;
+  margin: 0 !important;
+  transform: none !important;
+}
+.palette-compare-modal-canvas .palette-compare-modal-processed {
+  position: absolute !important;
+  inset: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none;
+}
+.palette-compare-modal-canvas .palette-compare-modal-divider {
+  z-index: 3;
+}

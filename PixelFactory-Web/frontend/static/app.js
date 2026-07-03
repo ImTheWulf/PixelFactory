@@ -133,6 +133,7 @@ const paletteCompareModal = document.getElementById("paletteCompareModal");
 const paletteCompareTitle = document.getElementById("paletteCompareTitle");
 const paletteCompareMeta = document.getElementById("paletteCompareMeta");
 const paletteCompareModalStage = document.getElementById("paletteCompareModalStage");
+const compareModalCanvas = document.getElementById("compareModalCanvas");
 const compareModalOriginal = document.getElementById("compareModalOriginal");
 const compareModalProcessed = document.getElementById("compareModalProcessed");
 const compareModalProcessedClip = document.getElementById("compareModalProcessedClip");
@@ -259,28 +260,39 @@ function scheduleComparePreviewUpdate() {
   }, 450);
 }
 
+function getCompareBaseSize() {
+  const naturalWidth = compareModalOriginal?.naturalWidth || selectedFile?.width || 512;
+  const naturalHeight = compareModalOriginal?.naturalHeight || selectedFile?.height || 512;
+  return { width: Math.max(1, naturalWidth), height: Math.max(1, naturalHeight) };
+}
+
 function applyPaletteCompareMode({ center = false } = {}) {
-  if (!paletteCompareModalStage) return;
+  if (!paletteCompareModalStage || !compareModalCanvas) return;
+  const { width, height } = getCompareBaseSize();
+  const stageWidth = Math.max(1, paletteCompareModalStage.clientWidth - 32);
+  const stageHeight = Math.max(1, paletteCompareModalStage.clientHeight - 32);
+  const fitScale = Math.min(stageWidth / width, stageHeight / height);
+  const baseScale = paletteCompareMode === "fit" ? fitScale : 1;
+  const zoom = paletteCompareMode === "fit" ? 1 : paletteCompareZoom;
+  const displayWidth = Math.max(1, Math.round(width * baseScale * zoom));
+  const displayHeight = Math.max(1, Math.round(height * baseScale * zoom));
+
   paletteCompareModalStage.classList.toggle("fit", paletteCompareMode === "fit");
   paletteCompareModalStage.classList.toggle("zoomed", paletteCompareMode !== "fit");
-  const zoom = paletteCompareMode === "fit" ? 1 : paletteCompareZoom;
-  const imgs = [compareModalOriginal, compareModalProcessed].filter(Boolean);
-  imgs.forEach((img) => {
-    // Keep both before/after layers mathematically identical so the slider stays aligned.
-    img.style.setProperty("width", "100%", "important");
-    img.style.setProperty("height", "100%", "important");
-    img.style.setProperty("max-width", "100%", "important");
-    img.style.setProperty("max-height", "100%", "important");
-    img.style.objectFit = "contain";
-    img.style.transformOrigin = "center center";
-    img.style.transform = `scale(${zoom})`;
+  compareModalCanvas.style.width = `${displayWidth}px`;
+  compareModalCanvas.style.height = `${displayHeight}px`;
+
+  [compareModalOriginal, compareModalProcessed].filter(Boolean).forEach((img) => {
+    img.style.transform = "none";
   });
+
   if (paletteCompareMeta) {
-    const zoomLabel = paletteCompareMode === "fit" ? "Fit to window" : `${Math.round(paletteCompareZoom * 100)}% zoom`;
+    const scaleLabel = paletteCompareMode === "fit" ? "Fit to window" : `${Math.round(paletteCompareZoom * 100)}% zoom`;
+    const sourceLabel = `${width} × ${height}`;
     const resLabel = paletteProcessedResolution && paletteProcessedResolution !== "—" ? ` · Output ${paletteProcessedResolution}` : "";
-    paletteCompareMeta.textContent = `${zoomLabel}${resLabel}`;
+    paletteCompareMeta.textContent = `${scaleLabel} · Source ${sourceLabel}${resLabel}`;
   }
-  if (center && paletteCompareModalStage) {
+  if (center) {
     requestAnimationFrame(() => {
       paletteCompareModalStage.scrollLeft = Math.max(0, (paletteCompareModalStage.scrollWidth - paletteCompareModalStage.clientWidth) / 2);
       paletteCompareModalStage.scrollTop = Math.max(0, (paletteCompareModalStage.scrollHeight - paletteCompareModalStage.clientHeight) / 2);
@@ -389,12 +401,19 @@ compareActualBtn?.addEventListener("click", () => setPaletteCompareActual(1));
 compareZoomInBtn?.addEventListener("click", () => setPaletteCompareActual((paletteCompareMode === "fit" ? 1 : paletteCompareZoom) * 1.25));
 compareZoomOutBtn?.addEventListener("click", () => setPaletteCompareActual((paletteCompareMode === "fit" ? 1 : paletteCompareZoom) / 1.25));
 paletteCompareModalStage?.addEventListener("wheel", (event) => {
-  if (!event.ctrlKey && !event.shiftKey) return;
+  if (!paletteCompareModal || paletteCompareModal.classList.contains("hidden")) return;
   event.preventDefault();
   const base = paletteCompareMode === "fit" ? 1 : paletteCompareZoom;
   const next = event.deltaY < 0 ? base * 1.12 : base / 1.12;
   setPaletteCompareActual(next);
 }, { passive: false });
+
+window.addEventListener("resize", () => {
+  if (paletteCompareModal && !paletteCompareModal.classList.contains("hidden")) {
+    applyPaletteCompareMode({ center: true });
+  }
+});
+
 compareDownloadBtn?.addEventListener("click", () => downloadBtn?.click());
 compareProcessBtn?.addEventListener("click", processPreviewFromCompareViewer);
 [compareResizeScale, comparePaletteColors, compareOperation].forEach((control) => {

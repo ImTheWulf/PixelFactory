@@ -1,4 +1,4 @@
-## PF-0016.6 — Palette Compare Zoom Fix
+## PF-0016.7 — Palette Compare Zoom Fix
 
 - Fixed compare viewer zoom so before/after layers scale together.
 - Added output resolution feedback after Palette Lab processing.
