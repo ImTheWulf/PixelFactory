@@ -4,25 +4,32 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0014_6_reload_ui" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0015_design_foundation" />
 </head>
 <body>
   <div class="app-shell">
     <aside class="sidebar">
-      <div class="brand">Pixel Factory</div>
-      <div class="subtitle">by Wulf · Web v0.14 · PF-0014.7</div>
+      <div class="brand-lockup">
+        <div class="brand-mark" aria-hidden="true">▧</div>
+        <div>
+          <div class="brand">Pixel Factory</div>
+          <div class="subtitle">by Wulf · Web v0.15 · PF-0015</div>
+        </div>
+      </div>
 
-      <nav class="nav">
-        <button class="nav-btn active" data-view="palette">Palette Lab</button>
-        <button class="nav-btn" data-view="character">Character Studio</button>
-        <button class="nav-btn" data-view="tile">Tile Studio</button>
-        <button class="nav-btn disabled">Repair Bench</button>
-        <button class="nav-btn" data-view="assets">Asset Browser</button>
-        <button class="nav-btn" data-view="exporter">Exporter</button>
+      <nav class="nav" aria-label="Primary navigation">
+        <button class="nav-btn active" data-view="start"><span class="nav-icon">⌂</span><span>Start</span></button>
+        <button class="nav-btn" data-view="palette"><span class="nav-icon">🎨</span><span>Palette Lab</span></button>
+        <button class="nav-btn" data-view="character"><span class="nav-icon">👤</span><span>Character Studio</span></button>
+        <button class="nav-btn" data-view="tile"><span class="nav-icon">▦</span><span>Tile Studio</span></button>
+        <button class="nav-btn disabled"><span class="nav-icon">🩹</span><span>Repair Bench</span></button>
+        <button class="nav-btn" data-view="assets"><span class="nav-icon">📦</span><span>Asset Browser</span></button>
+        <button class="nav-btn" data-view="exporter"><span class="nav-icon">⇪</span><span>Exporter</span></button>
+        <button class="nav-btn disabled"><span class="nav-icon">⚙</span><span>Settings</span></button>
       </nav>
 
 
-      <section id="paletteControls" class="panel view-controls">
+      <section id="paletteControls" class="panel view-controls hidden">
         <label class="file-label">
           Load Image
           <input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp" />
@@ -218,7 +225,51 @@
         </div>
       </div>
 
-      <section id="paletteView" class="view active">
+      <section id="startView" class="view active">
+        <header class="topbar pf-page-hero">
+          <div>
+            <div class="eyebrow">Pixel Factory</div>
+            <h1>Start</h1>
+            <p>Choose a studio, continue cleanup in Palette Lab, or browse the asset library.</p>
+          </div>
+        </header>
+
+        <section class="start-layout">
+          <div class="preview-card start-card start-hero-card">
+            <div class="eyebrow">Production Pipeline</div>
+            <h2>Build game-ready 2D assets</h2>
+            <p>Generate candidates, clean them in Palette Lab, save the keepers, and export only to Godot or Aseprite.</p>
+            <div class="start-actions">
+              <button type="button" class="pf-primary-action" data-start-view="tile">New Tile</button>
+              <button type="button" data-start-view="character">New Character</button>
+              <button type="button" data-start-view="palette">Open Palette Lab</button>
+              <button type="button" data-start-view="assets">Browse Assets</button>
+            </div>
+          </div>
+
+          <div class="preview-card start-card">
+            <h2>Workflow</h2>
+            <div class="workflow-steps">
+              <div><span>1</span><strong>Generate</strong><em>Create candidates through a curated studio.</em></div>
+              <div><span>2</span><strong>Clean</strong><em>Use Palette Lab as the current workspace/canvas.</em></div>
+              <div><span>3</span><strong>Accept</strong><em>Save the assets that belong in the library.</em></div>
+              <div><span>4</span><strong>Export</strong><em>Send final PNGs to Godot or Aseprite.</em></div>
+            </div>
+          </div>
+
+          <div class="preview-card start-card">
+            <h2>Studios</h2>
+            <div class="studio-link-grid">
+              <button type="button" data-start-view="tile"><span>▦</span><strong>Tile Studio</strong><em>Top-down tile candidates</em></button>
+              <button type="button" data-start-view="character"><span>👤</span><strong>Character Studio</strong><em>Full-body character candidates</em></button>
+              <button type="button" data-start-view="palette"><span>🎨</span><strong>Palette Lab</strong><em>Pixel cleanup workspace</em></button>
+              <button type="button" data-start-view="assets"><span>📦</span><strong>Asset Browser</strong><em>Organize and manage assets</em></button>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section id="paletteView" class="view">
         <header class="topbar">
           <h1>Palette Lab</h1>
           <p>Deterministic cleanup tools. No diffusion. No hallucination.</p>
@@ -349,6 +400,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0014_6_reload_ui"></script>
+  <script src="/static/app.js?v=pf0015_design_foundation"></script>
 </body>
 </html>

@@ -17,6 +17,9 @@ function setView(name) {
   if (name === "palette") {
     hydratePaletteFromWorkspaceIfNeeded();
   }
+  if (name === "assets") {
+    loadAssets(selectedAssetId).catch(() => {});
+  }
   if (name === "exporter") {
     updateExportSelectionStatus();
     refreshExportStatus();
@@ -24,6 +27,10 @@ function setView(name) {
 }
 
 navButtons.forEach((btn) => btn.addEventListener("click", () => setView(btn.dataset.view)));
+
+document.querySelectorAll("[data-start-view]").forEach((btn) => {
+  btn.addEventListener("click", () => setView(btn.dataset.startView));
+});
 
 // Comfy status
 const comfyUrl = document.getElementById("comfyUrl");
@@ -816,7 +823,7 @@ function selectAsset(assetId) {
   document.getElementById("inspectorViewLargeBtn")?.addEventListener("click", () => openImageViewer(asset.image_url, displayName));
   document.getElementById("acceptAssetBtn")?.addEventListener("click", () => acceptAsset(asset.id));
   document.getElementById("favoriteAssetBtn")?.addEventListener("click", () => toggleAssetFavorite(asset.id));
-  document.getElementById("paletteAssetBtn").addEventListener("click", () => sendAssetToPalette(asset));
+  document.getElementById("paletteAssetBtn")?.addEventListener("click", () => sendAssetToPalette(asset));
   document.getElementById("deleteAssetBtn").addEventListener("click", () => deleteAsset(asset.id));
   document.getElementById("selectForExportAssetBtn")?.addEventListener("click", () => toggleExportSelection(asset.id));
   document.getElementById("exportGodotAssetBtn")?.addEventListener("click", () => exportAsset(asset.id, "godot"));
@@ -895,19 +902,24 @@ async function deleteAsset(assetId) {
 }
 
 async function setWorkspaceFromAsset(asset) {
-  // Legacy alias kept for older callers. In the current Pixel Factory flow,
-  // Palette Lab is the active workspace/canvas destination.
-  return sendAssetToPalette(asset);
+  const response = await fetch(`/api/workspace/from-asset/${asset.id}`, { method: "POST" });
+  if (!response.ok) {
+    setStatus("Could not set workspace from asset.");
+    return;
+  }
+  await refreshWorkspace();
+  setStatus(`Workspace set to ${assetDisplayName(asset)}.`);
 }
 
 async function sendAssetToPalette(asset) {
   const response = await fetch(`/api/workspace/from-asset/${asset.id}`, { method: "POST" });
   if (!response.ok) {
-    setStatus("Could not open asset in Palette Lab.");
+    setStatus("Could not load asset into workspace.");
     return;
   }
   await refreshWorkspace();
   await loadWorkspaceIntoPalette();
+  setStatus(`Opened ${assetDisplayName(asset)} in Palette Lab.`);
 }
 
 

@@ -1,9 +1,10 @@
-## PF-0014.7 — Palette Lab Workspace Routing
+## PF-0015 — Global Design Foundation
 
-- Renamed Asset Browser action from **Set Workspace** to **Open in Palette Lab**.
-- Removed duplicate inspector workspace button.
-- Routed legacy workspace action through the Palette Lab open flow.
-- Updated docs to clarify Palette Lab as the current user-facing workspace/canvas destination.
+- Added Start screen as the default application landing view.
+- Added global icon navigation foundation.
+- Added refreshed brand lockup and PF-0015 version label.
+- Added shared design-system CSS tokens for the future Pixel Factory UI refresh.
+- Cleaned the Asset Inspector action language around Palette Lab.
 
 ## PF-0014.6 — Reload UI Cache Control
 
