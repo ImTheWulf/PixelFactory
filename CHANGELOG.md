@@ -1,3 +1,13 @@
+
+## PF-0015.6 — Selection and Export Cleanup
+
+- Removed confusing add/remove selection action from the single-asset inspector.
+- Moved favorite/unfavorite into the inspector image overlay.
+- Kept Asset Browser selection editing focused on Shift/Ctrl/Cmd multi-select.
+- Simplified Exporter to one main export action after choosing Godot or Aseprite.
+- Collapsed export paths/history/manifest information behind a details panel.
+- Tightened accepted/candidate status badge styling.
+
 ## PF-0015.5 — Exporter selection cleanup
 
 - Cleaned Exporter to use one focused export action for loaded selections.

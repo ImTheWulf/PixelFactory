@@ -778,7 +778,9 @@ function renderAssets(selectId = null) {
         toggleExportSelection(asset.id);
         return;
       }
-      selectAsset(asset.id, true);
+      // Regular click inspects the asset. If a multi-selection is active, keep
+      // that selection intact so browsing thumbnails does not destroy the export set.
+      selectAsset(asset.id, exportSelection.size === 0);
     });
     card.querySelector(".asset-thumb-zoom")?.addEventListener("click", (event) => {
       event.stopPropagation();
@@ -872,15 +874,14 @@ function selectAsset(assetId, clearMultiSelection = false) {
   assetInspector.innerHTML = `
     <div class="inspector-hero">
       <img src="${asset.image_url}" alt="${escapeHtml(displayName)}">
+      <button id="inspectorFavoriteBtn" type="button" class="inspector-favorite-btn ${asset.favorite ? "active" : ""}" title="${asset.favorite ? "Unfavorite" : "Favorite"}" aria-label="${asset.favorite ? "Unfavorite" : "Favorite"} ${escapeHtml(displayName)}"><span aria-hidden="true">${asset.favorite ? "★" : "☆"}</span></button>
       <button id="inspectorViewLargeBtn" type="button" class="inspector-view-btn">View Large</button>
       <span class="inspector-status-badge ${asset.status === "accepted" ? "accepted" : "incoming"}">${statusLabel}</span>
     </div>
 
     <div class="asset-actions">
       ${asset.status === "accepted" ? "" : '<button id="acceptAssetBtn">Accept</button>'}
-      <button id="favoriteAssetBtn">${asset.favorite ? "Unfavorite" : "Favorite"}</button>
       <button id="paletteAssetBtn">Open in Palette Lab</button>
-      <button id="selectForExportAssetBtn">${exportSelection.has(asset.id) ? "Remove from Selection" : "Add to Selection"}</button>
       <button id="sendToExporterBtn" class="export-route-btn">Export</button>
       <a href="${asset.image_url}" download="${escapeHtml(asset.name)}.png">Download</a>
       <button id="deleteAssetBtn">Delete</button>
@@ -923,10 +924,9 @@ function selectAsset(assetId, clearMultiSelection = false) {
   `;
   document.getElementById("inspectorViewLargeBtn")?.addEventListener("click", () => openImageViewer(asset.image_url, displayName));
   document.getElementById("acceptAssetBtn")?.addEventListener("click", () => acceptAsset(asset.id));
-  document.getElementById("favoriteAssetBtn")?.addEventListener("click", () => toggleAssetFavorite(asset.id));
+  document.getElementById("inspectorFavoriteBtn")?.addEventListener("click", () => toggleAssetFavorite(asset.id));
   document.getElementById("paletteAssetBtn")?.addEventListener("click", () => sendAssetToPalette(asset));
   document.getElementById("deleteAssetBtn").addEventListener("click", () => deleteAsset(asset.id));
-  document.getElementById("selectForExportAssetBtn")?.addEventListener("click", () => toggleExportSelection(asset.id));
   document.getElementById("sendToExporterBtn")?.addEventListener("click", () => routeAssetToExporter(asset.id));
   document.getElementById("saveAssetMetadataBtn")?.addEventListener("click", () => updateAssetMetadata(asset.id, {
     name: document.getElementById("assetNameInput")?.value || displayName,
@@ -1050,8 +1050,7 @@ function renderExportSelectionPanel() {
         </div>
       </div>
     `;
-    document.getElementById("exportPanelBrowseAssetsBtn")?.addEventListener("click", () => setView("assets"));
-    document.getElementById("exportPanelRefreshBtn")?.addEventListener("click", refreshExportStatus);
+      document.getElementById("exportPanelRefreshBtn")?.addEventListener("click", refreshExportStatus);
     return;
   }
 
@@ -1094,7 +1093,6 @@ function renderExportSelectionPanel() {
 
     <div class="export-panel-actions export-panel-actions-clean">
       <button id="exportPanelSelectedBtn" type="button" class="pf-primary-action">Export to ${escapeHtml(targetLabel)}</button>
-      <button id="exportPanelBrowseAssetsBtn" type="button">Change Selection in Asset Browser</button>
     </div>
   `;
 
@@ -1105,7 +1103,6 @@ function renderExportSelectionPanel() {
     });
   });
   document.getElementById("exportPanelSelectedBtn")?.addEventListener("click", exportSelectedAssets);
-  document.getElementById("exportPanelBrowseAssetsBtn")?.addEventListener("click", () => setView("assets"));
 }
 function applyExportTarget(target = null) {
   if (!target) return;
@@ -1239,33 +1236,36 @@ async function refreshExportStatus() {
     const data = await response.json();
     const targets = data.targets || {};
     panel.innerHTML = `
-      <div class="export-summary-grid">
-        <div><span>Selected assets</span><strong>${escapeHtml(exportSelection.size)}</strong></div>
-        <div><span>Accepted assets</span><strong>${escapeHtml(data.accepted_count ?? 0)}</strong></div>
-        <div><span>Candidate assets</span><strong>${escapeHtml(data.incoming_count ?? 0)}</strong></div>
-        <div><span>Exports root</span><strong>${escapeHtml(data.exports_root || "Exports")}</strong></div>
-      </div>
-      ${Object.entries(targets).map(([key, info]) => `
-        <div class="export-target-row">
-          <div class="export-target-header">
-            <strong>${escapeHtml(key)}</strong>
-            <span>${escapeHtml(info.count || 0)} exported</span>
-          </div>
-          <div class="metadata-path"><strong>Folder:</strong> ${escapeHtml(info.folder || "")}</div>
-          <div class="metadata-path"><strong>Manifest:</strong> ${escapeHtml(info.manifest_path || "")} ${info.manifest_exists ? "✓" : "not created yet"}</div>
-          ${Array.isArray(info.recent_exports) && info.recent_exports.length ? `
-            <div class="export-recent-list">
-              ${info.recent_exports.map((item) => `
-                <div class="export-recent-item">
-                  <strong>${escapeHtml(item.name || item.asset_id || "asset")}</strong>
-                  <span>${escapeHtml(item.image_path || "")}</span>
-                  <span>${item.image_exists ? "PNG exists ✓" : "PNG missing"} · ${item.metadata_exists ? "JSON exists ✓" : "JSON missing"}</span>
-                </div>
-              `).join("")}
-            </div>
-          ` : `<div class="export-empty-note">No exports yet for ${escapeHtml(key)}.</div>`}
+      <details class="export-details-panel">
+        <summary>Export history, paths, and manifest details</summary>
+        <div class="export-summary-grid">
+          <div><span>Selected assets</span><strong>${escapeHtml(exportSelection.size)}</strong></div>
+          <div><span>Accepted assets</span><strong>${escapeHtml(data.accepted_count ?? 0)}</strong></div>
+          <div><span>Candidate assets</span><strong>${escapeHtml(data.incoming_count ?? 0)}</strong></div>
+          <div><span>Exports root</span><strong>${escapeHtml(data.exports_root || "Exports")}</strong></div>
         </div>
-      `).join("")}
+        ${Object.entries(targets).map(([key, info]) => `
+          <div class="export-target-row">
+            <div class="export-target-header">
+              <strong>${escapeHtml(key)}</strong>
+              <span>${escapeHtml(info.count || 0)} exported</span>
+            </div>
+            <div class="metadata-path"><strong>Folder:</strong> ${escapeHtml(info.folder || "")}</div>
+            <div class="metadata-path"><strong>Manifest:</strong> ${escapeHtml(info.manifest_path || "")} ${info.manifest_exists ? "✓" : "not created yet"}</div>
+            ${Array.isArray(info.recent_exports) && info.recent_exports.length ? `
+              <div class="export-recent-list">
+                ${info.recent_exports.map((item) => `
+                  <div class="export-recent-item">
+                    <strong>${escapeHtml(item.name || item.asset_id || "asset")}</strong>
+                    <span>${escapeHtml(item.image_path || "")}</span>
+                    <span>${item.image_exists ? "PNG exists ✓" : "PNG missing"} · ${item.metadata_exists ? "JSON exists ✓" : "JSON missing"}</span>
+                  </div>
+                `).join("")}
+              </div>
+            ` : `<div class="export-empty-note">No exports yet for ${escapeHtml(key)}.</div>`}
+          </div>
+        `).join("")}
+      </details>
     `;
     renderExportSelectionPanel();
   } catch (err) {
