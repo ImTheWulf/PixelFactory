@@ -396,3 +396,9 @@ Palette Lab now has a stronger workspace/editor foundation:
 - discard/download result actions
 
 This continues the direction that Palette Lab is the user-facing workspace/canvas for post-generation cleanup.
+## PF-0016.3 Palette Lab Compare Cleanup
+
+Palette Lab should not auto-load stale workspace assets on startup or when opening the Palette Lab page. It should open blank until the user explicitly opens an asset, sends one from Asset Browser, uploads one, or clicks Load Current Workspace.
+
+The before/after compare should use a dedicated full-screen compare viewer, not the generic image viewer. The compare viewer should keep original and processed previews aligned and allow resize, palette color, and operation changes before processing again.
+

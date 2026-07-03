@@ -214,3 +214,10 @@ Status: Complete
 ## PF-0016.1 — Palette Lab Workspace Workflow
 
 Status: Added foundation for workspace metadata, dirty state, history, operation stack, and before/after compare.
+
+### PF-0016.3 — Palette Lab Compare Cleanup
+
+- Stop Palette Lab from auto-loading stale workspace assets.
+- Improve full-screen before/after comparison workflow.
+- Keep processing controls close to the comparison viewer.
+

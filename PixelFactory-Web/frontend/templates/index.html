@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.16 · PF-0016.2</div>
+          <div class="subtitle">by Wulf · Web v0.16 · PF-0016.3</div>
         </div>
       </div>
 
@@ -309,14 +309,14 @@
           <section id="paletteComparePanel" class="preview-card palette-compare-card hidden">
             <div class="section-title-row">
               <h2>Before / After Compare</h2>
-              <span id="compareOpenHint" class="palette-panel-hint">Drag slider to compare source and processed output</span>
+              <span class="palette-panel-hint">Drag slider to compare source and processed output</span>
             </div>
             <div class="palette-compare-shell">
-              <div class="palette-compare-stage">
+              <button id="openCompareViewerBtn" class="palette-compare-stage" type="button" title="Open full-screen compare viewer">
                 <img id="compareOriginalPreview" alt="Compare original" />
                 <div id="compareProcessedClip" class="palette-compare-processed"><img id="compareProcessedPreview" alt="Compare processed" /></div>
                 <div id="compareDivider" class="palette-compare-divider"></div>
-              </div>
+              </button>
               <input id="compareSlider" type="range" min="0" max="100" value="50" />
             </div>
           </section>
@@ -463,6 +463,43 @@
     </div>
   </div>
 
+
+  <div id="paletteCompareModal" class="palette-compare-modal hidden" aria-hidden="true">
+    <div class="palette-compare-backdrop" data-compare-close></div>
+    <div class="palette-compare-panel" role="dialog" aria-modal="true" aria-label="Palette compare viewer">
+      <div class="palette-compare-toolbar">
+        <div>
+          <div id="paletteCompareTitle" class="image-viewer-title">Before / After Compare</div>
+          <div id="paletteCompareMeta" class="image-viewer-meta">Fit to window</div>
+        </div>
+        <div class="image-viewer-actions">
+          <button id="compareZoomOutBtn" type="button">−</button>
+          <button id="compareFitBtn" type="button">Fit</button>
+          <button id="compareActualBtn" type="button">1:1</button>
+          <button id="compareZoomInBtn" type="button">+</button>
+          <button id="compareProcessBtn" type="button" class="pf-primary-action">Process Preview</button>
+          <button id="compareDownloadBtn" type="button">Download</button>
+          <button id="compareCloseBtn" type="button">Close</button>
+        </div>
+      </div>
+      <div class="palette-compare-modal-controls">
+        <label><span>Resize</span><select id="compareResizeScale"><option value="1">1x</option><option value="2">2x</option><option value="3">3x</option><option value="4">4x</option></select></label>
+        <label><span>Colors</span><select id="comparePaletteColors"><option value="8">8</option><option value="16">16</option><option value="32">32</option><option value="64">64</option></select></label>
+        <label><span>Operation</span><select id="compareOperation"><option value="resize_palette">Palette + Nearest Resize</option><option value="palette">Palette Only</option><option value="resize">Nearest Resize Only</option></select></label>
+      </div>
+      <div id="paletteCompareModalStage" class="palette-compare-modal-stage">
+        <img id="compareModalOriginal" alt="Compare original full view" />
+        <div id="compareModalProcessedClip" class="palette-compare-modal-processed"><img id="compareModalProcessed" alt="Compare processed full view" /></div>
+        <div id="compareModalDivider" class="palette-compare-modal-divider"></div>
+      </div>
+      <div class="palette-compare-modal-footer">
+        <span>Original</span>
+        <input id="compareModalSlider" type="range" min="0" max="100" value="50" />
+        <span>Processed</span>
+      </div>
+    </div>
+  </div>
+
   <div id="imageViewerModal" class="image-viewer-modal hidden" aria-hidden="true">
     <div class="image-viewer-backdrop" data-viewer-close></div>
     <div class="image-viewer-panel" role="dialog" aria-modal="true" aria-label="Image viewer">
@@ -483,27 +520,13 @@
           <button id="viewerCloseBtn" type="button">Close</button>
         </div>
       </div>
-      <div id="viewerPaletteControls" class="viewer-palette-controls hidden">
-        <label>Resize <select id="viewerResizeScale"><option value="1">1x</option><option value="2">2x</option><option value="3">3x</option><option value="4">4x</option></select></label>
-        <label>Colors <select id="viewerPaletteColors"><option value="16">16</option><option value="32">32</option><option value="64">64</option><option value="128">128</option></select></label>
-        <label>Operation <select id="viewerOperation"><option value="palette_resize">Palette + Nearest Resize</option><option value="palette_only">Palette Only</option><option value="resize_only">Nearest Resize Only</option></select></label>
-        <button id="viewerProcessPaletteBtn" type="button">Process Preview</button>
-      </div>
       <div id="imageViewerStage" class="image-viewer-stage">
         <img id="imageViewerImage" alt="Full image preview" />
-        <div id="imageViewerCompare" class="viewer-compare hidden">
-          <div class="viewer-compare-stage">
-            <img id="viewerCompareOriginal" alt="Compare original" />
-            <div id="viewerCompareProcessedClip" class="viewer-compare-processed"><img id="viewerCompareProcessed" alt="Compare processed" /></div>
-            <div id="viewerCompareDivider" class="viewer-compare-divider"></div>
-          </div>
-          <input id="viewerCompareSlider" type="range" min="0" max="100" value="50" />
-        </div>
       </div>
       <div id="imageViewerStrip" class="image-viewer-strip hidden" aria-label="Selected image thumbnails"></div>
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0016_2_palette_compare_viewer"></script>
+  <script src="/static/app.js?v=pf0016_3_palette_compare_cleanup"></script>
 </body>
 </html>

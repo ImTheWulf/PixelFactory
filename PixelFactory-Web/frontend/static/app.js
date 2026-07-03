@@ -25,10 +25,7 @@ function setView(name, options = {}) {
   const panel = document.getElementById(`${name}Controls`);
   if (panel) panel.classList.remove("hidden");
 
-  if (name === "palette") {
-    // Palette Lab intentionally opens blank unless the user loads/sends an asset.
-    refreshWorkspace({ quiet: true }).catch(() => {});
-  }
+  // Palette Lab intentionally opens blank unless the user explicitly opens an asset or loads current workspace.
   if (name === "assets") {
     loadAssets(selectedAssetId).catch(() => {});
   }
@@ -131,9 +128,28 @@ const compareOriginalPreview = document.getElementById("compareOriginalPreview")
 const compareProcessedPreview = document.getElementById("compareProcessedPreview");
 const compareProcessedClip = document.getElementById("compareProcessedClip");
 const compareDivider = document.getElementById("compareDivider");
+const openCompareViewerBtn = document.getElementById("openCompareViewerBtn");
+const paletteCompareModal = document.getElementById("paletteCompareModal");
+const paletteCompareTitle = document.getElementById("paletteCompareTitle");
+const paletteCompareMeta = document.getElementById("paletteCompareMeta");
+const paletteCompareModalStage = document.getElementById("paletteCompareModalStage");
+const compareModalOriginal = document.getElementById("compareModalOriginal");
+const compareModalProcessed = document.getElementById("compareModalProcessed");
+const compareModalProcessedClip = document.getElementById("compareModalProcessedClip");
+const compareModalDivider = document.getElementById("compareModalDivider");
+const compareModalSlider = document.getElementById("compareModalSlider");
+const compareResizeScale = document.getElementById("compareResizeScale");
+const comparePaletteColors = document.getElementById("comparePaletteColors");
+const compareOperation = document.getElementById("compareOperation");
+const compareProcessBtn = document.getElementById("compareProcessBtn");
+const compareDownloadBtn = document.getElementById("compareDownloadBtn");
+const compareCloseBtn = document.getElementById("compareCloseBtn");
+const compareFitBtn = document.getElementById("compareFitBtn");
+const compareActualBtn = document.getElementById("compareActualBtn");
+const compareZoomInBtn = document.getElementById("compareZoomInBtn");
+const compareZoomOutBtn = document.getElementById("compareZoomOutBtn");
 const discardPalettePreviewBtn = document.getElementById("discardPalettePreviewBtn");
 const downloadPaletteResultBtn = document.getElementById("downloadPaletteResultBtn");
-const compareOpenHint = document.getElementById("compareOpenHint");
 const opPaletteCount = document.getElementById("opPaletteCount");
 const opResizeScale = document.getElementById("opResizeScale");
 
@@ -144,25 +160,8 @@ let workspace = { has_image: false };
 let paletteDirty = false;
 let paletteHistoryEntries = [];
 let paletteCurrentMeta = { type: "—", status: "Empty", recipe: "—", resolution: "—" };
-
-function resetPaletteLabToBlank() {
-  selectedFile = null;
-  selectedFileSource = null;
-  if (processedBlobUrl) URL.revokeObjectURL(processedBlobUrl);
-  processedBlobUrl = null;
-  originalPreview?.removeAttribute("src");
-  processedPreview?.removeAttribute("src");
-  compareOriginalPreview?.removeAttribute("src");
-  compareProcessedPreview?.removeAttribute("src");
-  paletteComparePanel?.classList.add("hidden");
-  if (downloadBtn) downloadBtn.disabled = true;
-  if (downloadPaletteResultBtn) downloadPaletteResultBtn.disabled = true;
-  if (discardPalettePreviewBtn) discardPalettePreviewBtn.disabled = true;
-  updatePaletteLoadedState({ filename: "No asset loaded", source: "palette", detail: "Open an asset from Asset Browser, load the current workspace, or upload an image.", meta: { type: "—", status: "Empty", recipe: "—", resolution: "—" } });
-  paletteHistoryEntries = [];
-  renderPaletteHistory();
-  setPaletteDirty(false, "● Empty");
-}
+let paletteCompareZoom = 1;
+let paletteCompareMode = "fit";
 
 function setPaletteDirty(isDirty, label = null) {
   paletteDirty = Boolean(isDirty);
@@ -213,13 +212,109 @@ function updateCompareSlider() {
   if (compareDivider) compareDivider.style.left = `${value}%`;
 }
 
+function updateCompareModalSlider() {
+  const value = Number(compareModalSlider?.value || 50);
+  if (compareModalProcessedClip) compareModalProcessedClip.style.clipPath = `inset(0 ${100 - value}% 0 0)`;
+  if (compareModalDivider) compareModalDivider.style.left = `${value}%`;
+}
+
+function syncCompareControlsFromPalette() {
+  const resize = document.getElementById("resizeScale");
+  const colors = document.getElementById("paletteColors");
+  const operation = document.getElementById("operation");
+  if (compareResizeScale && resize) compareResizeScale.value = resize.value;
+  if (comparePaletteColors && colors) comparePaletteColors.value = colors.value;
+  if (compareOperation && operation) compareOperation.value = operation.value;
+}
+
+function syncPaletteControlsFromCompare() {
+  const resize = document.getElementById("resizeScale");
+  const colors = document.getElementById("paletteColors");
+  const operation = document.getElementById("operation");
+  if (resize && compareResizeScale) resize.value = compareResizeScale.value;
+  if (colors && comparePaletteColors) colors.value = comparePaletteColors.value;
+  if (operation && compareOperation) operation.value = compareOperation.value;
+  updateOperationStackLabels();
+}
+
+function applyPaletteCompareMode({ center = false } = {}) {
+  if (!paletteCompareModalStage) return;
+  paletteCompareModalStage.classList.toggle("fit", paletteCompareMode === "fit");
+  paletteCompareModalStage.classList.toggle("actual", paletteCompareMode !== "fit");
+  const imgs = [compareModalOriginal, compareModalProcessed].filter(Boolean);
+  imgs.forEach((img) => {
+    img.style.transform = "none";
+    if (paletteCompareMode === "fit") {
+      img.style.width = "100%";
+      img.style.height = "100%";
+      img.style.maxWidth = "100%";
+      img.style.maxHeight = "100%";
+    } else {
+      const naturalWidth = compareModalOriginal?.naturalWidth || img.naturalWidth || 1;
+      const naturalHeight = compareModalOriginal?.naturalHeight || img.naturalHeight || 1;
+      img.style.maxWidth = "none";
+      img.style.maxHeight = "none";
+      img.style.width = `${Math.max(1, Math.round(naturalWidth * paletteCompareZoom))}px`;
+      img.style.height = `${Math.max(1, Math.round(naturalHeight * paletteCompareZoom))}px`;
+    }
+  });
+  if (paletteCompareMeta) paletteCompareMeta.textContent = paletteCompareMode === "fit" ? "Fit to window" : `${Math.round(paletteCompareZoom * 100)}%`;
+  if (center && paletteCompareModalStage) {
+    requestAnimationFrame(() => {
+      paletteCompareModalStage.scrollLeft = Math.max(0, (paletteCompareModalStage.scrollWidth - paletteCompareModalStage.clientWidth) / 2);
+      paletteCompareModalStage.scrollTop = Math.max(0, (paletteCompareModalStage.scrollHeight - paletteCompareModalStage.clientHeight) / 2);
+    });
+  }
+}
+
+function updateCompareModalImages() {
+  const originalSrc = originalPreview?.getAttribute("src");
+  if (!originalSrc || !processedBlobUrl || !compareModalOriginal || !compareModalProcessed) return false;
+  compareModalOriginal.src = originalSrc;
+  compareModalProcessed.src = processedBlobUrl;
+  if (paletteCompareTitle) paletteCompareTitle.textContent = `${selectedFile?.name || "Current Canvas"} — Compare`;
+  updateCompareModalSlider();
+  applyPaletteCompareMode({ center: true });
+  return true;
+}
+
+function openPaletteCompareViewer() {
+  if (!paletteCompareModal || !processedBlobUrl) {
+    setStatus("Process a preview before opening the compare viewer.");
+    return;
+  }
+  syncCompareControlsFromPalette();
+  paletteCompareModal.classList.remove("hidden");
+  paletteCompareModal.setAttribute("aria-hidden", "false");
+  paletteCompareMode = "fit";
+  paletteCompareZoom = 1;
+  updateCompareModalImages();
+}
+
+function closePaletteCompareViewer() {
+  if (!paletteCompareModal) return;
+  paletteCompareModal.classList.add("hidden");
+  paletteCompareModal.setAttribute("aria-hidden", "true");
+}
+
+function setPaletteCompareFit() {
+  paletteCompareMode = "fit";
+  paletteCompareZoom = 1;
+  applyPaletteCompareMode({ center: true });
+}
+
+function setPaletteCompareActual(zoom = 1) {
+  paletteCompareMode = "actual";
+  paletteCompareZoom = Math.max(0.1, Math.min(8, zoom));
+  applyPaletteCompareMode({ center: true });
+}
+
 function showPaletteCompare() {
   if (!paletteComparePanel || !selectedFile || !processedBlobUrl) return;
   const originalSrc = originalPreview.getAttribute("src");
   if (compareOriginalPreview && originalSrc) compareOriginalPreview.src = originalSrc;
   if (compareProcessedPreview) compareProcessedPreview.src = processedBlobUrl;
   paletteComparePanel.classList.remove("hidden");
-  if (compareOpenHint) compareOpenHint.textContent = "Click compare preview to open full-screen workspace viewer";
   updateCompareSlider();
 }
 
@@ -258,6 +353,20 @@ function applyPreviewMode() {
 
 previewMode?.addEventListener("change", applyPreviewMode);
 compareSlider?.addEventListener("input", updateCompareSlider);
+compareModalSlider?.addEventListener("input", updateCompareModalSlider);
+openCompareViewerBtn?.addEventListener("click", openPaletteCompareViewer);
+compareCloseBtn?.addEventListener("click", closePaletteCompareViewer);
+document.querySelector("[data-compare-close]")?.addEventListener("click", closePaletteCompareViewer);
+compareFitBtn?.addEventListener("click", setPaletteCompareFit);
+compareActualBtn?.addEventListener("click", () => setPaletteCompareActual(1));
+compareZoomInBtn?.addEventListener("click", () => setPaletteCompareActual((paletteCompareMode === "fit" ? 1 : paletteCompareZoom) * 1.25));
+compareZoomOutBtn?.addEventListener("click", () => setPaletteCompareActual((paletteCompareMode === "fit" ? 1 : paletteCompareZoom) / 1.25));
+compareDownloadBtn?.addEventListener("click", () => downloadBtn?.click());
+compareProcessBtn?.addEventListener("click", () => {
+  syncPaletteControlsFromCompare();
+  processBtn?.click();
+});
+[compareResizeScale, comparePaletteColors, compareOperation].forEach((control) => control?.addEventListener("change", syncPaletteControlsFromCompare));
 discardPalettePreviewBtn?.addEventListener("click", () => clearPaletteProcessedPreview({ addHistory: true }));
 downloadPaletteResultBtn?.addEventListener("click", () => downloadBtn?.click());
 document.getElementById("paletteColors")?.addEventListener("change", updateOperationStackLabels);
@@ -385,14 +494,14 @@ imageInput.addEventListener("change", () => {
   setStatus(`Loaded ${file.name}`);
 });
 
-async function processPalettePreview({ source = "palette" } = {}) {
+processBtn.addEventListener("click", async () => {
   if (!selectedFile) {
     setStatus("Load an image first, or use the current workspace.");
-    return false;
+    return;
   }
 
   processBtn.disabled = true;
-  setStatus(source === "viewer" ? "Processing from compare viewer..." : "Processing...");
+  setStatus("Processing...");
 
   const form = new FormData();
   form.append("image", selectedFile);
@@ -415,20 +524,17 @@ async function processPalettePreview({ source = "palette" } = {}) {
     if (discardPalettePreviewBtn) discardPalettePreviewBtn.disabled = false;
     setPaletteDirty(true);
     showPaletteCompare();
+    if (paletteCompareModal && !paletteCompareModal.classList.contains("hidden")) updateCompareModalImages();
     const operationLabel = document.getElementById("operation")?.selectedOptions?.[0]?.textContent || "Process";
     updatePaletteLoadedState({ filename: selectedFile?.name || "Processed preview", source: selectedFileSource || "workspace", detail: "Processed preview ready" });
     addPaletteHistory("Processed preview", operationLabel);
     setStatus("Processed preview ready.");
-    return true;
   } catch (err) {
     setStatus(`Error: ${err.message}`);
-    return false;
   } finally {
     processBtn.disabled = false;
   }
-}
-
-processBtn.addEventListener("click", () => processPalettePreview());
+});
 
 downloadBtn.addEventListener("click", () => {
   if (!processedBlobUrl) return;
@@ -1617,52 +1723,13 @@ const viewerZoomOutBtn = document.getElementById("viewerZoomOutBtn");
 const viewerPrevBtn = document.getElementById("viewerPrevBtn");
 const viewerNextBtn = document.getElementById("viewerNextBtn");
 const imageViewerStrip = document.getElementById("imageViewerStrip");
-const imageViewerCompare = document.getElementById("imageViewerCompare");
-const viewerCompareOriginal = document.getElementById("viewerCompareOriginal");
-const viewerCompareProcessed = document.getElementById("viewerCompareProcessed");
-const viewerCompareProcessedClip = document.getElementById("viewerCompareProcessedClip");
-const viewerCompareDivider = document.getElementById("viewerCompareDivider");
-const viewerCompareSlider = document.getElementById("viewerCompareSlider");
-const viewerPaletteControls = document.getElementById("viewerPaletteControls");
-const viewerResizeScale = document.getElementById("viewerResizeScale");
-const viewerPaletteColors = document.getElementById("viewerPaletteColors");
-const viewerOperation = document.getElementById("viewerOperation");
-const viewerProcessPaletteBtn = document.getElementById("viewerProcessPaletteBtn");
 
 let viewerCollection = [];
 let viewerIndex = -1;
 let viewerZoom = 1;
 let viewerMode = "fit";
-let viewerCompareMode = false;
 let viewerDragging = false;
 let viewerDragStart = { x: 0, y: 0, scrollLeft: 0, scrollTop: 0 };
-
-function updateViewerCompareSlider() {
-  const value = Number(viewerCompareSlider?.value || 50);
-  if (viewerCompareProcessedClip) viewerCompareProcessedClip.style.clipPath = `inset(0 ${100 - value}% 0 0)`;
-  if (viewerCompareDivider) viewerCompareDivider.style.left = `${value}%`;
-}
-
-function setViewerCompareMode(isCompare) {
-  viewerCompareMode = Boolean(isCompare);
-  imageViewerImage?.classList.toggle("hidden", viewerCompareMode);
-  imageViewerCompare?.classList.toggle("hidden", !viewerCompareMode);
-  viewerPaletteControls?.classList.toggle("hidden", !viewerCompareMode);
-  imageViewerStage?.classList.toggle("compare-mode", viewerCompareMode);
-}
-
-function syncViewerPaletteControlsFromSidebar() {
-  if (viewerResizeScale) viewerResizeScale.value = document.getElementById("resizeScale")?.value || "2";
-  if (viewerPaletteColors) viewerPaletteColors.value = document.getElementById("paletteColors")?.value || "64";
-  if (viewerOperation) viewerOperation.value = document.getElementById("operation")?.value || "palette_resize";
-}
-
-function syncSidebarFromViewerPaletteControls() {
-  if (viewerResizeScale && document.getElementById("resizeScale")) document.getElementById("resizeScale").value = viewerResizeScale.value;
-  if (viewerPaletteColors && document.getElementById("paletteColors")) document.getElementById("paletteColors").value = viewerPaletteColors.value;
-  if (viewerOperation && document.getElementById("operation")) document.getElementById("operation").value = viewerOperation.value;
-  updateOperationStackLabels();
-}
 
 function updateViewerMeta() {
   if (!imageViewerMeta) return;
@@ -1679,10 +1746,6 @@ function centerViewerScroll() {
 }
 
 function applyViewerMode({ center = false } = {}) {
-  if (viewerCompareMode) {
-    updateViewerMeta();
-    return;
-  }
   if (!imageViewerImage || !imageViewerStage) return;
   imageViewerStage.classList.toggle("fit", viewerMode === "fit");
   imageViewerStage.classList.toggle("actual", viewerMode !== "fit");
@@ -1750,7 +1813,6 @@ function openImageViewer(src, title = "Image", collection = null, index = 0) {
   viewerIndex = Math.max(0, Math.min(Number(index) || 0, viewerCollection.length - 1));
   imageViewerModal.classList.remove("hidden");
   imageViewerModal.setAttribute("aria-hidden", "false");
-  setViewerCompareMode(false);
   showViewerItem(viewerIndex);
 }
 
@@ -1759,28 +1821,6 @@ function openSelectedImageViewer(index = 0) {
   if (!items.length) return;
   const collection = viewerItemsFromAssets(items);
   openImageViewer(collection[index]?.src || collection[0].src, collection[index]?.title || collection[0].title, collection, index);
-}
-
-function openPaletteCompareViewer() {
-  const originalSrc = originalPreview?.getAttribute("src");
-  if (!originalSrc || !processedBlobUrl) return;
-  imageViewerModal.classList.remove("hidden");
-  imageViewerModal.setAttribute("aria-hidden", "false");
-  viewerCollection = [];
-  viewerIndex = -1;
-  setViewerCompareMode(true);
-  if (imageViewerTitle) imageViewerTitle.textContent = `${selectedFile?.name || "Palette preview"} — Compare`;
-  if (imageViewerMeta) imageViewerMeta.textContent = "Before / After Compare";
-  if (viewerCompareOriginal) viewerCompareOriginal.src = originalSrc;
-  if (viewerCompareProcessed) viewerCompareProcessed.src = processedBlobUrl;
-  if (viewerDownloadLink) {
-    viewerDownloadLink.href = processedBlobUrl;
-    viewerDownloadLink.download = "pixel_factory_processed.png";
-  }
-  if (viewerDownloadAllBtn) viewerDownloadAllBtn.classList.add("hidden");
-  if (imageViewerStrip) imageViewerStrip.classList.add("hidden");
-  syncViewerPaletteControlsFromSidebar();
-  updateViewerCompareSlider();
 }
 
 function downloadViewerCollection() {
@@ -1803,7 +1843,6 @@ function closeImageViewer() {
   imageViewerModal.classList.add("hidden");
   imageViewerModal.setAttribute("aria-hidden", "true");
   if (imageViewerImage) imageViewerImage.removeAttribute("src");
-  setViewerCompareMode(false);
   viewerCollection = [];
   viewerIndex = -1;
   renderViewerStrip();
@@ -1830,24 +1869,9 @@ viewerZoomInBtn?.addEventListener("click", () => setViewerActual(viewerZoom * 1.
 viewerZoomOutBtn?.addEventListener("click", () => setViewerActual(viewerZoom / 1.25));
 viewerPrevBtn?.addEventListener("click", () => showViewerItem(viewerIndex - 1));
 viewerNextBtn?.addEventListener("click", () => showViewerItem(viewerIndex + 1));
-viewerCompareSlider?.addEventListener("input", updateViewerCompareSlider);
-viewerProcessPaletteBtn?.addEventListener("click", async () => {
-  syncSidebarFromViewerPaletteControls();
-  const ok = await processPalettePreview({ source: "viewer" });
-  if (ok) {
-    if (viewerCompareProcessed) viewerCompareProcessed.src = processedBlobUrl;
-    if (viewerDownloadLink) viewerDownloadLink.href = processedBlobUrl;
-    updateViewerCompareSlider();
-  }
-});
-paletteComparePanel?.addEventListener("click", (event) => {
-  if (event.target === compareSlider) return;
-  openPaletteCompareViewer();
-});
 
 let viewerWheelNavAt = 0;
 imageViewerStage?.addEventListener("wheel", (event) => {
-  if (viewerCompareMode) return;
   if (!imageViewerImage?.src) return;
   event.preventDefault();
 
@@ -1887,6 +1911,10 @@ window.addEventListener("mouseup", () => {
 });
 
 document.addEventListener("keydown", (event) => {
+  if (paletteCompareModal && !paletteCompareModal.classList.contains("hidden")) {
+    if (event.key === "Escape") closePaletteCompareViewer();
+    return;
+  }
   if (imageViewerModal?.classList.contains("hidden")) return;
   if (event.key === "Escape") closeImageViewer();
   if (event.key === "0") setViewerFit();
@@ -1906,7 +1934,6 @@ document.addEventListener("click", (event) => {
 // Startup
 (async function initPixelFactory() {
   applyPreviewMode();
-  resetPaletteLabToBlank();
   await refreshWorkspace();
   await loadAssets().catch(() => {});
   await checkComfy({ quiet: true });

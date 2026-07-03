@@ -1,11 +1,11 @@
 
-## PF-0016.2 — Palette Compare Viewer
+## PF-0016.3 — Palette Compare Cleanup
 
-- Palette Lab now opens blank on startup instead of auto-loading the last workspace asset.
-- Renamed Load Workspace Image to Load Current Workspace.
-- Added full-screen before/after compare viewer from Palette Lab compare previews.
-- Added Palette Lab process controls inside the compare viewer.
-- Updated version label to PF-0016.2.
+- Palette Lab no longer auto-loads the previous workspace just by opening the page.
+- Renamed workspace loading action to Load Current Workspace.
+- Added a dedicated full-screen Palette Lab compare viewer.
+- Compare viewer includes resize, palette color, and operation controls.
+- Compare preview keeps original and processed images aligned for before/after review.
 
 ## PF-0016.1 — Palette Lab Workspace Workflow
 
