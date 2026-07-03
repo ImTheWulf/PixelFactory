@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.15 · PF-0015.7</div>
+          <div class="subtitle">by Wulf · Web v0.15 · PF-0015.8</div>
         </div>
       </div>
 
@@ -190,7 +190,7 @@
           <option value="favorite">Favorites first</option>
         </select>
         <button id="refreshAssetsBtn">Refresh Assets</button>
-        <button id="clearCandidateAssetsBtn" type="button">Clear Unsaved Candidates</button>
+        <button id="clearCandidateAssetsBtn" type="button">Delete Unsaved Candidates</button>
       </section>
 
       <div id="status" class="status">Ready.</div>
@@ -332,7 +332,7 @@
           <p>Browse generated candidates and saved assets. Accept, favorite, open in Palette Lab, export to Godot/Aseprite, download, or delete.</p>
         </header>
 
-        <div class="asset-help">Candidates are generated results waiting to be saved. Accepting or favoriting saves them into the Accepted library. Use Clear Unsaved Candidates to clean up test generations.</div>
+        <div class="asset-help">Candidates are generated results waiting to be saved. Accepting or favoriting saves them into the Accepted library. Use Delete Unsaved Candidates to clean up test generations.</div>
         <section class="asset-layout">
           <div class="preview-card asset-list-card">
             <h2>Assets</h2>
@@ -382,10 +382,12 @@
           <div id="imageViewerMeta" class="image-viewer-meta">Fit</div>
         </div>
         <div class="image-viewer-actions">
+          <button id="viewerPrevBtn" type="button" title="Previous selected asset">‹</button>
           <button id="viewerZoomOutBtn" type="button">−</button>
           <button id="viewerFitBtn" type="button">Fit</button>
           <button id="viewerActualBtn" type="button">1:1</button>
           <button id="viewerZoomInBtn" type="button">+</button>
+          <button id="viewerNextBtn" type="button" title="Next selected asset">›</button>
           <a id="viewerDownloadLink" href="#" download>Download</a>
           <button id="viewerCloseBtn" type="button">Close</button>
         </div>
@@ -393,6 +395,7 @@
       <div id="imageViewerStage" class="image-viewer-stage">
         <img id="imageViewerImage" alt="Full image preview" />
       </div>
+      <div id="imageViewerStrip" class="image-viewer-strip hidden" aria-label="Selected image thumbnails"></div>
     </div>
   </div>
 

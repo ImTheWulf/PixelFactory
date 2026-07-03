@@ -1,3 +1,11 @@
+## PF-0015.8 — Candidate Actions and Selection Viewer
+
+- Renamed Clear Unsaved Candidates to Delete Unsaved Candidates in the UI.
+- Added multi-selected asset thumbnail opening in the image viewer.
+- Added previous/next controls and thumbnail strip for selected image viewer sets.
+- Added Favorite Selected, Accept Selected, Download Selected, and Export actions to multi-select inspector.
+- Continued user-facing candidate wording cleanup.
+
 ## PF-0015.7 — Selection Behavior Cleanup
 
 - Normal asset clicks now exit multi-select mode and inspect only the clicked asset.

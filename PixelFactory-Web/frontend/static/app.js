@@ -622,6 +622,16 @@ function selectedAssets() {
   return assets.filter((asset) => exportSelection.has(asset.id));
 }
 
+function viewerItemsFromAssets(items) {
+  return (items || []).map((asset) => ({
+    id: asset.id,
+    src: asset.image_url,
+    title: assetDisplayName(asset),
+    type: asset.type || "asset",
+    status: assetStatusLabel(asset),
+  }));
+}
+
 function assetCountSummary(items, key) {
   const counts = {};
   items.forEach((item) => {
@@ -821,7 +831,7 @@ function renderMultiSelectionInspector() {
   assetInspector.className = "asset-inspector multi";
   assetInspector.innerHTML = `
     <div class="multi-inspector-hero">
-      ${items.slice(0, 9).map((asset) => `<img src="${asset.image_url}" alt="${escapeHtml(assetDisplayName(asset))}">`).join("")}
+      ${items.slice(0, 9).map((asset, index) => `<button class="multi-inspector-thumb" type="button" data-index="${index}" title="View ${escapeHtml(assetDisplayName(asset))}"><img src="${asset.image_url}" alt="${escapeHtml(assetDisplayName(asset))}"></button>`).join("")}
     </div>
 
     <section class="inspector-section">
@@ -837,8 +847,9 @@ function renderMultiSelectionInspector() {
 
     <div class="asset-actions multi-actions">
       ${items.some((asset) => asset.status !== "accepted") ? '<button id="multiAcceptSelectedBtn" type="button">Accept Selected</button>' : ""}
-      <button id="multiSendExporterBtn" type="button">Export</button>
+      <button id="multiFavoriteSelectedBtn" type="button">Favorite Selected</button>
       <button id="multiDownloadSelectedBtn" type="button">Download Selected</button>
+      <button id="multiSendExporterBtn" type="button" class="export-route-btn">Export</button>
     </div>
 
     <section class="inspector-section">
@@ -849,7 +860,11 @@ function renderMultiSelectionInspector() {
     </section>
   `;
 
+  assetInspector.querySelectorAll(".multi-inspector-thumb").forEach((button) => {
+    button.addEventListener("click", () => openSelectedImageViewer(Number(button.dataset.index || 0)));
+  });
   document.getElementById("multiAcceptSelectedBtn")?.addEventListener("click", acceptSelectedAssets);
+  document.getElementById("multiFavoriteSelectedBtn")?.addEventListener("click", favoriteSelectedAssets);
   document.getElementById("multiSendExporterBtn")?.addEventListener("click", () => routeSelectionToExporter());
   document.getElementById("multiDownloadSelectedBtn")?.addEventListener("click", downloadSelectedAssets);
 }
@@ -997,6 +1012,72 @@ async function acceptAsset(assetId) {
   if (!response.ok) { setStatus("Accept failed."); return; }
   setStatus("Asset accepted.");
   await loadAssets(assetId);
+}
+
+async function acceptSelectedAssets() {
+  const items = selectedAssets();
+  if (!items.length) {
+    setStatus("Select assets first.");
+    return;
+  }
+  const candidates = items.filter((asset) => asset.status !== "accepted");
+  if (!candidates.length) {
+    setStatus("Selected assets are already accepted.");
+    return;
+  }
+  setStatus(`Accepting ${candidates.length} selected asset(s)...`);
+  let ok = 0;
+  for (const asset of candidates) {
+    try {
+      const response = await fetch(`/api/assets/${asset.id}/accept`, { method: "POST" });
+      if (response.ok) ok += 1;
+    } catch (_) {}
+  }
+  setStatus(`Accepted ${ok} selected asset(s).`);
+  await loadAssets();
+  renderMultiSelectionInspector();
+}
+
+async function favoriteSelectedAssets() {
+  const items = selectedAssets();
+  if (!items.length) {
+    setStatus("Select assets first.");
+    return;
+  }
+  setStatus(`Favoriting ${items.length} selected asset(s)...`);
+  let ok = 0;
+  for (const asset of items) {
+    try {
+      const response = await fetch(`/api/assets/${asset.id}/metadata`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ favorite: true }),
+      });
+      if (response.ok) ok += 1;
+    } catch (_) {}
+  }
+  setStatus(`Favorited and saved ${ok} selected asset(s).`);
+  await loadAssets();
+  renderMultiSelectionInspector();
+}
+
+function downloadSelectedAssets() {
+  const items = selectedAssets();
+  if (!items.length) {
+    setStatus("Select assets first.");
+    return;
+  }
+  items.forEach((asset, index) => {
+    setTimeout(() => {
+      const link = document.createElement("a");
+      link.href = asset.image_url;
+      link.download = `${assetDisplayName(asset).replace(/[^a-z0-9_\-]+/gi, "_")}.png`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    }, index * 120);
+  });
+  setStatus(`Downloading ${items.length} selected asset(s).`);
 }
 
 async function deleteAsset(assetId) {
@@ -1290,9 +1371,9 @@ function clearExportSelectionWithStatus() {
 document.getElementById("refreshExportsBtn")?.addEventListener("click", refreshExportStatus);
 
 async function clearUnsavedCandidates() {
-  if (!confirm("Delete all unsaved candidate assets? Accepted and favorited assets are kept.")) return;
+  if (!confirm("Delete all unsaved candidate assets? This wipes them from the Asset Browser. Accepted and favorited assets are kept.")) return;
   if (clearCandidateAssetsBtn) clearCandidateAssetsBtn.disabled = true;
-  setStatus("Clearing unsaved candidates...");
+  setStatus("Deleting unsaved candidates...");
 
   try {
     let response = await fetch("/api/assets/candidates/clear", { method: "POST" });
@@ -1315,9 +1396,9 @@ async function clearUnsavedCandidates() {
     await refreshWorkspace();
     await loadAssets();
     updateExportSelectionStatus();
-    setStatus(`Cleared ${data.deleted || 0} unsaved candidate asset(s). Kept ${data.kept || 0} saved asset(s).`);
+    setStatus(`Deleted ${data.deleted || 0} unsaved candidate asset(s). Kept ${data.kept || 0} saved asset(s).`);
   } catch (err) {
-    setStatus(`Could not clear candidates: ${err.message}`);
+    setStatus(`Could not delete candidates: ${err.message}`);
   } finally {
     if (clearCandidateAssetsBtn) clearCandidateAssetsBtn.disabled = false;
   }
@@ -1346,7 +1427,12 @@ const viewerFitBtn = document.getElementById("viewerFitBtn");
 const viewerActualBtn = document.getElementById("viewerActualBtn");
 const viewerZoomInBtn = document.getElementById("viewerZoomInBtn");
 const viewerZoomOutBtn = document.getElementById("viewerZoomOutBtn");
+const viewerPrevBtn = document.getElementById("viewerPrevBtn");
+const viewerNextBtn = document.getElementById("viewerNextBtn");
+const imageViewerStrip = document.getElementById("imageViewerStrip");
 
+let viewerCollection = [];
+let viewerIndex = -1;
 let viewerZoom = 1;
 let viewerMode = "fit";
 let viewerDragging = false;
@@ -1388,18 +1474,56 @@ function applyViewerMode({ center = false } = {}) {
   if (center || viewerMode === "fit") centerViewerScroll();
 }
 
-function openImageViewer(src, title = "Image") {
-  if (!imageViewerModal || !imageViewerImage) return;
-  imageViewerImage.src = src;
-  imageViewerTitle.textContent = title || "Image";
-  viewerDownloadLink.href = src;
-  viewerDownloadLink.download = `${(title || "pixel_factory_image").replace(/[^a-z0-9_\-]+/gi, "_")}.png`;
+function renderViewerStrip() {
+  if (!imageViewerStrip) return;
+  const hasCollection = viewerCollection.length > 1;
+  imageViewerStrip.classList.toggle("hidden", !hasCollection);
+  if (!hasCollection) {
+    imageViewerStrip.innerHTML = "";
+  } else {
+    imageViewerStrip.innerHTML = viewerCollection.map((item, index) => `
+      <button class="viewer-strip-thumb ${index === viewerIndex ? "active" : ""}" type="button" data-index="${index}" title="${escapeHtml(item.title || "Image")}">
+        <img src="${item.src}" alt="${escapeHtml(item.title || "Image")}">
+      </button>
+    `).join("");
+    imageViewerStrip.querySelectorAll(".viewer-strip-thumb").forEach((button) => {
+      button.addEventListener("click", () => showViewerItem(Number(button.dataset.index || 0)));
+    });
+  }
+  if (viewerPrevBtn) viewerPrevBtn.disabled = !hasCollection;
+  if (viewerNextBtn) viewerNextBtn.disabled = !hasCollection;
+}
+
+function showViewerItem(index) {
+  if (!imageViewerImage) return;
+  if (!viewerCollection.length) return;
+  viewerIndex = (index + viewerCollection.length) % viewerCollection.length;
+  const item = viewerCollection[viewerIndex];
+  imageViewerImage.src = item.src;
+  imageViewerTitle.textContent = item.title || "Image";
+  viewerDownloadLink.href = item.src;
+  viewerDownloadLink.download = `${(item.title || "pixel_factory_image").replace(/[^a-z0-9_\-]+/gi, "_")}.png`;
   viewerMode = "fit";
   viewerZoom = 1;
-  imageViewerModal.classList.remove("hidden");
-  imageViewerModal.setAttribute("aria-hidden", "false");
+  renderViewerStrip();
   if (imageViewerImage.complete) applyViewerMode({ center: true });
   else imageViewerImage.onload = () => applyViewerMode({ center: true });
+}
+
+function openImageViewer(src, title = "Image", collection = null, index = 0) {
+  if (!imageViewerModal || !imageViewerImage) return;
+  viewerCollection = Array.isArray(collection) && collection.length ? collection : [{ src, title }];
+  viewerIndex = Math.max(0, Math.min(Number(index) || 0, viewerCollection.length - 1));
+  imageViewerModal.classList.remove("hidden");
+  imageViewerModal.setAttribute("aria-hidden", "false");
+  showViewerItem(viewerIndex);
+}
+
+function openSelectedImageViewer(index = 0) {
+  const items = selectedAssets();
+  if (!items.length) return;
+  const collection = viewerItemsFromAssets(items);
+  openImageViewer(collection[index]?.src || collection[0].src, collection[index]?.title || collection[0].title, collection, index);
 }
 
 function closeImageViewer() {
@@ -1407,6 +1531,9 @@ function closeImageViewer() {
   imageViewerModal.classList.add("hidden");
   imageViewerModal.setAttribute("aria-hidden", "true");
   if (imageViewerImage) imageViewerImage.removeAttribute("src");
+  viewerCollection = [];
+  viewerIndex = -1;
+  renderViewerStrip();
 }
 
 function setViewerActual(zoom = 1, { center = true } = {}) {
@@ -1427,6 +1554,8 @@ viewerFitBtn?.addEventListener("click", setViewerFit);
 viewerActualBtn?.addEventListener("click", () => setViewerActual(1));
 viewerZoomInBtn?.addEventListener("click", () => setViewerActual(viewerZoom * 1.25));
 viewerZoomOutBtn?.addEventListener("click", () => setViewerActual(viewerZoom / 1.25));
+viewerPrevBtn?.addEventListener("click", () => showViewerItem(viewerIndex - 1));
+viewerNextBtn?.addEventListener("click", () => showViewerItem(viewerIndex + 1));
 
 imageViewerStage?.addEventListener("wheel", (event) => {
   if (!imageViewerImage?.src) return;
@@ -1461,6 +1590,8 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") closeImageViewer();
   if (event.key === "0") setViewerFit();
   if (event.key === "1") setViewerActual(1);
+  if (event.key === "ArrowLeft") showViewerItem(viewerIndex - 1);
+  if (event.key === "ArrowRight") showViewerItem(viewerIndex + 1);
 });
 
 document.addEventListener("click", (event) => {
