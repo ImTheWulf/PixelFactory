@@ -1,3 +1,10 @@
+## PF-0017.5 — Pixel Snap Grid Overlay and Workflow Compact
+
+- Compacted Palette Lab History and Operation Stack when collapsed.
+- Fixed grid overlay sizing so it follows the rendered image bounds instead of filling the empty preview area.
+- Kept grid overlays out of the main Original/Processed preview cards.
+- Updated Palette Lab version/cache label.
+
 
 ## PF-0017.4 — Pixel Snap Live Preview/Grid Polish
 

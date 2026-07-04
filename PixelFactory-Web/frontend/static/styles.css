@@ -2874,11 +2874,8 @@ select option:hover {
   }
 }
 
-<<<<<<< HEAD
 /* PF-0017.4 Pixel Snap live preview/grid lock polish */
-=======
 /* PF-0017.3 Pixel Snap live preview/grid lock polish */
->>>>>>> aeabed633420bce9dac491c86285e5e35aaaae67
 .pf-grid-overlay.locked {
   inset: 0 auto auto 0;
   transform: none !important;
@@ -2889,7 +2886,6 @@ select option:hover {
 .pixel-snap-toggle input#pixelSnapLivePreview + span::after {
   content: "";
 }
-<<<<<<< HEAD
 
 
 /* PF-0017.4 Palette Lab cleanup */
@@ -2969,5 +2965,80 @@ select option:hover {
 @media (max-width: 1180px) {
   .palette-collapsed-workflow { grid-template-columns: 1fr; }
 }
-=======
->>>>>>> aeabed633420bce9dac491c86285e5e35aaaae67
+
+
+/* PF-0017.5 compact workflow + locked grid overlay polish */
+.palette-workflow-grid,
+.palette-collapsed-workflow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  gap: 12px;
+  margin: 12px 0 16px;
+  align-items: start;
+}
+
+.palette-workflow-details,
+.palette-operation-card,
+.palette-history-card {
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.palette-workflow-details:not([open]) {
+  min-height: 48px !important;
+  max-height: 52px;
+}
+
+.palette-workflow-details summary {
+  list-style: none;
+  cursor: pointer;
+  min-height: 48px;
+  padding: 13px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 16px;
+}
+
+.palette-workflow-details summary::-webkit-details-marker { display: none; }
+.palette-workflow-details summary::before {
+  content: "▸";
+  color: var(--accent);
+  font-size: 13px;
+  transition: transform .16s ease;
+}
+.palette-workflow-details[open] summary::before { transform: rotate(90deg); }
+.palette-workflow-details summary strong { color: var(--text); }
+.palette-workflow-details[open] summary {
+  border-bottom: 1px solid var(--border);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.palette-operation-stack,
+.palette-history-list {
+  padding: 12px 14px 14px;
+}
+
+.palette-operation-row {
+  min-height: 44px;
+}
+
+.palette-viewport .pf-grid-overlay,
+.palette-preview-card .pf-grid-overlay {
+  display: none !important;
+}
+
+.palette-compare-stage .pf-grid-overlay,
+.palette-compare-modal-canvas > .pf-grid-overlay {
+  border-radius: 0;
+  transform: translateZ(0);
+  background-position: 0 0;
+}
+
+@media (max-width: 1180px) {
+  .palette-workflow-grid,
+  .palette-collapsed-workflow { grid-template-columns: 1fr; }
+}

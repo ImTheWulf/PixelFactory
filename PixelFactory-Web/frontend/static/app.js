@@ -224,6 +224,21 @@ function ensureGridOverlay(host) {
   return overlay;
 }
 
+function getContainedImageRect(img, host) {
+  const hostRect = host.getBoundingClientRect();
+  const imgRect = img.getBoundingClientRect();
+  const naturalWidth = img.naturalWidth || 1;
+  const naturalHeight = img.naturalHeight || 1;
+  const boxWidth = Math.max(1, imgRect.width || hostRect.width);
+  const boxHeight = Math.max(1, imgRect.height || hostRect.height);
+  const scale = Math.min(boxWidth / naturalWidth, boxHeight / naturalHeight);
+  const width = Math.max(1, naturalWidth * scale);
+  const height = Math.max(1, naturalHeight * scale);
+  const left = (imgRect.left - hostRect.left) + (boxWidth - width) / 2;
+  const top = (imgRect.top - hostRect.top) + (boxHeight - height) / 2;
+  return { left, top, width, height };
+}
+
 function updateGridOverlayForImage(img, host, gridSize) {
   const overlay = ensureGridOverlay(host);
   if (!overlay || !img || !img.getAttribute("src") || !img.naturalWidth || !img.naturalHeight) {
@@ -257,13 +272,14 @@ function updateGridOverlayForImage(img, host, gridSize) {
     return;
   }
 
-  const width = Math.max(1, imgRect.width);
-  const height = Math.max(1, imgRect.height);
+  const contentRect = getContainedImageRect(img, host);
+  const width = Math.max(1, contentRect.width);
+  const height = Math.max(1, contentRect.height);
   const columns = Math.max(1, img.naturalWidth / grid);
   const rows = Math.max(1, img.naturalHeight / grid);
 
-  overlay.style.left = `${imgRect.left - hostRect.left + host.scrollLeft}px`;
-  overlay.style.top = `${imgRect.top - hostRect.top + host.scrollTop}px`;
+  overlay.style.left = `${contentRect.left + host.scrollLeft}px`;
+  overlay.style.top = `${contentRect.top + host.scrollTop}px`;
   overlay.style.width = `${width}px`;
   overlay.style.height = `${height}px`;
   overlay.style.backgroundSize = `${Math.max(2, width / columns)}px ${Math.max(2, height / rows)}px`;
@@ -543,6 +559,7 @@ function setPaletteCompareZoomAtPoint(nextZoom, clientX, clientY) {
     const maxTop = Math.max(0, stage.scrollHeight - stage.clientHeight);
     stage.scrollLeft = Math.min(maxLeft, Math.max(0, canvasLeftInScroll + relX * newCanvasRect.width - viewportX));
     stage.scrollTop = Math.min(maxTop, Math.max(0, canvasTopInScroll + relY * newCanvasRect.height - viewportY));
+    updatePixelSnapGridOverlays();
   });
 }
 
