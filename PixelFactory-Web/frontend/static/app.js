@@ -153,8 +153,8 @@ const compareDifferenceCanvas = document.getElementById("compareDifferenceCanvas
 const comparePixelInspector = document.getElementById("comparePixelInspector");
 const discardPalettePreviewBtn = document.getElementById("discardPalettePreviewBtn");
 const downloadPaletteResultBtn = document.getElementById("downloadPaletteResultBtn");
-const savePaletteResultBtn = document.getElementById("savePaletteResultBtn");
-const acceptPaletteResultBtn = document.getElementById("acceptPaletteResultBtn");
+const savePaletteAssetBtn = document.getElementById("savePaletteAssetBtn");
+const savePaletteAsAssetBtn = document.getElementById("savePaletteAsAssetBtn");
 const opPaletteCount = document.getElementById("opPaletteCount");
 const opResizeScale = document.getElementById("opResizeScale");
 const opPixelSize = document.getElementById("opPixelSize");
@@ -676,8 +676,8 @@ function clearPaletteProcessedPreview({ addHistory = false } = {}) {
   downloadBtn.disabled = true;
   if (downloadPaletteResultBtn) downloadPaletteResultBtn.disabled = true;
   if (discardPalettePreviewBtn) discardPalettePreviewBtn.disabled = true;
-  if (savePaletteResultBtn) savePaletteResultBtn.disabled = true;
-  if (acceptPaletteResultBtn) acceptPaletteResultBtn.disabled = true;
+  if (savePaletteAssetBtn) savePaletteAssetBtn.disabled = true;
+  if (savePaletteAsAssetBtn) savePaletteAsAssetBtn.disabled = true;
   paletteComparePanel?.classList.add("hidden");
   closePaletteCompareViewer();
   setPaletteDirty(false);
@@ -976,8 +976,8 @@ async function processPalettePreview({ quiet = false } = {}) {
     downloadBtn.disabled = false;
     if (downloadPaletteResultBtn) downloadPaletteResultBtn.disabled = false;
     if (discardPalettePreviewBtn) discardPalettePreviewBtn.disabled = false;
-    if (savePaletteResultBtn) savePaletteResultBtn.disabled = false;
-    if (acceptPaletteResultBtn) acceptPaletteResultBtn.disabled = false;
+    if (savePaletteAssetBtn) savePaletteAssetBtn.disabled = false;
+    if (savePaletteAsAssetBtn) savePaletteAsAssetBtn.disabled = false;
     setPaletteDirty(true);
     showPaletteCompare();
     syncCompareControlsFromPalette();
@@ -1026,44 +1026,79 @@ downloadBtn.addEventListener("click", () => {
   addPaletteHistory("Downloaded result", "pixel_factory_processed.png");
 });
 
-async function savePaletteProcessedAsset({ accept = false } = {}) {
-  if (!processedBlobUrl) {
-    setStatus("Process an image before saving a Palette Lab result.");
-    return null;
-  }
-
-  const blob = await fetch(processedBlobUrl).then((response) => response.blob());
-  const sourceName = paletteSourceAsset?.name || selectedFile?.name || "palette_lab_result";
-  const sourceType = paletteSourceAsset?.type || paletteCurrentMeta.type || "repair";
+function buildPaletteSaveForm(blob, filename, extra = {}) {
   const form = new FormData();
-  form.append("image", blob, sourceName.replace(/\.png$/i, "") + "_clean.png");
-  form.append("asset_type", sourceType);
-  form.append("source_asset_id", paletteSourceAsset?.id || "");
-  form.append("source_asset_name", sourceName);
+  form.append("image", blob, filename);
   form.append("operation", document.getElementById("operation")?.value || "palette_lab");
   form.append("palette_colors", document.getElementById("paletteColors")?.value || "64");
   form.append("resize_scale", document.getElementById("resizeScale")?.value || "1");
   form.append("pixel_size", document.getElementById("pixelSize")?.value || "0");
   form.append("pixel_strength", pixelSnapStrength?.value || "1");
-  form.append("accept", accept ? "true" : "false");
+  Object.entries(extra).forEach(([key, value]) => form.append(key, value ?? ""));
+  return form;
+}
 
-  const label = accept ? "Saving and accepting Palette Lab result..." : "Saving Palette Lab result as Candidate...";
-  setStatus(label);
-  const response = await fetch("/api/assets/from-palette", { method: "POST", body: form });
+async function savePaletteEdit({ saveAs = false } = {}) {
+  if (!processedBlobUrl) {
+    setStatus("Update the preview before saving Palette Lab changes.");
+    return null;
+  }
+
+  const blob = await fetch(processedBlobUrl).then((response) => response.blob());
+  const sourceName = paletteSourceAsset?.name || selectedFile?.name || "palette_lab_result";
+  const cleanBase = sourceName.replace(/\.png$/i, "");
+  const sourceType = paletteSourceAsset?.type || paletteCurrentMeta.type || "repair";
+
+  let endpoint = "";
+  let form = null;
+
+  if (saveAs || !paletteSourceAsset?.id) {
+    const suggested = `${cleanBase}_edited`;
+    const newName = window.prompt("Save cleaned asset as:", suggested);
+    if (!newName) {
+      setStatus("Save As cancelled.");
+      return null;
+    }
+    endpoint = "/api/assets/palette-save-as";
+    form = buildPaletteSaveForm(blob, `${newName}.png`, {
+      name: newName,
+      asset_type: sourceType,
+      source_asset_id: paletteSourceAsset?.id || "",
+      source_asset_name: sourceName,
+    });
+    setStatus("Saving Palette Lab result as a new accepted asset...");
+  } else {
+    endpoint = `/api/assets/${encodeURIComponent(paletteSourceAsset.id)}/palette-save`;
+    form = buildPaletteSaveForm(blob, `${cleanBase}.png`);
+    setStatus("Saving Palette Lab edits to current asset...");
+  }
+
+  const response = await fetch(endpoint, { method: "POST", body: form });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     setStatus(data.detail || `Save failed: HTTP ${response.status}`);
     return null;
   }
+
   const asset = data.asset;
-  addPaletteHistory(accept ? "Saved + accepted result" : "Saved candidate result", asset?.name || sourceName);
-  setPaletteDirty(false, accept ? "● Saved + Accepted" : "● Saved as Candidate");
-  setStatus(accept ? "Palette Lab result saved and accepted." : "Palette Lab result saved as a Candidate.");
+  if (asset) {
+    paletteSourceAsset = asset;
+    updatePaletteMeta({
+      type: asset.type || sourceType || "—",
+      status: asset.status === "accepted" ? "Accepted" : "Candidate",
+      recipe: asset.recipe_name || asset.recipe_id || paletteCurrentMeta.recipe || "—",
+      resolution: paletteProcessedResolution || paletteCurrentMeta.resolution || "—",
+    });
+    updatePaletteLoadedState({ filename: asset.name || sourceName, source: "asset", detail: "Saved in Asset Browser", meta: paletteCurrentMeta });
+  }
+  addPaletteHistory(saveAs ? "Saved As" : "Saved", asset?.name || sourceName);
+  setPaletteDirty(false, "● Saved");
+  setStatus(saveAs ? "Palette Lab result saved as a new accepted asset." : "Palette Lab changes saved to current asset.");
   return asset;
 }
 
-savePaletteResultBtn?.addEventListener("click", () => savePaletteProcessedAsset({ accept: false }));
-acceptPaletteResultBtn?.addEventListener("click", () => savePaletteProcessedAsset({ accept: true }));
+savePaletteAssetBtn?.addEventListener("click", () => savePaletteEdit({ saveAs: false }));
+savePaletteAsAssetBtn?.addEventListener("click", () => savePaletteEdit({ saveAs: true }));
 
 
 // Character Studio

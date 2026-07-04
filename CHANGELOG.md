@@ -1,4 +1,13 @@
 
+## PF-0018 — Palette Lab Editor Save Flow
+
+- Replaced Palette Lab Candidate save flow with editor-style Save and Save As.
+- Save now updates the currently loaded asset instead of creating a Candidate.
+- Save As creates a new accepted asset with source/edit metadata.
+- Palette Lab edits now preserve non-destructive history metadata on the asset.
+- Renamed Operation Stack to Processing Pipeline for clearer editor language.
+
+
 ## PF-0017.7 — Palette Lab Save Result Flow
 
 - Added native save flow for processed Palette Lab previews.

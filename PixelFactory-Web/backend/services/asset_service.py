@@ -162,6 +162,67 @@ class AssetService:
         meta["image_url"] = self.asset_url(asset_id)
         return meta
 
+    def overwrite_asset_image(self, asset_id: str, image_bytes: bytes, edit_meta: dict[str, Any] | None = None) -> dict[str, Any] | None:
+        """Overwrite the active image for an existing asset and record Palette Lab edit metadata.
+
+        Palette Lab edits are not candidates. They are user edits to the loaded
+        asset. Accepted assets overwrite their accepted image; candidates overwrite
+        their current candidate image.
+        """
+        meta = self.load(asset_id)
+        if not meta:
+            return None
+        target = self.active_image_path_from_meta(meta)
+        if not target:
+            return None
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(image_bytes)
+        edit_meta = edit_meta or {}
+        now = datetime.now().isoformat(timespec="seconds")
+        meta["updated"] = now
+        meta["palette_lab_last_edit"] = {"updated": now, **edit_meta}
+        history = meta.get("palette_lab_history")
+        if not isinstance(history, list):
+            history = []
+        history.append({"action": "save", "updated": now, **edit_meta})
+        meta["palette_lab_history"] = history[-50:]
+        clean = {k: v for k, v in meta.items() if k not in {"image_url", "project_root", "active_image_path"}}
+        self.metadata_path(asset_id).write_text(json.dumps(clean, indent=2), encoding="utf-8")
+        return self.load(asset_id)
+
+    def save_palette_variant(self, image_bytes: bytes, *, source_asset_id: str = "", name: str = "", asset_type: str = "repair", edit_meta: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Create a new accepted asset from a Palette Lab edit.
+
+        This is a deliberate Save As flow, not a generated Candidate flow.
+        """
+        source = self.load(source_asset_id) if source_asset_id else None
+        edit_meta = edit_meta or {}
+        safe_type = str(asset_type or (source or {}).get("type") or "repair").strip().lower()
+        if safe_type in {"—", "upload", "manual", "asset"}:
+            safe_type = "repair"
+        source_name = str((source or {}).get("name") or edit_meta.get("source_asset_name") or "palette_lab_asset")
+        requested_name = str(name or f"{source_name}_edited").strip()
+        tags = list((source or {}).get("tags") or [])
+        for tag in ["palette-lab", "edited", safe_type]:
+            if tag not in tags:
+                tags.append(tag)
+        meta = self.save_asset(
+            image_bytes,
+            safe_type,
+            name=requested_name,
+            prompt=f"Palette Lab edit from {source_name}",
+            workflow="palette_lab",
+            recipe_id="palette_lab.pixel_cleanup",
+            recipe_name="Palette Lab Cleanup",
+            source_asset_id=source_asset_id or None,
+            source_asset_name=source_name,
+            engine="pixel_factory",
+            tags=tags,
+            palette_lab_last_edit=edit_meta,
+        )
+        accepted = self.accept(meta["id"])
+        return accepted or meta
+
 
     def update_metadata(self, asset_id: str, changes: dict[str, Any]) -> dict[str, Any] | None:
         meta = self.load(asset_id)

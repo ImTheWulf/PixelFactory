@@ -39,7 +39,7 @@ asset_service = AssetService(PROJECT_ROOT)
 workspace_service = WorkspaceService(PROJECT_ROOT)
 export_service = ExportService(PROJECT_ROOT, asset_service)
 
-app = FastAPI(title="Pixel Factory by Wulf", version="0.16-pf0017-7-save-processed-assets")
+app = FastAPI(title="Pixel Factory by Wulf", version="0.16-pf0018-palette-save-flow")
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
 
@@ -523,6 +523,66 @@ async def save_palette_result(
         accepted = asset_service.accept(meta["id"])
         if accepted:
             meta = accepted
+    return {"ok": True, "asset": meta}
+
+
+@app.post("/api/assets/{asset_id}/palette-save")
+async def save_palette_edit(
+    asset_id: str,
+    image: UploadFile = File(...),
+    operation: str = Form("palette_lab"),
+    palette_colors: int = Form(64),
+    resize_scale: int = Form(1),
+    pixel_size: int = Form(0),
+    pixel_strength: float = Form(1.0),
+) -> dict:
+    data = await image.read()
+    if not data:
+        raise HTTPException(status_code=400, detail="No processed image supplied")
+    edit_meta = {
+        "operation": operation,
+        "palette_colors": int(palette_colors),
+        "resize_scale": int(resize_scale),
+        "pixel_size": int(pixel_size),
+        "pixel_strength": float(pixel_strength),
+    }
+    meta = asset_service.overwrite_asset_image(asset_id, data, edit_meta)
+    if not meta:
+        raise HTTPException(status_code=404, detail="Palette Lab save target not found")
+    return {"ok": True, "asset": meta}
+
+
+@app.post("/api/assets/palette-save-as")
+async def save_palette_edit_as(
+    image: UploadFile = File(...),
+    name: str = Form(""),
+    asset_type: str = Form("repair"),
+    source_asset_id: str = Form(""),
+    source_asset_name: str = Form(""),
+    operation: str = Form("palette_lab"),
+    palette_colors: int = Form(64),
+    resize_scale: int = Form(1),
+    pixel_size: int = Form(0),
+    pixel_strength: float = Form(1.0),
+) -> dict:
+    data = await image.read()
+    if not data:
+        raise HTTPException(status_code=400, detail="No processed image supplied")
+    edit_meta = {
+        "source_asset_name": source_asset_name,
+        "operation": operation,
+        "palette_colors": int(palette_colors),
+        "resize_scale": int(resize_scale),
+        "pixel_size": int(pixel_size),
+        "pixel_strength": float(pixel_strength),
+    }
+    meta = asset_service.save_palette_variant(
+        data,
+        source_asset_id=source_asset_id,
+        name=name,
+        asset_type=asset_type,
+        edit_meta=edit_meta,
+    )
     return {"ok": True, "asset": meta}
 
 @app.patch("/api/assets/{asset_id}/metadata")
