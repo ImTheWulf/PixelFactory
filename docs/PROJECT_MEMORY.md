@@ -402,3 +402,16 @@ Palette Lab should not auto-load stale workspace assets on startup or when openi
 
 The before/after compare should use a dedicated full-screen compare viewer, not the generic image viewer. The compare viewer should keep original and processed previews aligned and allow resize, palette color, and operation changes before processing again.
 
+
+
+## PF-0017 — Pixel Snap Foundation
+
+- Added first Palette Lab Pixel Snap processing path.
+- Added Pixel Size controls for Palette Lab and compare viewer.
+- Added Pixel Snap operation modes for preview processing.
+- Enabled Pixel Snap cleanup card in Palette Lab.
+- This is a local foundation inspired by Sprite Fusion Pixel Snapper; upstream engine integration can be evaluated later.
+
+## PF-0017.1 Pixel Snap Direction
+
+Pixel Snap is being built as a native Pixel Factory cleanup tool inside Palette Lab. It should not depend on a separate web UI or external server. The first native pass includes grid size, strength, palette snap, and alpha preservation controls.

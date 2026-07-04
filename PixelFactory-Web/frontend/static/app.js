@@ -139,6 +139,7 @@ const compareModalDivider = document.getElementById("compareModalDivider");
 const compareModalSlider = document.getElementById("compareModalSlider");
 const compareResizeScale = document.getElementById("compareResizeScale");
 const comparePaletteColors = document.getElementById("comparePaletteColors");
+const comparePixelSize = document.getElementById("comparePixelSize");
 const compareOperation = document.getElementById("compareOperation");
 const compareProcessBtn = document.getElementById("compareProcessBtn");
 const compareDownloadBtn = document.getElementById("compareDownloadBtn");
@@ -151,6 +152,15 @@ const discardPalettePreviewBtn = document.getElementById("discardPalettePreviewB
 const downloadPaletteResultBtn = document.getElementById("downloadPaletteResultBtn");
 const opPaletteCount = document.getElementById("opPaletteCount");
 const opResizeScale = document.getElementById("opResizeScale");
+const opPixelSize = document.getElementById("opPixelSize");
+const opPixelSnapCheck = document.getElementById("opPixelSnapCheck");
+const pixelSnapToolBtn = document.getElementById("pixelSnapToolBtn");
+const pixelSnapGridSize = document.getElementById("pixelSnapGridSize");
+const pixelSnapStrength = document.getElementById("pixelSnapStrength");
+const pixelSnapStrengthValue = document.getElementById("pixelSnapStrengthValue");
+const pixelSnapPalette = document.getElementById("pixelSnapPalette");
+const pixelSnapAlpha = document.getElementById("pixelSnapAlpha");
+const pixelSnapModeBadge = document.getElementById("pixelSnapModeBadge");
 
 let selectedFile = null;
 let selectedFileSource = null;
@@ -207,8 +217,15 @@ function renderPaletteHistory() {
 }
 
 function updateOperationStackLabels() {
+  const operation = document.getElementById("operation")?.value || "resize_palette";
+  const pixelSize = document.getElementById("pixelSize")?.value || "0";
+  const snapStrength = Number(pixelSnapStrength?.value || 1);
   if (opPaletteCount) opPaletteCount.textContent = `${document.getElementById("paletteColors")?.value || 64} colors`;
   if (opResizeScale) opResizeScale.textContent = `${document.getElementById("resizeScale")?.value || 2}x`;
+  if (opPixelSize) opPixelSize.textContent = pixelSize === "0" ? `Auto · ${Math.round(snapStrength * 100)}%` : `${pixelSize}px · ${Math.round(snapStrength * 100)}%`;
+  if (opPixelSnapCheck) opPixelSnapCheck.checked = operation.startsWith("pixel_snap");
+  if (pixelSnapStrengthValue) pixelSnapStrengthValue.textContent = `${Math.round(snapStrength * 100)}%`;
+  if (pixelSnapModeBadge) pixelSnapModeBadge.textContent = pixelSize === "0" ? "Auto grid" : `${pixelSize}px grid`;
 }
 
 function updateCompareSlider() {
@@ -226,21 +243,39 @@ function updateCompareModalSlider() {
 function syncCompareControlsFromPalette() {
   const resize = document.getElementById("resizeScale");
   const colors = document.getElementById("paletteColors");
+  const pixelSize = document.getElementById("pixelSize");
   const operation = document.getElementById("operation");
   if (compareResizeScale && resize) compareResizeScale.value = resize.value;
   if (comparePaletteColors && colors) comparePaletteColors.value = colors.value;
+  if (comparePixelSize && pixelSize) comparePixelSize.value = pixelSize.value;
   if (compareOperation && operation) compareOperation.value = operation.value;
 }
 
 function syncPaletteControlsFromCompare() {
   const resize = document.getElementById("resizeScale");
   const colors = document.getElementById("paletteColors");
+  const pixelSize = document.getElementById("pixelSize");
   const operation = document.getElementById("operation");
   if (resize && compareResizeScale) resize.value = compareResizeScale.value;
   if (colors && comparePaletteColors) colors.value = comparePaletteColors.value;
+  if (pixelSize && comparePixelSize) pixelSize.value = comparePixelSize.value;
   if (operation && compareOperation) operation.value = compareOperation.value;
   updateOperationStackLabels();
 }
+function syncPixelSnapPanelToOperation() {
+  const pixelSize = document.getElementById("pixelSize");
+  const operation = document.getElementById("operation");
+  if (pixelSnapGridSize && pixelSize) pixelSize.value = pixelSnapGridSize.value;
+  if (operation) operation.value = pixelSnapPalette?.checked === false ? "pixel_snap_only" : "pixel_snap";
+  updateOperationStackLabels();
+}
+
+function syncPixelSnapPanelFromOperation() {
+  const pixelSize = document.getElementById("pixelSize");
+  if (pixelSnapGridSize && pixelSize) pixelSnapGridSize.value = pixelSize.value;
+  updateOperationStackLabels();
+}
+
 
 function syncOpenCompareControlsFromPalette() {
   if (!paletteCompareModal || paletteCompareModal.classList.contains("hidden")) return;
@@ -489,11 +524,11 @@ window.addEventListener("resize", () => {
 
 compareDownloadBtn?.addEventListener("click", () => downloadBtn?.click());
 compareProcessBtn?.addEventListener("click", processPreviewFromCompareViewer);
-[compareResizeScale, comparePaletteColors, compareOperation].forEach((control) => {
+[compareResizeScale, comparePaletteColors, comparePixelSize, compareOperation].forEach((control) => {
   control?.addEventListener("change", () => { syncPaletteControlsFromCompare(); scheduleComparePreviewUpdate(); });
   control?.addEventListener("input", () => { syncPaletteControlsFromCompare(); scheduleComparePreviewUpdate(); });
 });
-[document.getElementById("resizeScale"), document.getElementById("paletteColors"), document.getElementById("operation")].forEach((control) => {
+[document.getElementById("resizeScale"), document.getElementById("paletteColors"), document.getElementById("pixelSize"), document.getElementById("operation")].forEach((control) => {
   control?.addEventListener("change", () => { updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); });
   control?.addEventListener("input", () => { updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); });
 });
@@ -501,7 +536,33 @@ discardPalettePreviewBtn?.addEventListener("click", () => clearPaletteProcessedP
 downloadPaletteResultBtn?.addEventListener("click", () => downloadBtn?.click());
 document.getElementById("paletteColors")?.addEventListener("change", updateOperationStackLabels);
 document.getElementById("resizeScale")?.addEventListener("change", updateOperationStackLabels);
+document.getElementById("pixelSize")?.addEventListener("change", updateOperationStackLabels);
+document.getElementById("operation")?.addEventListener("change", updateOperationStackLabels);
+pixelSnapGridSize?.addEventListener("change", () => {
+  syncPixelSnapPanelToOperation();
+  schedulePalettePreviewUpdate();
+});
+pixelSnapStrength?.addEventListener("input", () => {
+  syncPixelSnapPanelToOperation();
+  schedulePalettePreviewUpdate();
+});
+pixelSnapPalette?.addEventListener("change", () => {
+  syncPixelSnapPanelToOperation();
+  schedulePalettePreviewUpdate();
+});
+pixelSnapAlpha?.addEventListener("change", () => {
+  syncPixelSnapPanelToOperation();
+  schedulePalettePreviewUpdate();
+});
+pixelSnapToolBtn?.addEventListener("click", () => {
+  syncPixelSnapPanelToOperation();
+  updateOperationStackLabels();
+  processPalettePreview();
+  setStatus("Pixel Snap preview running...");
+});
+document.getElementById("pixelSize")?.addEventListener("change", syncPixelSnapPanelFromOperation);
 updateOperationStackLabels();
+syncPixelSnapPanelFromOperation();
 
 async function refreshWorkspace({ quiet = true } = {}) {
   try {
@@ -611,11 +672,23 @@ async function processPalettePreview({ quiet = false } = {}) {
   form.append("image", selectedFile);
   form.append("resize_scale", document.getElementById("resizeScale").value);
   form.append("palette_colors", document.getElementById("paletteColors").value);
+  form.append("pixel_size", document.getElementById("pixelSize")?.value || "0");
+  form.append("pixel_strength", pixelSnapStrength?.value || "1");
+  form.append("snap_palette", pixelSnapPalette?.checked === false ? "false" : "true");
+  form.append("preserve_alpha", pixelSnapAlpha?.checked === false ? "false" : "true");
   form.append("operation", document.getElementById("operation").value);
 
   try {
     const response = await fetch("/api/process", { method: "POST", body: form });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    if (!response.ok) {
+      let detail = `HTTP ${response.status}`;
+      try {
+        const errorBody = await response.json();
+        detail = errorBody.detail || detail;
+        if (Array.isArray(detail)) detail = detail.map((item) => item.msg || JSON.stringify(item)).join("; ");
+      } catch (_) {}
+      throw new Error(detail);
+    }
     const blob = await response.blob();
     if (processedBlobUrl) URL.revokeObjectURL(processedBlobUrl);
     processedBlobUrl = URL.createObjectURL(blob);
@@ -637,8 +710,11 @@ async function processPalettePreview({ quiet = false } = {}) {
     const operationLabel = document.getElementById("operation")?.selectedOptions?.[0]?.textContent || "Process";
     const scaleLabel = document.getElementById("resizeScale")?.value || "1";
     const colorLabel = document.getElementById("paletteColors")?.value || "64";
+    const pixelSizeLabel = document.getElementById("pixelSize")?.value || "0";
+    const pixelSizeText = pixelSizeLabel === "0" ? "auto grid" : `${pixelSizeLabel}px grid`;
+    const strengthText = document.getElementById("operation")?.value?.startsWith("pixel_snap") ? ` · ${Math.round(Number(pixelSnapStrength?.value || 1) * 100)}% snap` : "";
     updatePaletteLoadedState({ filename: selectedFile?.name || "Processed preview", source: selectedFileSource || "workspace", detail: `Processed preview ready${paletteProcessedResolution !== "—" ? ` · ${paletteProcessedResolution}` : ""}` });
-    addPaletteHistory("Processed preview", `${operationLabel} · ${colorLabel} colors · ${scaleLabel}x`);
+    addPaletteHistory("Processed preview", `${operationLabel} · ${colorLabel} colors · ${scaleLabel}x · ${pixelSizeText}${strengthText}`);
     setStatus("Palette Lab preview updated.");
   } catch (err) {
     setStatus(`Error: ${err.message}`);

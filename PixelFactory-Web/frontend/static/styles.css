@@ -2711,3 +2711,104 @@ select option:hover {
 .palette-compare-modal-stage.zoomed .palette-compare-modal-canvas {
   margin: auto !important;
 }
+
+/* PF-0017.1 Native Pixel Snap panel */
+.palette-tool-card.active {
+  cursor: pointer;
+  opacity: 1;
+  border-color: rgba(110, 231, 255, .35);
+  background: rgba(110, 231, 255, .08);
+}
+
+.palette-tool-card.active:hover {
+  transform: translateY(-1px);
+  border-color: rgba(110, 231, 255, .55);
+  background: rgba(110, 231, 255, .12);
+}
+
+
+/* PF-0017.1 Native Pixel Snap panel */
+.palette-panel-subtitle {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.tool-mode-badge {
+  align-self: start;
+  border: 1px solid rgba(96, 165, 250, .35);
+  background: rgba(37, 99, 235, .16);
+  color: #bfe2ff;
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 850;
+}
+.pixel-snap-panel {
+  border-color: rgba(110, 231, 255, .18);
+}
+.pixel-snap-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(240px, .65fr);
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.pixel-snap-control-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.pixel-snap-control-grid label,
+.pixel-snap-toggle {
+  background: rgba(3, 7, 12, .52);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+}
+.pixel-snap-control-grid label span,
+.pixel-snap-toggle span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+.pixel-snap-control-grid select,
+.pixel-snap-control-grid input[type="range"] {
+  width: 100%;
+}
+.pixel-snap-control-grid em {
+  display: block;
+  color: var(--text);
+  font-style: normal;
+  font-weight: 850;
+  margin-top: 6px;
+}
+.pixel-snap-toggle {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+}
+.pixel-snap-toggle span {
+  margin: 0;
+  color: var(--text);
+  font-weight: 750;
+}
+.pixel-snap-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  justify-content: center;
+}
+.compact-tools {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.compact-tools .palette-tool-card {
+  min-height: 72px;
+}
+@media (max-width: 1180px) {
+  .pixel-snap-layout,
+  .pixel-snap-control-grid,
+  .compact-tools {
+    grid-template-columns: 1fr;
+  }
+}

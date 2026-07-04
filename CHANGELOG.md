@@ -1,4 +1,11 @@
 
+## PF-0017.1 — Native Pixel Snap Panel
+
+- Hardened Palette Lab process requests to avoid HTTP 422 payload mismatches.
+- Added native Pixel Snap controls for grid size, strength, palette snapping, and alpha preservation.
+- Improved Pixel Snap processing as a first-class Palette Lab cleanup tool.
+- Added clearer processing errors from the backend.
+
 ## PF-0016.11 — Palette Compare Zoom Origin
 
 - Improved Palette Lab compare viewer zoom origin so first zoom does not jump to the top-left.
@@ -322,3 +329,12 @@ Quick favorite toggle and seed UI cleanup.
 - Kept accepted and favorited assets safe during candidate cleanup.
 - Clears stale workspace state if the current workspace points to a deleted candidate.
 - Documented the PF-0014 generated dark multi-panel UI concept as the global Pixel Factory UI target.
+
+
+## PF-0017 — Pixel Snap Foundation
+
+- Added first Palette Lab Pixel Snap processing path.
+- Added Pixel Size controls for Palette Lab and compare viewer.
+- Added Pixel Snap operation modes for preview processing.
+- Enabled Pixel Snap cleanup card in Palette Lab.
+- This is a local foundation inspired by Sprite Fusion Pixel Snapper; upstream engine integration can be evaluated later.

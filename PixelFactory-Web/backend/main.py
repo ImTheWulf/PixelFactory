@@ -39,7 +39,7 @@ asset_service = AssetService(PROJECT_ROOT)
 workspace_service = WorkspaceService(PROJECT_ROOT)
 export_service = ExportService(PROJECT_ROOT, asset_service)
 
-app = FastAPI(title="Pixel Factory by Wulf", version="0.14-pf0014-2-tile-asset-workflow")
+app = FastAPI(title="Pixel Factory by Wulf", version="0.16-pf0017-1-pixel-snap-native")
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
 
@@ -64,24 +64,111 @@ def _png_response(img: Image.Image) -> Response:
     return Response(content=buf.getvalue(), media_type="image/png")
 
 
+
+def _auto_pixel_size(width: int, height: int) -> int:
+    """Small local Pixel Snapper-style heuristic for AI pixel-art cleanup.
+
+    This is not the upstream Sprite Fusion WASM/Rust implementation yet. It is a
+    lightweight foundation that gives Palette Lab a usable snap-to-grid pass while
+    leaving room to vendor the real MIT Pixel Snapper engine later.
+    """
+    smallest = max(1, min(width, height))
+    if smallest >= 1024:
+        return 32
+    if smallest >= 512:
+        return 16
+    if smallest >= 256:
+        return 8
+    if smallest >= 128:
+        return 4
+    return 2
+
+
+def _quantize_rgba(img: Image.Image, colors: int) -> Image.Image:
+    colors = max(2, min(256, int(colors)))
+    alpha = img.getchannel("A")
+    rgb = img.convert("RGB")
+    quantized = rgb.quantize(colors=colors, method=Image.Quantize.MEDIANCUT)
+    out = quantized.convert("RGBA")
+    out.putalpha(alpha)
+    return out
+
+
+def _pixel_snap_rgba(
+    img: Image.Image,
+    *,
+    pixel_size: int = 0,
+    palette_colors: int = 64,
+    quantize: bool = True,
+) -> Image.Image:
+    """Snap uneven AI pixels to a coarse grid, then restore with NEAREST.
+
+    Conceptually follows the Pixel Snapper goal: consistent pixel grid + optional
+    strict palette. It downsamples to grid cells, optionally quantizes, then
+    nearest-neighbor upscales back to the original size.
+    """
+    w, h = img.size
+    px = int(pixel_size or 0)
+    if px <= 0:
+        px = _auto_pixel_size(w, h)
+    px = max(1, min(px, max(1, min(w, h) // 2)))
+
+    snapped_w = max(1, round(w / px))
+    snapped_h = max(1, round(h / px))
+    small = img.resize((snapped_w, snapped_h), Image.Resampling.BOX)
+    if quantize:
+        small = _quantize_rgba(small, palette_colors)
+    return small.resize((w, h), Image.Resampling.NEAREST)
+
+
 @app.post("/api/process")
 async def process_image(
     image: UploadFile = File(...),
     resize_scale: int = Form(1),
     palette_colors: int = Form(64),
-    operation: Literal["resize", "palette", "resize_palette"] = Form("resize_palette"),
+    operation: str = Form("resize_palette"),
+    pixel_size: int = Form(0),
+    pixel_strength: float = Form(1.0),
+    snap_palette: bool = Form(True),
+    preserve_alpha: bool = Form(True),
 ) -> Response:
     data = await image.read()
     img = _read_image(data)
 
-    if operation in {"palette", "resize_palette"}:
-        alpha = img.getchannel("A")
-        rgb = img.convert("RGB")
-        quantized = rgb.quantize(colors=max(2, min(256, palette_colors)), method=Image.Quantize.MEDIANCUT)
-        img = quantized.convert("RGBA")
-        img.putalpha(alpha)
+    operation = (operation or "resize_palette").strip().lower()
+    aliases = {
+        "nearest": "resize",
+        "nearest_resize": "resize",
+        "palette_resize": "resize_palette",
+        "snap": "pixel_snap",
+        "pixel-snap": "pixel_snap",
+    }
+    operation = aliases.get(operation, operation)
+    allowed = {"resize", "palette", "resize_palette", "pixel_snap", "pixel_snap_only"}
+    if operation not in allowed:
+        raise HTTPException(status_code=400, detail=f"Unsupported Palette Lab operation: {operation}")
 
-    if operation in {"resize", "resize_palette"} and resize_scale > 1:
+    resize_scale = max(1, min(16, int(resize_scale or 1)))
+    palette_colors = max(2, min(256, int(palette_colors or 64)))
+    pixel_size = max(0, int(pixel_size or 0))
+    pixel_strength = max(0.0, min(1.0, float(pixel_strength or 1.0)))
+
+    original = img.copy()
+
+    if operation == "pixel_snap":
+        img = _pixel_snap_rgba(img, pixel_size=pixel_size, palette_colors=palette_colors, quantize=bool(snap_palette))
+    elif operation == "pixel_snap_only":
+        img = _pixel_snap_rgba(img, pixel_size=pixel_size, palette_colors=palette_colors, quantize=False)
+    elif operation in {"palette", "resize_palette"}:
+        img = _quantize_rgba(img, palette_colors)
+
+    if operation.startswith("pixel_snap") and pixel_strength < 0.999:
+        img = Image.blend(original, img, pixel_strength)
+
+    if preserve_alpha and img.mode == "RGBA":
+        img.putalpha(original.getchannel("A"))
+
+    if operation in {"resize", "resize_palette", "pixel_snap"} and resize_scale > 1:
         w, h = img.size
         img = img.resize((w * resize_scale, h * resize_scale), Image.Resampling.NEAREST)
 
