@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0017_1_pixel_snap_native_panel" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0017_2_pixel_snap_engine_ui" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.16 · PF-0017.1</div>
+          <div class="subtitle">by Wulf · Web v0.16 · PF-0017.2</div>
         </div>
       </div>
 
@@ -380,9 +380,16 @@
                 <label><span>Strength</span><input id="pixelSnapStrength" type="range" min="0.25" max="1" step="0.05" value="1" /><em id="pixelSnapStrengthValue">100%</em></label>
                 <label class="pixel-snap-toggle"><input id="pixelSnapPalette" type="checkbox" checked /> <span>Snap colors to palette</span></label>
                 <label class="pixel-snap-toggle"><input id="pixelSnapAlpha" type="checkbox" checked /> <span>Preserve transparency</span></label>
+                <label class="pixel-snap-toggle"><input id="pixelSnapShowGrid" type="checkbox" /> <span>Show grid overlay</span></label>
+                <label class="pixel-snap-toggle"><input id="pixelSnapLivePreview" type="checkbox" checked /> <span>Live preview</span></label>
               </div>
 
               <div class="pixel-snap-actions">
+                <div class="pixel-snap-readout">
+                  <div><span>Detected Grid</span><strong id="pixelSnapDetectedGrid">—</strong></div>
+                  <div><span>Confidence</span><strong id="pixelSnapConfidence">—</strong></div>
+                  <div><span>Palette Target</span><strong id="pixelSnapPaletteEstimate">—</strong></div>
+                </div>
                 <button type="button" id="pixelSnapToolBtn" class="pf-primary-action">Apply Pixel Snap Preview</button>
                 <p id="pixelSnapHint" class="palette-panel-hint">Use Auto for most AI-generated tiles and sprites. Manual grid size is useful when you know the intended pixel block size.</p>
               </div>
@@ -566,6 +573,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0017_1_pixel_snap_native_panel"></script>
+  <script src="/static/app.js?v=pf0017_2_pixel_snap_engine_ui"></script>
 </body>
 </html>

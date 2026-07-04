@@ -1,3 +1,10 @@
+## PF-0017.2 — Pixel Snap Engine UI
+
+- Added Pixel Snap readout for detected grid, confidence, and palette target.
+- Added optional grid overlay for Palette Lab previews and compare viewer.
+- Added live preview toggle for Pixel Snap controls.
+- Improved native Pixel Snap tool feedback inside Palette Lab.
+
 
 ## PF-0017.1 — Native Pixel Snap Panel
 

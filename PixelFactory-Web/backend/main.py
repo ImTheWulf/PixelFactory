@@ -39,7 +39,7 @@ asset_service = AssetService(PROJECT_ROOT)
 workspace_service = WorkspaceService(PROJECT_ROOT)
 export_service = ExportService(PROJECT_ROOT, asset_service)
 
-app = FastAPI(title="Pixel Factory by Wulf", version="0.16-pf0017-1-pixel-snap-native")
+app = FastAPI(title="Pixel Factory by Wulf", version="0.16-pf0017-2-pixel-snap-engine-ui")
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
 

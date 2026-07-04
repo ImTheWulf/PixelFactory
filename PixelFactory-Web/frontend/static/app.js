@@ -160,6 +160,11 @@ const pixelSnapStrength = document.getElementById("pixelSnapStrength");
 const pixelSnapStrengthValue = document.getElementById("pixelSnapStrengthValue");
 const pixelSnapPalette = document.getElementById("pixelSnapPalette");
 const pixelSnapAlpha = document.getElementById("pixelSnapAlpha");
+const pixelSnapShowGrid = document.getElementById("pixelSnapShowGrid");
+const pixelSnapLivePreview = document.getElementById("pixelSnapLivePreview");
+const pixelSnapDetectedGrid = document.getElementById("pixelSnapDetectedGrid");
+const pixelSnapConfidence = document.getElementById("pixelSnapConfidence");
+const pixelSnapPaletteEstimate = document.getElementById("pixelSnapPaletteEstimate");
 const pixelSnapModeBadge = document.getElementById("pixelSnapModeBadge");
 
 let selectedFile = null;
@@ -177,6 +182,94 @@ let paletteIsProcessing = false;
 let paletteCompareIsPanning = false;
 let paletteComparePanStart = null;
 let paletteCompareSpaceDown = false;
+
+function getAutoPixelSnapSize(width, height) {
+  const smallest = Math.max(1, Math.min(Number(width) || 1, Number(height) || 1));
+  if (smallest >= 1024) return 32;
+  if (smallest >= 512) return 16;
+  if (smallest >= 256) return 8;
+  if (smallest >= 128) return 4;
+  return 2;
+}
+
+function getCurrentPixelSnapSize() {
+  const selected = Number(pixelSnapGridSize?.value || document.getElementById("pixelSize")?.value || 0);
+  const sourceWidth = originalPreview?.naturalWidth || selectedFile?.width || 512;
+  const sourceHeight = originalPreview?.naturalHeight || selectedFile?.height || 512;
+  return selected > 0 ? selected : getAutoPixelSnapSize(sourceWidth, sourceHeight);
+}
+
+function getPixelSnapConfidence(width, height, gridSize) {
+  const w = Number(width) || 1;
+  const h = Number(height) || 1;
+  const grid = Math.max(1, Number(gridSize) || 1);
+  const divisibility = ((w % grid === 0 ? 1 : 0.72) + (h % grid === 0 ? 1 : 0.72)) / 2;
+  const cellCount = (w / grid) * (h / grid);
+  const densityScore = cellCount >= 64 && cellCount <= 16384 ? 1 : 0.78;
+  return Math.round(Math.max(35, Math.min(98, divisibility * densityScore * 94)));
+}
+
+function ensureGridOverlay(host) {
+  if (!host) return null;
+  let overlay = host.querySelector(":scope > .pf-grid-overlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.className = "pf-grid-overlay";
+    host.appendChild(overlay);
+  }
+  return overlay;
+}
+
+function updateGridOverlayForImage(img, host, gridSize) {
+  const overlay = ensureGridOverlay(host);
+  if (!overlay || !img || !img.getAttribute("src") || !img.naturalWidth || !img.naturalHeight) {
+    if (overlay) overlay.classList.remove("active");
+    return;
+  }
+  if (!pixelSnapShowGrid?.checked) {
+    overlay.classList.remove("active");
+    return;
+  }
+
+  const imgRect = img.getBoundingClientRect();
+  const hostRect = host.getBoundingClientRect();
+  const width = Math.max(1, imgRect.width);
+  const height = Math.max(1, imgRect.height);
+  const columns = Math.max(1, img.naturalWidth / Math.max(1, gridSize));
+  const rows = Math.max(1, img.naturalHeight / Math.max(1, gridSize));
+
+  overlay.style.left = `${imgRect.left - hostRect.left + host.scrollLeft}px`;
+  overlay.style.top = `${imgRect.top - hostRect.top + host.scrollTop}px`;
+  overlay.style.width = `${width}px`;
+  overlay.style.height = `${height}px`;
+  overlay.style.backgroundSize = `${Math.max(2, width / columns)}px ${Math.max(2, height / rows)}px`;
+  overlay.classList.add("active");
+}
+
+function updatePixelSnapAnalysis() {
+  const width = originalPreview?.naturalWidth || 0;
+  const height = originalPreview?.naturalHeight || 0;
+  const gridSize = getCurrentPixelSnapSize();
+  const confidence = width && height ? getPixelSnapConfidence(width, height, gridSize) : 0;
+  const paletteTarget = Number(document.getElementById("paletteColors")?.value || 64);
+  if (pixelSnapDetectedGrid) pixelSnapDetectedGrid.textContent = width && height ? `${gridSize}px` : "—";
+  if (pixelSnapConfidence) pixelSnapConfidence.textContent = width && height ? `${confidence}%` : "—";
+  if (pixelSnapPaletteEstimate) pixelSnapPaletteEstimate.textContent = pixelSnapPalette?.checked === false ? "Off" : `${paletteTarget} colors`;
+  if (pixelSnapModeBadge) pixelSnapModeBadge.textContent = width && height ? `${gridSize}px · ${confidence}%` : (gridSize ? `${gridSize}px grid` : "Auto grid");
+
+  updatePixelSnapGridOverlays();
+}
+
+function updatePixelSnapGridOverlays() {
+  const gridSize = getCurrentPixelSnapSize();
+  document.querySelectorAll(".viewport .pf-grid-overlay, .palette-compare-modal-canvas > .pf-grid-overlay, .palette-compare-stage .pf-grid-overlay").forEach((node) => node.classList.remove("active"));
+
+  updateGridOverlayForImage(originalPreview, originalPreview?.closest(".viewport"), gridSize);
+  updateGridOverlayForImage(processedPreview, processedPreview?.closest(".viewport"), gridSize);
+  updateGridOverlayForImage(compareOriginalPreview, compareOriginalPreview?.closest(".palette-compare-stage"), gridSize);
+  updateGridOverlayForImage(compareModalOriginal, compareModalCanvas, gridSize);
+}
+
 
 function setPaletteDirty(isDirty, label = null) {
   paletteDirty = Boolean(isDirty);
@@ -238,6 +331,7 @@ function updateCompareModalSlider() {
   const value = Number(compareModalSlider?.value || 50);
   if (compareModalProcessedClip) compareModalProcessedClip.style.clipPath = `inset(0 ${100 - value}% 0 0)`;
   if (compareModalDivider) compareModalDivider.style.left = `${value}%`;
+  requestAnimationFrame(updatePixelSnapGridOverlays);
 }
 
 function syncCompareControlsFromPalette() {
@@ -428,6 +522,7 @@ function showPaletteCompare() {
   if (compareProcessedPreview) compareProcessedPreview.src = processedBlobUrl;
   paletteComparePanel.classList.remove("hidden");
   updateCompareSlider();
+  requestAnimationFrame(updatePixelSnapGridOverlays);
 }
 
 function clearPaletteProcessedPreview({ addHistory = false } = {}) {
@@ -462,6 +557,7 @@ function applyPreviewMode() {
       viewport.classList.toggle("actual-mode", mode === "actual");
     }
   });
+  requestAnimationFrame(updatePixelSnapGridOverlays);
 }
 
 previewMode?.addEventListener("change", applyPreviewMode);
@@ -540,20 +636,25 @@ document.getElementById("pixelSize")?.addEventListener("change", updateOperation
 document.getElementById("operation")?.addEventListener("change", updateOperationStackLabels);
 pixelSnapGridSize?.addEventListener("change", () => {
   syncPixelSnapPanelToOperation();
-  schedulePalettePreviewUpdate();
+  updatePixelSnapAnalysis();
+  if (pixelSnapLivePreview?.checked !== false) schedulePalettePreviewUpdate();
 });
 pixelSnapStrength?.addEventListener("input", () => {
   syncPixelSnapPanelToOperation();
-  schedulePalettePreviewUpdate();
+  updatePixelSnapAnalysis();
+  if (pixelSnapLivePreview?.checked !== false) schedulePalettePreviewUpdate();
 });
 pixelSnapPalette?.addEventListener("change", () => {
   syncPixelSnapPanelToOperation();
-  schedulePalettePreviewUpdate();
+  updatePixelSnapAnalysis();
+  if (pixelSnapLivePreview?.checked !== false) schedulePalettePreviewUpdate();
 });
 pixelSnapAlpha?.addEventListener("change", () => {
   syncPixelSnapPanelToOperation();
-  schedulePalettePreviewUpdate();
+  if (pixelSnapLivePreview?.checked !== false) schedulePalettePreviewUpdate();
 });
+pixelSnapShowGrid?.addEventListener("change", updatePixelSnapGridOverlays);
+pixelSnapLivePreview?.addEventListener("change", updatePixelSnapAnalysis);
 pixelSnapToolBtn?.addEventListener("click", () => {
   syncPixelSnapPanelToOperation();
   updateOperationStackLabels();
@@ -601,8 +702,12 @@ async function loadImageIntoPaletteFromUrl(url, filename = "workspace.png", sour
   paletteComparePanel?.classList.add("hidden");
   setPaletteDirty(false);
   addPaletteHistory("Loaded asset", filename);
-  originalPreview.onload = () => updatePaletteMeta({ resolution: `${originalPreview.naturalWidth} × ${originalPreview.naturalHeight}` });
+  originalPreview.onload = () => {
+    updatePaletteMeta({ resolution: `${originalPreview.naturalWidth} × ${originalPreview.naturalHeight}` });
+    updatePixelSnapAnalysis();
+  };
   applyPreviewMode();
+  updatePixelSnapAnalysis();
 }
 
 async function loadWorkspaceIntoPalette() {
@@ -651,8 +756,12 @@ imageInput.addEventListener("change", () => {
   paletteComparePanel?.classList.add("hidden");
   setPaletteDirty(false);
   addPaletteHistory("Loaded upload", file.name);
-  originalPreview.onload = () => updatePaletteMeta({ resolution: `${originalPreview.naturalWidth} × ${originalPreview.naturalHeight}` });
+  originalPreview.onload = () => {
+    updatePaletteMeta({ resolution: `${originalPreview.naturalWidth} × ${originalPreview.naturalHeight}` });
+    updatePixelSnapAnalysis();
+  };
   applyPreviewMode();
+  updatePixelSnapAnalysis();
   setStatus(`Loaded ${file.name}`);
 });
 
@@ -697,6 +806,7 @@ async function processPalettePreview({ quiet = false } = {}) {
     processedPreview.dataset.viewerTitle = "Processed preview";
     processedPreview.onload = () => {
       paletteProcessedResolution = `${processedPreview.naturalWidth} × ${processedPreview.naturalHeight}`;
+      updatePixelSnapAnalysis();
       if (paletteCompareMeta && paletteCompareModal && !paletteCompareModal.classList.contains("hidden")) applyPaletteCompareMode();
     };
     applyPreviewMode();

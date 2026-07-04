@@ -415,3 +415,16 @@ The before/after compare should use a dedicated full-screen compare viewer, not 
 ## PF-0017.1 Pixel Snap Direction
 
 Pixel Snap is being built as a native Pixel Factory cleanup tool inside Palette Lab. It should not depend on a separate web UI or external server. The first native pass includes grid size, strength, palette snap, and alpha preservation controls.
+
+
+## PF-0017.2 Pixel Snap Engine UI
+
+Pixel Snap is a native Palette Lab cleanup tool, not an external web UI.
+
+Current direction:
+
+- detect or select a pixel grid size
+- show a grid overlay when requested
+- show confidence/readout information so users understand what Pixel Factory is doing
+- keep the tool inside Palette Lab's design system
+- use live preview when possible, with manual Apply available as fallback

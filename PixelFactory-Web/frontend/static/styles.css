@@ -2812,3 +2812,64 @@ select option:hover {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* PF-0017.2 Pixel Snap engine UI */
+.pf-grid-overlay {
+  position: absolute;
+  pointer-events: none;
+  display: none;
+  z-index: 2;
+  opacity: .42;
+  mix-blend-mode: screen;
+  background-image:
+    linear-gradient(to right, rgba(110,231,255,.55) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(110,231,255,.55) 1px, transparent 1px);
+  box-shadow: inset 0 0 0 1px rgba(110,231,255,.22);
+}
+
+.pf-grid-overlay.active {
+  display: block;
+}
+
+.viewport,
+.palette-compare-stage,
+.palette-compare-modal-canvas {
+  position: relative;
+}
+
+.pixel-snap-readout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.pixel-snap-readout div {
+  border: 1px solid rgba(110,231,255,.18);
+  background: rgba(3, 7, 12, .52);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pixel-snap-readout span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.pixel-snap-readout strong {
+  color: #c9f5ff;
+  font-size: 13px;
+}
+
+.pixel-snap-control-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 1180px) {
+  .pixel-snap-readout {
+    grid-template-columns: 1fr;
+  }
+}
