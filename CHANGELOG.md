@@ -1,4 +1,11 @@
 
+## PF-0018.2 - Palette Lab tool controls cleanup
+- Moved Palette Lab load/upload flow into the main canvas header.
+- Consolidated resize, palette, and Pixel Snap settings into the Pixel Snap tool panel.
+- Replaced operation dropdown workflow with native on/off tool toggles.
+- Made Original/Processed Fit and 1:1 controls center the preview viewport.
+
+
 ## PF-0018 — Palette Lab Editor Save Flow
 
 - Replaced Palette Lab Candidate save flow with editor-style Save and Save As.

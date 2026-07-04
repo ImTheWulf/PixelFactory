@@ -173,6 +173,12 @@ const pixelSnapDetectedGrid = document.getElementById("pixelSnapDetectedGrid");
 const pixelSnapConfidence = document.getElementById("pixelSnapConfidence");
 const pixelSnapPaletteEstimate = document.getElementById("pixelSnapPaletteEstimate");
 const pixelSnapModeBadge = document.getElementById("pixelSnapModeBadge");
+const pixelSnapEnabled = document.getElementById("pixelSnapEnabled");
+const paletteEnabled = document.getElementById("paletteEnabled");
+const resizeEnabled = document.getElementById("resizeEnabled");
+const comparePixelSnapEnabled = document.getElementById("comparePixelSnapEnabled");
+const comparePaletteEnabled = document.getElementById("comparePaletteEnabled");
+const compareResizeEnabled = document.getElementById("compareResizeEnabled");
 
 let selectedFile = null;
 let selectedFileSource = null;
@@ -194,6 +200,40 @@ let paletteCompareViewMode = "compare";
 
 function isPixelSnapLivePreviewEnabled() {
   return pixelSnapLivePreview?.checked === true;
+}
+
+function operationFromFlags({ snap = true, palette = true, resize = true } = {}) {
+  if (snap && palette && resize) return "pixel_snap";
+  if (snap && palette && !resize) return "pixel_snap_only";
+  if (snap && !palette && resize) return "pixel_snap_only";
+  if (snap && !palette && !resize) return "pixel_snap_only";
+  if (!snap && palette && resize) return "resize_palette";
+  if (!snap && palette && !resize) return "palette";
+  if (!snap && !palette && resize) return "resize";
+  return "pixel_snap_only";
+}
+
+function syncOperationFromToolToggles() {
+  const operation = document.getElementById("operation");
+  if (!operation) return;
+  operation.value = operationFromFlags({
+    snap: pixelSnapEnabled?.checked !== false,
+    palette: paletteEnabled?.checked !== false,
+    resize: resizeEnabled?.checked !== false,
+  });
+  if (pixelSnapPalette && paletteEnabled) pixelSnapPalette.disabled = paletteEnabled.checked === false;
+  if (pixelSnapGridSize && pixelSnapEnabled) pixelSnapGridSize.disabled = pixelSnapEnabled.checked === false;
+  if (pixelSnapStrength && pixelSnapEnabled) pixelSnapStrength.disabled = pixelSnapEnabled.checked === false;
+}
+
+function syncCompareOperationFromToggles() {
+  const compareOperationControl = document.getElementById("compareOperation");
+  if (!compareOperationControl) return;
+  compareOperationControl.value = operationFromFlags({
+    snap: comparePixelSnapEnabled?.checked !== false,
+    palette: comparePaletteEnabled?.checked !== false,
+    resize: compareResizeEnabled?.checked !== false,
+  });
 }
 
 function getAutoPixelSnapSize(width, height) {
@@ -360,15 +400,21 @@ function renderPaletteHistory() {
 }
 
 function updateOperationStackLabels() {
+  syncOperationFromToolToggles();
   const operation = document.getElementById("operation")?.value || "resize_palette";
   const pixelSize = pixelSnapGridSize?.value || document.getElementById("pixelSize")?.value || "0";
   const snapStrength = Number(pixelSnapStrength?.value || 1);
-  if (opPaletteCount) opPaletteCount.textContent = `${document.getElementById("paletteColors")?.value || 64} colors`;
-  if (opResizeScale) opResizeScale.textContent = `${document.getElementById("resizeScale")?.value || 2}x`;
-  if (opPixelSize) opPixelSize.textContent = pixelSize === "0" ? `Auto · ${Math.round(snapStrength * 100)}%` : `${pixelSize}px · ${Math.round(snapStrength * 100)}%`;
-  if (opPixelSnapRow) opPixelSnapRow.classList.toggle("active", operation.startsWith("pixel_snap"));
+  const paletteOn = paletteEnabled?.checked !== false;
+  const resizeOn = resizeEnabled?.checked !== false;
+  const snapOn = pixelSnapEnabled?.checked !== false;
+  if (opPaletteCount) opPaletteCount.textContent = paletteOn ? `${document.getElementById("paletteColors")?.value || 64} colors` : "Off";
+  if (opResizeScale) opResizeScale.textContent = resizeOn ? `${document.getElementById("resizeScale")?.value || 2}x` : "Off";
+  if (opPixelSize) opPixelSize.textContent = snapOn ? (pixelSize === "0" ? `Auto · ${Math.round(snapStrength * 100)}%` : `${pixelSize}px · ${Math.round(snapStrength * 100)}%`) : "Off";
+  document.querySelector('[data-op="palette"]')?.classList.toggle("active", paletteOn);
+  document.querySelector('[data-op="resize"]')?.classList.toggle("active", resizeOn);
+  if (opPixelSnapRow) opPixelSnapRow.classList.toggle("active", snapOn || operation.startsWith("pixel_snap"));
   if (pixelSnapStrengthValue) pixelSnapStrengthValue.textContent = `${Math.round(snapStrength * 100)}%`;
-  if (pixelSnapModeBadge) pixelSnapModeBadge.textContent = pixelSize === "0" ? "Auto grid" : `${pixelSize}px grid`;
+  if (pixelSnapModeBadge) pixelSnapModeBadge.textContent = snapOn ? (pixelSize === "0" ? "Auto grid" : `${pixelSize}px grid`) : "Pixel Snap off";
 }
 
 function updateCompareSlider() {
@@ -736,16 +782,31 @@ function applyPreviewMode() {
 previewMode?.addEventListener("change", applyPreviewMode);
 previewModeInline?.addEventListener("change", () => { if (previewMode) previewMode.value = previewModeInline.value; applyPreviewMode(); });
 
+function centerPreviewScroll(host = null) {
+  const viewports = host ? [host] : Array.from(document.querySelectorAll(".palette-viewport"));
+  requestAnimationFrame(() => {
+    viewports.forEach((viewport) => {
+      if (!viewport) return;
+      viewport.scrollLeft = Math.max(0, (viewport.scrollWidth - viewport.clientWidth) / 2);
+      viewport.scrollTop = Math.max(0, (viewport.scrollHeight - viewport.clientHeight) / 2);
+    });
+  });
+}
+
 function setPreviewModeForAll(mode) {
   if (previewMode) previewMode.value = mode;
   if (previewModeInline) previewModeInline.value = mode;
   applyPreviewMode();
+  centerPreviewScroll();
 }
 
 document.querySelectorAll("[data-preview-action]").forEach((btn) => {
   btn.addEventListener("click", () => {
     const action = btn.dataset.previewAction || "";
-    setPreviewModeForAll(action.endsWith("actual") ? "actual" : "fit");
+    const mode = action.endsWith("actual") ? "actual" : "fit";
+    setPreviewModeForAll(mode);
+    const hostName = action.startsWith("original") ? "original" : action.startsWith("processed") ? "processed" : null;
+    if (hostName) centerPreviewScroll(document.querySelector(`[data-preview-host="${hostName}"]`));
   });
 });
 
@@ -839,13 +900,13 @@ window.addEventListener("resize", () => {
 
 compareDownloadBtn?.addEventListener("click", () => downloadBtn?.click());
 compareProcessBtn?.addEventListener("click", processPreviewFromCompareViewer);
-[compareResizeScale, comparePaletteColors, comparePixelSize, compareOperation].forEach((control) => {
-  control?.addEventListener("change", () => { syncPaletteControlsFromCompare(); scheduleComparePreviewUpdate(); });
-  control?.addEventListener("input", () => { syncPaletteControlsFromCompare(); scheduleComparePreviewUpdate(); });
+[compareResizeScale, comparePaletteColors, comparePixelSize, compareOperation, comparePixelSnapEnabled, comparePaletteEnabled, compareResizeEnabled].forEach((control) => {
+  control?.addEventListener("change", () => { syncCompareOperationFromToggles(); syncPaletteControlsFromCompare(); scheduleComparePreviewUpdate(); });
+  control?.addEventListener("input", () => { syncCompareOperationFromToggles(); syncPaletteControlsFromCompare(); scheduleComparePreviewUpdate(); });
 });
-[document.getElementById("resizeScale"), document.getElementById("paletteColors"), pixelSnapGridSize, document.getElementById("operation")].forEach((control) => {
-  control?.addEventListener("change", () => { updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); });
-  control?.addEventListener("input", () => { updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); });
+[document.getElementById("resizeScale"), document.getElementById("paletteColors"), pixelSnapGridSize, document.getElementById("operation"), pixelSnapEnabled, paletteEnabled, resizeEnabled].forEach((control) => {
+  control?.addEventListener("change", () => { syncOperationFromToolToggles(); updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); });
+  control?.addEventListener("input", () => { syncOperationFromToolToggles(); updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); });
 });
 discardPalettePreviewBtn?.addEventListener("click", () => clearPaletteProcessedPreview({ addHistory: true }));
 downloadPaletteResultBtn?.addEventListener("click", () => downloadBtn?.click());
@@ -864,6 +925,7 @@ pixelSnapStrength?.addEventListener("input", () => {
   schedulePalettePreviewUpdate();
 });
 pixelSnapPalette?.addEventListener("change", () => {
+  if (paletteEnabled && pixelSnapPalette.checked) paletteEnabled.checked = true;
   syncPixelSnapPanelToOperation();
   updatePixelSnapAnalysis();
   schedulePalettePreviewUpdate();
@@ -971,7 +1033,7 @@ async function hydratePaletteFromWorkspaceIfNeeded() {
 
 changePaletteAssetBtn?.addEventListener("click", () => setView("assets"));
 
-imageInput.addEventListener("change", () => {
+imageInput?.addEventListener("change", () => {
   const file = imageInput.files?.[0];
   if (!file) return;
   selectedFile = file;
@@ -1005,6 +1067,7 @@ async function processPalettePreview({ quiet = false } = {}) {
   if (compareProcessBtn) compareProcessBtn.disabled = true;
   if (!quiet) setStatus("Processing Palette Lab preview...");
 
+  syncOperationFromToolToggles();
   const form = new FormData();
   form.append("image", selectedFile);
   form.append("resize_scale", document.getElementById("resizeScale").value);

@@ -3177,3 +3177,95 @@ select option:hover {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* PF-0018.2 Palette Lab tool unification */
+.palette-side-status .palette-source-card {
+  margin: 0 0 10px 0;
+}
+.pf-button-like {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  color: var(--text);
+  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.025));
+  font-weight: 800;
+  cursor: pointer;
+  padding: 0 14px;
+  text-align: center;
+}
+.pf-button-like:hover {
+  border-color: var(--accent);
+  background: rgba(37, 99, 235, .16);
+}
+.pf-button-like input[type="file"] {
+  display: none;
+}
+.pixel-snap-tool-groups {
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+}
+.pixel-tool-group {
+  margin: 0;
+  border: 1px solid var(--border);
+  background: rgba(3, 7, 12, .52);
+  border-radius: 14px;
+  padding: 14px;
+  min-height: 120px;
+}
+.pixel-tool-group legend {
+  padding: 0 8px;
+  color: var(--text);
+  font-weight: 900;
+}
+.pixel-tool-group label {
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin-top: 8px;
+}
+.pf-inline-toggle {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 8px;
+}
+.pf-inline-toggle input {
+  width: 16px;
+  height: 16px;
+}
+.pixel-tool-group:has(input[type="checkbox"]:not(:checked)) select,
+.pixel-tool-group:has(input[type="checkbox"]:not(:checked)) input[type="range"] {
+  opacity: .55;
+}
+.preview-camera-actions {
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.preview-camera-actions .pf-primary-action,
+.preview-camera-actions #downloadBtn {
+  min-width: 120px;
+}
+.compare-toggle {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 42px;
+}
+.compare-toggle input {
+  width: 17px;
+  height: 17px;
+}
+.palette-compare-modal-controls {
+  align-items: end;
+}
+.palette-operation-row.active {
+  border-color: rgba(59, 130, 246, .55);
+  background: rgba(37, 99, 235, .08);
+}
+@media (max-width: 1280px) {
+  .pixel-snap-tool-groups {
+    grid-template-columns: 1fr;
+  }
+}

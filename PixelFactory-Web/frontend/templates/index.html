@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0018_1_palette_layout_unify" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0018_2_palette_tools_unify" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.16 · PF-0018.1</div>
+          <div class="subtitle">by Wulf · Web v0.16 · PF-0018.2</div>
         </div>
       </div>
 
@@ -28,66 +28,13 @@
       </nav>
 
 
-      <section id="paletteControls" class="panel view-controls hidden">
-        <label class="file-label">
-          Load Image
-          <input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp" />
-        </label>
-
-        <label>Resize Scale</label>
-        <select id="resizeScale">
-          <option value="1">1x</option>
-          <option value="2" selected>2x</option>
-          <option value="3">3x</option>
-          <option value="4">4x</option>
-          <option value="8">8x</option>
-        </select>
-
-        <label>Palette Colors</label>
-        <select id="paletteColors">
-          <option value="2">2</option>
-          <option value="4">4</option>
-          <option value="6">6</option>
-          <option value="8">8</option>
-          <option value="10">10</option>
-          <option value="12">12</option>
-          <option value="14">14</option>
-          <option value="16">16</option>
-          <option value="18">18</option>
-          <option value="20">20</option>
-          <option value="22">22</option>
-          <option value="24">24</option>
-          <option value="32">32</option>
-          <option value="64" selected>64</option>
-          <option value="128">128</option>
-          <option value="256">256</option>
-        </select>
-
-        <input id="pixelSize" type="hidden" value="0" />
-
-        <label>Operation</label>
-        <select id="operation">
-          <option value="resize_palette" selected>Palette + Nearest Resize</option>
-          <option value="palette">Palette Only</option>
-          <option value="resize">Nearest Resize Only</option>
-          <option value="pixel_snap">Pixel Snap + Palette + Resize</option>
-          <option value="pixel_snap_only">Pixel Snap Only</option>
-        </select>
-
-        <label>Preview Mode</label>
-        <select id="previewMode">
-          <option value="fit" selected>Fit to Window</option>
-          <option value="actual">Actual Pixels</option>
-        </select>
-
+      <section id="paletteControls" class="panel view-controls hidden palette-side-status">
+        <div class="panel-title">Palette Lab</div>
         <div class="palette-source-card">
           <label>Current Asset</label>
           <div id="workspaceStatus" class="workspace-status">No asset loaded</div>
-          <button id="changePaletteAssetBtn" type="button">Change Asset</button>
         </div>
-
-        <button id="processBtn" class="pf-primary-action">Update Preview</button>
-        <button id="downloadBtn" disabled>Download PNG</button>
+        <p class="panel-hint">Use the canvas header and Pixel Snap panel to load, preview, save, or download.</p>
       </section>
 
       <section id="characterControls" class="panel view-controls hidden">
@@ -290,6 +237,7 @@
               <div id="paletteDirtyState" class="palette-dirty-state saved">● Clean</div>
               <div class="palette-active-actions">
                 <button type="button" data-start-view="assets">Browse Assets</button>
+                <label class="pf-button-like" for="imageInput">Load Image<input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp" /></label>
                 <button type="button" data-start-view="tile" class="pf-primary-action">New Tile</button>
               </div>
               <div class="palette-active-actions">
@@ -338,7 +286,7 @@
             <div class="preview-card palette-preview-card">
               <div class="section-title-row">
                 <h2>Processed</h2>
-                <div class="preview-camera-actions"><select id="previewModeInline"><option value="fit">Fit to Window</option><option value="actual">Actual Pixels</option></select><button type="button" data-preview-action="processed-fit">Fit</button><button type="button" data-preview-action="processed-actual">1:1</button></div>
+                <div class="preview-camera-actions"><button type="button" data-preview-action="processed-fit">Fit</button><button type="button" data-preview-action="processed-actual">1:1</button><button id="processBtn" type="button" class="pf-primary-action">Update Preview</button><button id="downloadBtn" type="button" disabled>Download PNG</button></div>
               </div>
               <div class="viewport palette-viewport" data-preview-host="processed"><img id="processedPreview" alt="Processed preview" /></div>
             </div>
@@ -360,6 +308,10 @@
           </section>
 
 
+          <input id="previewMode" type="hidden" value="fit" />
+          <input id="operation" type="hidden" value="pixel_snap" />
+          <input id="pixelSize" type="hidden" value="0" />
+
           <section class="preview-card palette-tool-dock pixel-snap-panel">
             <div class="section-title-row">
               <div>
@@ -370,13 +322,30 @@
             </div>
 
             <div class="pixel-snap-layout">
-              <div class="pixel-snap-control-grid">
-                <label><span>Grid Size</span><select id="pixelSnapGridSize"><option value="0" selected>Auto detect</option><option value="2">2 px</option><option value="4">4 px</option><option value="8">8 px</option><option value="16">16 px</option><option value="32">32 px</option><option value="64">64 px</option></select></label>
-                <label><span>Strength</span><input id="pixelSnapStrength" type="range" min="0.25" max="1" step="0.05" value="1" /><em id="pixelSnapStrengthValue">100%</em></label>
-                <label class="pixel-snap-toggle"><input id="pixelSnapPalette" type="checkbox" checked /> <span>Snap colors to palette</span></label>
-                <label class="pixel-snap-toggle"><input id="pixelSnapAlpha" type="checkbox" checked /> <span>Preserve transparency</span></label>
-                <label class="pixel-snap-toggle"><input id="pixelSnapShowGrid" type="checkbox" /> <span>Show grid overlay</span></label>
-                <label class="pixel-snap-toggle"><input id="pixelSnapLivePreview" type="checkbox" checked /> <span>Auto-update preview</span></label>
+              <div class="pixel-snap-control-grid pixel-snap-tool-groups">
+                <fieldset class="pixel-tool-group">
+                  <legend><label class="pf-inline-toggle"><input id="pixelSnapEnabled" type="checkbox" checked /> Pixel Snap</label></legend>
+                  <label><span>Grid Size</span><select id="pixelSnapGridSize"><option value="0" selected>Auto detect</option><option value="2">2 px</option><option value="4">4 px</option><option value="8">8 px</option><option value="16">16 px</option><option value="32">32 px</option><option value="64">64 px</option></select></label>
+                  <label><span>Strength</span><input id="pixelSnapStrength" type="range" min="0.25" max="1" step="0.05" value="1" /><em id="pixelSnapStrengthValue">100%</em></label>
+                </fieldset>
+
+                <fieldset class="pixel-tool-group">
+                  <legend><label class="pf-inline-toggle"><input id="paletteEnabled" type="checkbox" checked /> Color Cleanup</label></legend>
+                  <label><span>Palette Colors</span><select id="paletteColors"><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="14">14</option><option value="16">16</option><option value="18">18</option><option value="20">20</option><option value="22">22</option><option value="24">24</option><option value="32">32</option><option value="64" selected>64</option><option value="128">128</option><option value="256">256</option></select></label>
+                  <label class="pixel-snap-toggle"><input id="pixelSnapPalette" type="checkbox" checked /> <span>Snap colors to palette</span></label>
+                </fieldset>
+
+                <fieldset class="pixel-tool-group">
+                  <legend><label class="pf-inline-toggle"><input id="resizeEnabled" type="checkbox" checked /> Resize</label></legend>
+                  <label><span>Resize Scale</span><select id="resizeScale"><option value="1">1x</option><option value="2" selected>2x</option><option value="3">3x</option><option value="4">4x</option><option value="8">8x</option></select></label>
+                </fieldset>
+
+                <fieldset class="pixel-tool-group">
+                  <legend>Preview Options</legend>
+                  <label class="pixel-snap-toggle"><input id="pixelSnapAlpha" type="checkbox" checked /> <span>Preserve transparency</span></label>
+                  <label class="pixel-snap-toggle"><input id="pixelSnapShowGrid" type="checkbox" /> <span>Show grid in compare viewer</span></label>
+                  <label class="pixel-snap-toggle"><input id="pixelSnapLivePreview" type="checkbox" checked /> <span>Auto-update preview</span></label>
+                </fieldset>
               </div>
 
               <div class="pixel-snap-actions">
@@ -525,7 +494,10 @@
         <label><span>Resize</span><select id="compareResizeScale"><option value="1">1x</option><option value="2">2x</option><option value="3">3x</option><option value="4">4x</option></select></label>
         <label><span>Colors</span><select id="comparePaletteColors"><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="14">14</option><option value="16">16</option><option value="18">18</option><option value="20">20</option><option value="22">22</option><option value="24">24</option><option value="32">32</option><option value="64">64</option><option value="128">128</option><option value="256">256</option></select></label>
         <label><span>Grid Size</span><select id="comparePixelSize"><option value="0">Auto</option><option value="2">2 px</option><option value="4">4 px</option><option value="8">8 px</option><option value="16">16 px</option><option value="32">32 px</option><option value="64">64 px</option></select></label>
-        <label><span>Operation</span><select id="compareOperation"><option value="resize_palette">Palette + Nearest Resize</option><option value="palette">Palette Only</option><option value="resize">Nearest Resize Only</option><option value="pixel_snap">Pixel Snap + Palette + Resize</option><option value="pixel_snap_only">Pixel Snap Only</option></select></label>
+        <input id="compareOperation" type="hidden" value="pixel_snap" />
+        <label class="compare-toggle"><span>Pixel Snap</span><input id="comparePixelSnapEnabled" type="checkbox" checked /></label>
+        <label class="compare-toggle"><span>Color Cleanup</span><input id="comparePaletteEnabled" type="checkbox" checked /></label>
+        <label class="compare-toggle"><span>Resize</span><input id="compareResizeEnabled" type="checkbox" checked /></label>
         <label class="compare-grid-toggle"><span>Grid</span><button id="compareGridToggle" type="button">Grid Off</button></label>
       </div>
       <div id="paletteCompareModalStage" class="palette-compare-modal-stage" title="Mouse wheel zoom · Space+drag pan · double-click fit">
@@ -572,6 +544,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0018_1_palette_layout_unify"></script>
+  <script src="/static/app.js?v=pf0018_2_palette_tools_unify"></script>
 </body>
 </html>
