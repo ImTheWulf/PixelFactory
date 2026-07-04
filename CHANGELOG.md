@@ -1,3 +1,10 @@
+## PF-0018.6 - Palette Lab color cleanup clarity
+- Added Original colors palette target so Palette Lab can keep the source palette without forced color reduction.
+- Removed the visible Snap Colors toggle from the main Color Cleanup UI to reduce confusion.
+- Color Cleanup now controls palette reduction while Pixel Snap controls grid cleanup.
+- Prevented Palette Lab from jumping/scrolling to the bottom when toggles are clicked.
+- Backend processing now treats palette color value 0 as keep original colors.
+
 
 ## PF-0018.5 - Palette Lab primary compare workflow
 - Made the before/after compare panel the primary Palette Lab work canvas.

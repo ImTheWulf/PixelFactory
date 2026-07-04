@@ -202,6 +202,28 @@ function isPixelSnapLivePreviewEnabled() {
   return pixelSnapLivePreview?.checked === true;
 }
 
+function getPaletteTargetValue() {
+  const raw = document.getElementById("paletteColors")?.value ?? "0";
+  const value = Number(raw);
+  return Number.isFinite(value) ? Math.max(0, Math.min(256, value)) : 0;
+}
+
+function isColorCleanupActive() {
+  return paletteEnabled?.checked !== false && getPaletteTargetValue() > 0;
+}
+
+function paletteTargetLabel(value = getPaletteTargetValue()) {
+  return Number(value) > 0 ? `${Number(value)} colors` : "Original colors";
+}
+
+function preservePaletteScroll(fn = null) {
+  const x = window.scrollX;
+  const y = window.scrollY;
+  if (typeof fn === "function") fn();
+  requestAnimationFrame(() => window.scrollTo(x, y));
+  window.setTimeout(() => window.scrollTo(x, y), 80);
+}
+
 function operationFromFlags({ snap = true, palette = true, resize = true } = {}) {
   if (snap && palette && resize) return "pixel_snap";
   if (snap && palette && !resize) return "pixel_snap_only";
@@ -222,6 +244,7 @@ function syncOperationFromToolToggles() {
     resize: resizeEnabled?.checked !== false,
   });
   if (pixelSnapPalette && paletteEnabled) pixelSnapPalette.disabled = paletteEnabled.checked === false;
+  if (pixelSnapPalette) pixelSnapPalette.checked = isColorCleanupActive();
   if (pixelSnapGridSize && pixelSnapEnabled) pixelSnapGridSize.disabled = pixelSnapEnabled.checked === false;
   if (pixelSnapStrength && pixelSnapEnabled) pixelSnapStrength.disabled = pixelSnapEnabled.checked === false;
 }
@@ -341,10 +364,10 @@ function updatePixelSnapAnalysis() {
   const height = originalPreview?.naturalHeight || 0;
   const gridSize = getCurrentPixelSnapSize();
   const confidence = width && height ? getPixelSnapConfidence(width, height, gridSize) : 0;
-  const paletteTarget = Number(document.getElementById("paletteColors")?.value || 64);
+  const paletteTarget = getPaletteTargetValue();
   if (pixelSnapDetectedGrid) pixelSnapDetectedGrid.textContent = width && height ? `${gridSize}px` : "—";
   if (pixelSnapConfidence) pixelSnapConfidence.textContent = width && height ? `${confidence}%` : "—";
-  if (pixelSnapPaletteEstimate) pixelSnapPaletteEstimate.textContent = pixelSnapPalette?.checked === false ? "Off" : `${paletteTarget} colors`;
+  if (pixelSnapPaletteEstimate) pixelSnapPaletteEstimate.textContent = isColorCleanupActive() ? `${paletteTarget} colors` : "Original colors";
   if (pixelSnapModeBadge) pixelSnapModeBadge.textContent = width && height ? `${gridSize}px · ${confidence}%` : (gridSize ? `${gridSize}px grid` : "Auto grid");
 
   updatePixelSnapGridOverlays();
@@ -404,10 +427,10 @@ function updateOperationStackLabels() {
   const operation = document.getElementById("operation")?.value || "resize_palette";
   const pixelSize = pixelSnapGridSize?.value || document.getElementById("pixelSize")?.value || "0";
   const snapStrength = Number(pixelSnapStrength?.value || 1);
-  const paletteOn = paletteEnabled?.checked !== false;
+  const paletteOn = isColorCleanupActive();
   const resizeOn = resizeEnabled?.checked !== false;
   const snapOn = pixelSnapEnabled?.checked !== false;
-  if (opPaletteCount) opPaletteCount.textContent = paletteOn ? `${document.getElementById("paletteColors")?.value || 64} colors` : "Off";
+  if (opPaletteCount) opPaletteCount.textContent = paletteOn ? paletteTargetLabel() : "Original colors";
   if (opResizeScale) opResizeScale.textContent = resizeOn ? `${document.getElementById("resizeScale")?.value || 2}x` : "Off";
   if (opPixelSize) opPixelSize.textContent = snapOn ? (pixelSize === "0" ? `Auto · ${Math.round(snapStrength * 100)}%` : `${pixelSize}px · ${Math.round(snapStrength * 100)}%`) : "Off";
   document.querySelector('[data-op="palette"]')?.classList.toggle("active", paletteOn);
@@ -566,10 +589,9 @@ function syncPaletteControlsFromCompare() {
 }
 function syncPixelSnapPanelToOperation() {
   const pixelSize = document.getElementById("pixelSize");
-  const operation = document.getElementById("operation");
   if (pixelSnapGridSize && pixelSize) pixelSize.value = pixelSnapGridSize.value;
   if (comparePixelSize && pixelSnapGridSize) comparePixelSize.value = pixelSnapGridSize.value;
-  if (operation) operation.value = pixelSnapPalette?.checked === false ? "pixel_snap_only" : "pixel_snap";
+  syncOperationFromToolToggles();
   updateCompareGridToggleLabel();
   updateOperationStackLabels();
 }
@@ -920,16 +942,16 @@ window.addEventListener("resize", () => {
 compareDownloadBtn?.addEventListener("click", () => downloadBtn?.click());
 compareProcessBtn?.addEventListener("click", processPreviewFromCompareViewer);
 [compareResizeScale, comparePaletteColors, comparePixelSize, compareOperation, comparePixelSnapEnabled, comparePaletteEnabled, compareResizeEnabled].forEach((control) => {
-  control?.addEventListener("change", () => { syncCompareOperationFromToggles(); syncPaletteControlsFromCompare(); scheduleComparePreviewUpdate(); });
-  control?.addEventListener("input", () => { syncCompareOperationFromToggles(); syncPaletteControlsFromCompare(); scheduleComparePreviewUpdate(); });
+  control?.addEventListener("change", () => preservePaletteScroll(() => { syncCompareOperationFromToggles(); syncPaletteControlsFromCompare(); scheduleComparePreviewUpdate(); }));
+  control?.addEventListener("input", () => preservePaletteScroll(() => { syncCompareOperationFromToggles(); syncPaletteControlsFromCompare(); scheduleComparePreviewUpdate(); }));
 });
 [document.getElementById("resizeScale"), document.getElementById("paletteColors"), pixelSnapGridSize, document.getElementById("operation"), pixelSnapEnabled, paletteEnabled, resizeEnabled].forEach((control) => {
-  control?.addEventListener("change", () => { syncOperationFromToolToggles(); updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); });
-  control?.addEventListener("input", () => { syncOperationFromToolToggles(); updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); });
+  control?.addEventListener("change", () => preservePaletteScroll(() => { syncOperationFromToolToggles(); updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); }));
+  control?.addEventListener("input", () => preservePaletteScroll(() => { syncOperationFromToolToggles(); updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); }));
 });
 document.querySelectorAll(".pf-toggle-button-control input[type='checkbox']").forEach((input) => {
-  input.addEventListener("change", updateToolToggleLabels);
-  input.addEventListener("input", updateToolToggleLabels);
+  input.addEventListener("change", () => preservePaletteScroll(updateToolToggleLabels));
+  input.addEventListener("input", () => preservePaletteScroll(updateToolToggleLabels));
 });
 
 function resetPaletteLab() {
@@ -969,28 +991,28 @@ document.getElementById("paletteColors")?.addEventListener("change", updateOpera
 document.getElementById("resizeScale")?.addEventListener("change", updateOperationStackLabels);
 document.getElementById("pixelSize")?.addEventListener("change", updateOperationStackLabels);
 document.getElementById("operation")?.addEventListener("change", updateOperationStackLabels);
-pixelSnapGridSize?.addEventListener("change", () => {
+pixelSnapGridSize?.addEventListener("change", () => preservePaletteScroll(() => {
   syncPixelSnapPanelToOperation();
   updatePixelSnapAnalysis();
   schedulePalettePreviewUpdate();
-});
-pixelSnapStrength?.addEventListener("input", () => {
+}));
+pixelSnapStrength?.addEventListener("input", () => preservePaletteScroll(() => {
   syncPixelSnapPanelToOperation();
   updatePixelSnapAnalysis();
   schedulePalettePreviewUpdate();
-});
-pixelSnapPalette?.addEventListener("change", () => {
+}));
+pixelSnapPalette?.addEventListener("change", () => preservePaletteScroll(() => {
   if (paletteEnabled && pixelSnapPalette.checked) paletteEnabled.checked = true;
   syncPixelSnapPanelToOperation();
   updatePixelSnapAnalysis();
   schedulePalettePreviewUpdate();
-});
-pixelSnapAlpha?.addEventListener("change", () => {
+}));
+pixelSnapAlpha?.addEventListener("change", () => preservePaletteScroll(() => {
   syncPixelSnapPanelToOperation();
   schedulePalettePreviewUpdate();
-});
-pixelSnapShowGrid?.addEventListener("change", () => { updateCompareGridToggleLabel(); updatePixelSnapGridOverlays(); });
-pixelSnapLivePreview?.addEventListener("change", () => {
+}));
+pixelSnapShowGrid?.addEventListener("change", () => preservePaletteScroll(() => { updateCompareGridToggleLabel(); updatePixelSnapGridOverlays(); }));
+pixelSnapLivePreview?.addEventListener("change", () => preservePaletteScroll(() => {
   updatePixelSnapAnalysis();
   if (isPixelSnapLivePreviewEnabled()) {
     setStatus("Auto-update preview enabled.");
@@ -1000,7 +1022,7 @@ pixelSnapLivePreview?.addEventListener("change", () => {
     window.clearTimeout(compareAutoProcessTimer);
     setStatus("Auto-update preview disabled. Use Update Preview manually.");
   }
-});
+}));
 pixelSnapToolBtn?.addEventListener("click", () => {
   syncPixelSnapPanelToOperation();
   updateOperationStackLabels();
@@ -1119,6 +1141,7 @@ async function processPalettePreview({ quiet = false } = {}) {
   }
   if (paletteIsProcessing) return;
 
+  const restoreScroll = quiet ? { x: window.scrollX, y: window.scrollY } : null;
   paletteIsProcessing = true;
   processBtn.disabled = true;
   if (compareProcessBtn) compareProcessBtn.disabled = true;
@@ -1131,7 +1154,7 @@ async function processPalettePreview({ quiet = false } = {}) {
   form.append("palette_colors", document.getElementById("paletteColors").value);
   form.append("pixel_size", pixelSnapGridSize?.value || document.getElementById("pixelSize")?.value || "0");
   form.append("pixel_strength", pixelSnapStrength?.value || "1");
-  form.append("snap_palette", pixelSnapPalette?.checked === false ? "false" : "true");
+  form.append("snap_palette", isColorCleanupActive() ? "true" : "false");
   form.append("preserve_alpha", pixelSnapAlpha?.checked === false ? "false" : "true");
   form.append("operation", document.getElementById("operation").value);
 
@@ -1173,12 +1196,12 @@ async function processPalettePreview({ quiet = false } = {}) {
     if (paletteCompareModal && !paletteCompareModal.classList.contains("hidden")) updateCompareModalImages();
     const operationLabel = document.getElementById("operation")?.selectedOptions?.[0]?.textContent || "Process";
     const scaleLabel = document.getElementById("resizeScale")?.value || "1";
-    const colorLabel = document.getElementById("paletteColors")?.value || "64";
+    const colorLabel = paletteTargetLabel();
     const pixelSizeLabel = pixelSnapGridSize?.value || document.getElementById("pixelSize")?.value || "0";
     const pixelSizeText = pixelSizeLabel === "0" ? "auto grid" : `${pixelSizeLabel}px grid`;
     const strengthText = document.getElementById("operation")?.value?.startsWith("pixel_snap") ? ` · ${Math.round(Number(pixelSnapStrength?.value || 1) * 100)}% snap` : "";
     updatePaletteLoadedState({ filename: selectedFile?.name || "Processed preview", source: selectedFileSource || "workspace", detail: `Processed preview ready${paletteProcessedResolution !== "—" ? ` · ${paletteProcessedResolution}` : ""}` });
-    addPaletteHistory(operationLabel, `${colorLabel} colors · ${scaleLabel}x · ${pixelSizeText}${strengthText}`);
+    addPaletteHistory(operationLabel, `${colorLabel} · ${scaleLabel}x · ${pixelSizeText}${strengthText}`);
     setStatus("Palette Lab preview updated.");
   } catch (err) {
     setStatus(`Error: ${err.message}`);
@@ -1186,6 +1209,7 @@ async function processPalettePreview({ quiet = false } = {}) {
     paletteIsProcessing = false;
     processBtn.disabled = false;
     if (compareProcessBtn) compareProcessBtn.disabled = false;
+    if (restoreScroll) requestAnimationFrame(() => window.scrollTo(restoreScroll.x, restoreScroll.y));
   }
 }
 
@@ -1219,7 +1243,7 @@ function buildPaletteSaveForm(blob, filename, extra = {}) {
   const form = new FormData();
   form.append("image", blob, filename);
   form.append("operation", document.getElementById("operation")?.value || "palette_lab");
-  form.append("palette_colors", document.getElementById("paletteColors")?.value || "64");
+  form.append("palette_colors", document.getElementById("paletteColors")?.value || "0");
   form.append("resize_scale", document.getElementById("resizeScale")?.value || "1");
   form.append("pixel_size", pixelSnapGridSize?.value || document.getElementById("pixelSize")?.value || "0");
   form.append("pixel_strength", pixelSnapStrength?.value || "1");

@@ -39,7 +39,7 @@ asset_service = AssetService(PROJECT_ROOT)
 workspace_service = WorkspaceService(PROJECT_ROOT)
 export_service = ExportService(PROJECT_ROOT, asset_service)
 
-app = FastAPI(title="Pixel Factory by Wulf", version="0.16-pf0018-palette-save-flow")
+app = FastAPI(title="Pixel Factory by Wulf", version="0.16-pf0018.6-palette-color-cleanup")
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
 
@@ -85,7 +85,10 @@ def _auto_pixel_size(width: int, height: int) -> int:
 
 
 def _quantize_rgba(img: Image.Image, colors: int) -> Image.Image:
-    colors = max(2, min(256, int(colors)))
+    colors = int(colors or 0)
+    if colors <= 0:
+        return img.copy()
+    colors = max(2, min(256, colors))
     alpha = img.getchannel("A")
     rgb = img.convert("RGB")
     quantized = rgb.quantize(colors=colors, method=Image.Quantize.MEDIANCUT)
@@ -125,7 +128,7 @@ def _pixel_snap_rgba(
 async def process_image(
     image: UploadFile = File(...),
     resize_scale: int = Form(1),
-    palette_colors: int = Form(64),
+    palette_colors: int = Form(0),
     operation: str = Form("resize_palette"),
     pixel_size: int = Form(0),
     pixel_strength: float = Form(1.0),
@@ -149,14 +152,14 @@ async def process_image(
         raise HTTPException(status_code=400, detail=f"Unsupported Palette Lab operation: {operation}")
 
     resize_scale = max(1, min(16, int(resize_scale or 1)))
-    palette_colors = max(2, min(256, int(palette_colors or 64)))
+    palette_colors = max(0, min(256, int(palette_colors or 0)))
     pixel_size = max(0, int(pixel_size or 0))
     pixel_strength = max(0.0, min(1.0, float(pixel_strength or 1.0)))
 
     original = img.copy()
 
     if operation == "pixel_snap":
-        img = _pixel_snap_rgba(img, pixel_size=pixel_size, palette_colors=palette_colors, quantize=bool(snap_palette))
+        img = _pixel_snap_rgba(img, pixel_size=pixel_size, palette_colors=palette_colors, quantize=bool(snap_palette) and palette_colors > 0)
     elif operation == "pixel_snap_only":
         img = _pixel_snap_rgba(img, pixel_size=pixel_size, palette_colors=palette_colors, quantize=False)
     elif operation in {"palette", "resize_palette"}:
@@ -486,7 +489,7 @@ async def save_palette_result(
     source_asset_id: str = Form(""),
     source_asset_name: str = Form(""),
     operation: str = Form("palette_lab"),
-    palette_colors: int = Form(64),
+    palette_colors: int = Form(0),
     resize_scale: int = Form(1),
     pixel_size: int = Form(0),
     pixel_strength: float = Form(1.0),
@@ -531,7 +534,7 @@ async def save_palette_edit(
     asset_id: str,
     image: UploadFile = File(...),
     operation: str = Form("palette_lab"),
-    palette_colors: int = Form(64),
+    palette_colors: int = Form(0),
     resize_scale: int = Form(1),
     pixel_size: int = Form(0),
     pixel_strength: float = Form(1.0),
@@ -560,7 +563,7 @@ async def save_palette_edit_as(
     source_asset_id: str = Form(""),
     source_asset_name: str = Form(""),
     operation: str = Form("palette_lab"),
-    palette_colors: int = Form(64),
+    palette_colors: int = Form(0),
     resize_scale: int = Form(1),
     pixel_size: int = Form(0),
     pixel_strength: float = Form(1.0),
