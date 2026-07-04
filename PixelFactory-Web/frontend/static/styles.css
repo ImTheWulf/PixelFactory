@@ -3528,3 +3528,63 @@ select option:hover {
     grid-template-columns: 1fr 1fr !important;
   }
 }
+
+
+/* PF-0018.5 Palette Lab primary compare workflow */
+.legacy-preview-grid {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+.palette-primary-compare {
+  min-height: min(72vh, 760px);
+}
+.palette-primary-compare .section-title-row {
+  align-items: center;
+  gap: 12px;
+}
+.palette-compare-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.palette-compare-actions .palette-panel-hint {
+  margin-right: 8px;
+}
+.palette-compare-actions button {
+  min-width: 130px;
+}
+.palette-primary-compare .palette-compare-stage {
+  min-height: min(62vh, 650px);
+  height: min(62vh, 650px);
+}
+.palette-primary-compare .palette-compare-shell {
+  gap: 12px;
+}
+.palette-primary-compare #compareSlider {
+  height: 22px;
+}
+.palette-active-actions #discardPalettePreviewBtn:not(:disabled) {
+  border-color: rgba(239, 68, 68, .45);
+  color: #fecaca;
+}
+.pixel-snap-actions #pixelSnapToolBtn::before {
+  content: "↻ ";
+}
+.palette-compare-card.hidden {
+  display: none !important;
+}
+@media (max-width: 1100px) {
+  .palette-compare-actions {
+    justify-content: flex-start;
+  }
+  .palette-primary-compare .palette-compare-stage {
+    min-height: 420px;
+    height: 420px;
+  }
+}

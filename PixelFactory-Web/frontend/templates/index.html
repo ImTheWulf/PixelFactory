@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0018_4_compare_control_polish" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0018_5_palette_primary_compare" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.16 · PF-0018.4</div>
+          <div class="subtitle">by Wulf · Web v0.16 · PF-0018.5</div>
         </div>
       </div>
 
@@ -241,7 +241,7 @@
                 <button type="button" data-start-view="tile" class="pf-primary-action">New Tile</button>
               </div>
               <div class="palette-active-actions">
-                <button type="button" id="discardPalettePreviewBtn" disabled>Discard Preview</button>
+                <button type="button" id="discardPalettePreviewBtn" disabled>Discard</button>
                 <button type="button" id="downloadPaletteResultBtn" disabled>Download Result</button>
               </div>
               <div class="palette-active-actions">
@@ -275,7 +275,7 @@
 
           </div>
 
-          <section class="palette-preview-grid">
+          <section class="palette-preview-grid legacy-preview-grid" aria-hidden="true">
             <div class="preview-card palette-preview-card">
               <div class="section-title-row">
                 <h2>Original</h2>
@@ -286,16 +286,16 @@
             <div class="preview-card palette-preview-card">
               <div class="section-title-row">
                 <h2>Processed</h2>
-                <div class="preview-camera-actions"><button type="button" data-preview-action="processed-fit">Fit</button><button type="button" data-preview-action="processed-actual">1:1</button><button id="processBtn" type="button" class="pf-primary-action">Update Preview</button><button id="downloadBtn" type="button" disabled>Download PNG</button></div>
+                <div class="preview-camera-actions"><button type="button" data-preview-action="processed-fit">Fit</button><button type="button" data-preview-action="processed-actual">1:1</button></div>
               </div>
               <div class="viewport palette-viewport" data-preview-host="processed"><img id="processedPreview" alt="Processed preview" /></div>
             </div>
           </section>
 
-          <section id="paletteComparePanel" class="preview-card palette-compare-card hidden">
+          <section id="paletteComparePanel" class="preview-card palette-compare-card palette-primary-compare">
             <div class="section-title-row">
               <h2>Before / After Compare</h2>
-              <span class="palette-panel-hint">Drag slider to compare source and processed output</span>
+              <div class="palette-compare-actions"><span class="palette-panel-hint">Main cleanup canvas · drag slider to compare source and processed output</span><button id="processBtn" type="button" class="pf-primary-action">Update Preview</button><button id="downloadBtn" type="button" disabled>Download PNG</button></div>
             </div>
             <div class="palette-compare-shell">
               <button id="openCompareViewerBtn" class="palette-compare-stage" type="button" title="Open full-screen compare viewer">
@@ -361,7 +361,7 @@
                   <div><span>Confidence</span><strong id="pixelSnapConfidence">—</strong></div>
                   <div><span>Palette Target</span><strong id="pixelSnapPaletteEstimate">—</strong></div>
                 </div>
-                <button type="button" id="pixelSnapToolBtn" class="pf-primary-action">Update Pixel Snap</button>
+                <button type="button" id="pixelSnapToolBtn" class="pf-primary-action">Force Update</button>
                 <p id="pixelSnapHint" class="palette-panel-hint">Use Auto for most AI-generated tiles and sprites. Manual grid size is useful when you know the intended pixel block size.</p>
               </div>
             </div>

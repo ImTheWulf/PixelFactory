@@ -1,4 +1,12 @@
 
+## PF-0018.5 - Palette Lab primary compare workflow
+- Made the before/after compare panel the primary Palette Lab work canvas.
+- Hid redundant Original/Processed panels while keeping their image state available internally.
+- Renamed Discard Preview to Discard and made it reset the Palette Lab session.
+- Moved Update Preview and Download PNG into the compare canvas header.
+- Renamed Pixel Snap update action to Force Update.
+
+
 ## PF-0018.3 - Palette Lab tool toggle polish
 - Polished Palette Lab tool toggles into consistent on/off pill buttons.
 - Added green/red toggle states for Pixel Snap, Color Cleanup, Resize, grid, transparency, and auto-update controls.

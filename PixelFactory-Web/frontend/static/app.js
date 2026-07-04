@@ -739,12 +739,14 @@ function setPaletteCompareZoomAtPoint(nextZoom, clientX, clientY) {
   });
 }
 
-function showPaletteCompare() {
-  if (!paletteComparePanel || !selectedFile || !processedBlobUrl) return;
-  if (compareSlider) compareSlider.value = "50";
-  const originalSrc = originalPreview.getAttribute("src");
-  if (compareOriginalPreview && originalSrc) compareOriginalPreview.src = originalSrc;
-  if (compareProcessedPreview) compareProcessedPreview.src = processedBlobUrl;
+function showPaletteCompare({ resetSlider = false } = {}) {
+  if (!paletteComparePanel || !selectedFile) return;
+  const originalSrc = originalPreview?.getAttribute("src");
+  if (!originalSrc) return;
+  const hasProcessed = Boolean(processedBlobUrl);
+  if (compareSlider && resetSlider) compareSlider.value = hasProcessed ? "50" : "0";
+  if (compareOriginalPreview) compareOriginalPreview.src = originalSrc;
+  if (compareProcessedPreview) compareProcessedPreview.src = hasProcessed ? processedBlobUrl : originalSrc;
   paletteComparePanel.classList.remove("hidden");
   updateCompareSlider();
   requestAnimationFrame(updatePixelSnapGridOverlays);
@@ -764,7 +766,8 @@ function clearPaletteProcessedPreview({ addHistory = false } = {}) {
   if (discardPalettePreviewBtn) discardPalettePreviewBtn.disabled = true;
   if (savePaletteAssetBtn) savePaletteAssetBtn.disabled = true;
   if (savePaletteAsAssetBtn) savePaletteAsAssetBtn.disabled = true;
-  paletteComparePanel?.classList.add("hidden");
+  if (selectedFile) showPaletteCompare({ resetSlider: true });
+  else paletteComparePanel?.classList.add("hidden");
   closePaletteCompareViewer();
   setPaletteDirty(false);
   updatePixelSnapGridOverlays();
@@ -928,7 +931,39 @@ document.querySelectorAll(".pf-toggle-button-control input[type='checkbox']").fo
   input.addEventListener("change", updateToolToggleLabels);
   input.addEventListener("input", updateToolToggleLabels);
 });
-discardPalettePreviewBtn?.addEventListener("click", () => clearPaletteProcessedPreview({ addHistory: true }));
+
+function resetPaletteLab() {
+  window.clearTimeout(paletteAutoProcessTimer);
+  window.clearTimeout(compareAutoProcessTimer);
+  if (processedBlobUrl) URL.revokeObjectURL(processedBlobUrl);
+  processedBlobUrl = null;
+  selectedFile = null;
+  selectedFileSource = null;
+  paletteSourceAsset = null;
+  paletteProcessedResolution = "—";
+  paletteDirty = false;
+  [originalPreview, processedPreview, compareOriginalPreview, compareProcessedPreview, compareModalOriginal, compareModalProcessed].filter(Boolean).forEach((img) => {
+    img.removeAttribute("src");
+    img.classList.remove("pf-viewable-image");
+  });
+  paletteComparePanel?.classList.add("hidden");
+  closePaletteCompareViewer();
+  if (workspaceStatus) workspaceStatus.textContent = "No asset loaded";
+  updatePaletteLoadedState({ filename: "No canvas loaded", source: "workspace", detail: "Open an asset, browse assets, or load an image." });
+  updatePaletteMeta({ type: "—", status: "Empty", recipe: "—", resolution: "—" });
+  paletteHistoryEntries = [];
+  renderPaletteHistory();
+  setPaletteDirty(false, "● Clean");
+  updatePixelSnapAnalysis();
+  if (downloadBtn) downloadBtn.disabled = true;
+  if (downloadPaletteResultBtn) downloadPaletteResultBtn.disabled = true;
+  if (discardPalettePreviewBtn) discardPalettePreviewBtn.disabled = true;
+  if (savePaletteAssetBtn) savePaletteAssetBtn.disabled = true;
+  if (savePaletteAsAssetBtn) savePaletteAsAssetBtn.disabled = true;
+  setStatus("Palette Lab reset.");
+}
+
+discardPalettePreviewBtn?.addEventListener("click", resetPaletteLab);
 downloadPaletteResultBtn?.addEventListener("click", () => downloadBtn?.click());
 document.getElementById("paletteColors")?.addEventListener("change", updateOperationStackLabels);
 document.getElementById("resizeScale")?.addEventListener("change", updateOperationStackLabels);
@@ -970,7 +1005,7 @@ pixelSnapToolBtn?.addEventListener("click", () => {
   syncPixelSnapPanelToOperation();
   updateOperationStackLabels();
   processPalettePreview();
-  setStatus("Pixel Snap preview running...");
+  setStatus("Force updating Pixel Snap preview...");
 });
 document.getElementById("pixelSize")?.addEventListener("change", syncPixelSnapPanelFromOperation);
 updateOperationStackLabels();
@@ -1019,6 +1054,7 @@ async function loadImageIntoPaletteFromUrl(url, filename = "workspace.png", sour
   originalPreview.onload = () => {
     updatePaletteMeta({ resolution: `${originalPreview.naturalWidth} × ${originalPreview.naturalHeight}` });
     updatePixelSnapAnalysis();
+    showPaletteCompare({ resetSlider: true });
   };
   applyPreviewMode();
   updatePixelSnapAnalysis();
@@ -1069,6 +1105,7 @@ imageInput?.addEventListener("change", () => {
   originalPreview.onload = () => {
     updatePaletteMeta({ resolution: `${originalPreview.naturalWidth} × ${originalPreview.naturalHeight}` });
     updatePixelSnapAnalysis();
+    showPaletteCompare({ resetSlider: true });
   };
   applyPreviewMode();
   updatePixelSnapAnalysis();
@@ -1131,7 +1168,7 @@ async function processPalettePreview({ quiet = false } = {}) {
     if (savePaletteAssetBtn) savePaletteAssetBtn.disabled = false;
     if (savePaletteAsAssetBtn) savePaletteAsAssetBtn.disabled = false;
     setPaletteDirty(true);
-    showPaletteCompare();
+    showPaletteCompare({ resetSlider: true });
     syncCompareControlsFromPalette();
     if (paletteCompareModal && !paletteCompareModal.classList.contains("hidden")) updateCompareModalImages();
     const operationLabel = document.getElementById("operation")?.selectedOptions?.[0]?.textContent || "Process";
