@@ -1,3 +1,11 @@
+
+## PF-0017.4 — Pixel Snap Live Preview/Grid Polish
+
+- Clarified Live Preview as Auto-update Preview.
+- Auto-update Preview now actually controls automatic preview processing.
+- Pixel Snap grid overlay is locked to the compare canvas while zooming/panning.
+- Improved compare overlay refresh after zoom and compare layout changes.
+
 ## PF-0017.2 — Pixel Snap Engine UI
 
 - Added Pixel Snap readout for detected grid, confidence, and palette target.

@@ -2873,3 +2873,94 @@ select option:hover {
     grid-template-columns: 1fr;
   }
 }
+
+/* PF-0017.4 Pixel Snap live preview/grid lock polish */
+.pf-grid-overlay.locked {
+  inset: 0 auto auto 0;
+  transform: none !important;
+}
+.palette-compare-modal-canvas > .pf-grid-overlay {
+  z-index: 4;
+}
+.pixel-snap-toggle input#pixelSnapLivePreview + span::after {
+  content: "";
+}
+
+
+/* PF-0017.4 Palette Lab cleanup */
+.palette-collapsed-workflow {
+  grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr);
+  align-items: start;
+}
+.palette-workflow-details {
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.palette-workflow-details summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+}
+.palette-workflow-details summary::-webkit-details-marker { display: none; }
+.palette-workflow-details summary::before {
+  content: "▸";
+  color: var(--accent);
+  font-size: 13px;
+  transition: transform .18s ease;
+}
+.palette-workflow-details[open] summary::before { transform: rotate(90deg); }
+.palette-workflow-details summary strong {
+  color: var(--text);
+  font-size: 16px;
+  margin-right: auto;
+}
+.palette-workflow-details[open] summary {
+  border-bottom: 1px solid var(--border);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.palette-operation-stack,
+.palette-history-list {
+  padding: 12px 14px 14px;
+}
+.palette-operation-stack label { display: none; }
+.palette-operation-row {
+  background: rgba(3, 7, 12, .58);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.palette-operation-row strong {
+  color: var(--text);
+  font-size: 13px;
+}
+.palette-operation-row span,
+.palette-operation-row em {
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+}
+.palette-operation-row.active {
+  border-color: rgba(96,165,250,.55);
+  background: rgba(37,99,235,.12);
+}
+.palette-operation-row.muted {
+  opacity: .58;
+}
+.palette-viewport .pf-grid-overlay { display: none !important; }
+.palette-compare-card.hidden + .palette-workflow-grid {
+  margin-top: 0;
+}
+@media (max-width: 1180px) {
+  .palette-collapsed-workflow { grid-template-columns: 1fr; }
+}

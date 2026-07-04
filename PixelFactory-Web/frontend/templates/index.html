@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.16 · PF-0017.2</div>
+          <div class="subtitle">by Wulf · Web v0.16 · PF-0017.4</div>
         </div>
       </div>
 
@@ -340,29 +340,29 @@
             </div>
           </section>
 
-          <section class="palette-workflow-grid">
-            <div class="preview-card palette-operation-card">
-              <div class="section-title-row">
-                <h2>Operation Stack</h2>
+          <section class="palette-workflow-grid palette-collapsed-workflow">
+            <details class="preview-card palette-operation-card palette-workflow-details">
+              <summary>
+                <strong>Operation Stack</strong>
                 <span class="palette-panel-hint">Current processing plan</span>
-              </div>
+              </summary>
               <div id="paletteOperationStack" class="palette-operation-stack">
-                <label><input type="checkbox" checked disabled /> Palette reduction <span id="opPaletteCount">64 colors</span></label>
-                <label><input type="checkbox" checked disabled /> Nearest-neighbor resize <span id="opResizeScale">2x</span></label>
-                <label><input id="opPixelSnapCheck" type="checkbox" disabled /> Pixel Snap <span id="opPixelSize">Auto</span></label>
-                <label><input type="checkbox" disabled /> Chroma Key <em>coming</em></label>
+                <div class="palette-operation-row" data-op="palette"><strong>Palette reduction</strong><span id="opPaletteCount">64 colors</span></div>
+                <div class="palette-operation-row" data-op="resize"><strong>Nearest-neighbor resize</strong><span id="opResizeScale">2x</span></div>
+                <div class="palette-operation-row" id="opPixelSnapRow" data-op="pixel-snap"><strong>Pixel Snap</strong><span id="opPixelSize">Auto</span></div>
+                <div class="palette-operation-row muted" data-op="chroma"><strong>Chroma Key</strong><em>coming</em></div>
               </div>
-            </div>
+            </details>
 
-            <div class="preview-card palette-history-card">
-              <div class="section-title-row">
-                <h2>History</h2>
-                <span class="palette-panel-hint">Workspace actions</span>
-              </div>
+            <details class="preview-card palette-history-card palette-workflow-details">
+              <summary>
+                <strong>History</strong>
+                <span class="palette-panel-hint">Recent workspace actions</span>
+              </summary>
               <ol id="paletteHistory" class="palette-history-list">
                 <li>No asset loaded.</li>
               </ol>
-            </div>
+            </details>
           </section>
 
           <section class="preview-card palette-tool-dock pixel-snap-panel">
@@ -381,7 +381,7 @@
                 <label class="pixel-snap-toggle"><input id="pixelSnapPalette" type="checkbox" checked /> <span>Snap colors to palette</span></label>
                 <label class="pixel-snap-toggle"><input id="pixelSnapAlpha" type="checkbox" checked /> <span>Preserve transparency</span></label>
                 <label class="pixel-snap-toggle"><input id="pixelSnapShowGrid" type="checkbox" /> <span>Show grid overlay</span></label>
-                <label class="pixel-snap-toggle"><input id="pixelSnapLivePreview" type="checkbox" checked /> <span>Live preview</span></label>
+                <label class="pixel-snap-toggle"><input id="pixelSnapLivePreview" type="checkbox" checked /> <span>Auto-update preview</span></label>
               </div>
 
               <div class="pixel-snap-actions">
@@ -390,7 +390,7 @@
                   <div><span>Confidence</span><strong id="pixelSnapConfidence">—</strong></div>
                   <div><span>Palette Target</span><strong id="pixelSnapPaletteEstimate">—</strong></div>
                 </div>
-                <button type="button" id="pixelSnapToolBtn" class="pf-primary-action">Apply Pixel Snap Preview</button>
+                <button type="button" id="pixelSnapToolBtn" class="pf-primary-action">Update Pixel Snap</button>
                 <p id="pixelSnapHint" class="palette-panel-hint">Use Auto for most AI-generated tiles and sprites. Manual grid size is useful when you know the intended pixel block size.</p>
               </div>
             </div>
