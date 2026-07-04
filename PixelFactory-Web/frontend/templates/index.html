@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0017_5_grid_overlay_workflow_compact" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0017_6_difference_pixel_inspector" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.16 · PF-0017.5</div>
+          <div class="subtitle">by Wulf · Web v0.16 · PF-0017.6</div>
         </div>
       </div>
 
@@ -519,6 +519,7 @@
           <button id="compareZoomOutBtn" type="button">−</button>
           <button id="compareFitBtn" type="button">Fit</button>
           <button id="compareActualBtn" type="button">1:1</button>
+          <button id="compareDifferenceBtn" type="button">Difference</button>
           <button id="compareZoomInBtn" type="button">+</button>
           <button id="compareProcessBtn" type="button" class="pf-primary-action">Process / Update</button>
           <button id="compareDownloadBtn" type="button">Download</button>
@@ -535,6 +536,7 @@
         <div id="compareModalCanvas" class="palette-compare-modal-canvas">
           <img id="compareModalOriginal" alt="Compare original full view" />
           <div id="compareModalProcessedClip" class="palette-compare-modal-processed"><img id="compareModalProcessed" alt="Compare processed full view" /></div>
+          <canvas id="compareDifferenceCanvas" class="palette-compare-difference" aria-label="Difference preview"></canvas>
           <div id="compareModalDivider" class="palette-compare-modal-divider"></div>
         </div>
       </div>
@@ -542,6 +544,7 @@
         <span>Original</span>
         <input id="compareModalSlider" type="range" min="0" max="100" value="50" />
         <span>Processed</span>
+        <div id="comparePixelInspector" class="compare-pixel-inspector">Hover image for pixel info</div>
       </div>
     </div>
   </div>
@@ -573,6 +576,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0017_2_pixel_snap_engine_ui"></script>
+  <script src="/static/app.js?v=pf0017_6_difference_pixel_inspector"></script>
 </body>
 </html>

@@ -1,3 +1,9 @@
+## PF-0017.6 — Difference View and Pixel Inspector
+
+- Added a Difference mode to the Palette Lab compare viewer.
+- Added hover pixel inspector readout for original and processed pixels.
+- Updated Pixel Factory version/cache labels.
+
 ## PF-0017.5 — Pixel Snap Grid Overlay and Workflow Compact
 
 - Compacted Palette Lab History and Operation Stack when collapsed.

@@ -148,6 +148,9 @@ const compareFitBtn = document.getElementById("compareFitBtn");
 const compareActualBtn = document.getElementById("compareActualBtn");
 const compareZoomInBtn = document.getElementById("compareZoomInBtn");
 const compareZoomOutBtn = document.getElementById("compareZoomOutBtn");
+const compareDifferenceBtn = document.getElementById("compareDifferenceBtn");
+const compareDifferenceCanvas = document.getElementById("compareDifferenceCanvas");
+const comparePixelInspector = document.getElementById("comparePixelInspector");
 const discardPalettePreviewBtn = document.getElementById("discardPalettePreviewBtn");
 const downloadPaletteResultBtn = document.getElementById("downloadPaletteResultBtn");
 const opPaletteCount = document.getElementById("opPaletteCount");
@@ -182,6 +185,7 @@ let paletteIsProcessing = false;
 let paletteCompareIsPanning = false;
 let paletteComparePanStart = null;
 let paletteCompareSpaceDown = false;
+let paletteCompareViewMode = "compare";
 
 function isPixelSnapLivePreviewEnabled() {
   return pixelSnapLivePreview?.checked === true;
@@ -375,6 +379,86 @@ function updateCompareModalSlider() {
   requestAnimationFrame(updatePixelSnapGridOverlays);
 }
 
+function setCompareViewMode(mode = "compare") {
+  paletteCompareViewMode = mode === "difference" ? "difference" : "compare";
+  compareModalCanvas?.classList.toggle("difference-mode", paletteCompareViewMode === "difference");
+  compareDifferenceBtn?.classList.toggle("active", paletteCompareViewMode === "difference");
+  if (compareModalSlider) compareModalSlider.disabled = paletteCompareViewMode === "difference";
+  if (paletteCompareMeta) {
+    const base = paletteCompareMeta.textContent.split(" · View")[0];
+    paletteCompareMeta.textContent = `${base} · View ${paletteCompareViewMode === "difference" ? "Difference" : "Before/After"}`;
+  }
+  if (paletteCompareViewMode === "difference") buildCompareDifferenceCanvas();
+  updateCompareModalSlider();
+}
+
+function buildCompareDifferenceCanvas() {
+  if (!compareDifferenceCanvas || !compareModalOriginal || !compareModalProcessed) return false;
+  if (!compareModalOriginal.naturalWidth || !compareModalOriginal.naturalHeight || !compareModalProcessed.naturalWidth || !compareModalProcessed.naturalHeight) return false;
+  const width = compareModalOriginal.naturalWidth;
+  const height = compareModalOriginal.naturalHeight;
+  compareDifferenceCanvas.width = width;
+  compareDifferenceCanvas.height = height;
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  const out = compareDifferenceCanvas.getContext("2d");
+  if (!ctx || !out) return false;
+  ctx.clearRect(0, 0, width, height);
+  ctx.drawImage(compareModalOriginal, 0, 0, width, height);
+  const original = ctx.getImageData(0, 0, width, height);
+  ctx.clearRect(0, 0, width, height);
+  ctx.drawImage(compareModalProcessed, 0, 0, width, height);
+  const processed = ctx.getImageData(0, 0, width, height);
+  const diff = out.createImageData(width, height);
+  for (let i = 0; i < diff.data.length; i += 4) {
+    const dr = Math.abs(original.data[i] - processed.data[i]);
+    const dg = Math.abs(original.data[i + 1] - processed.data[i + 1]);
+    const db = Math.abs(original.data[i + 2] - processed.data[i + 2]);
+    const da = Math.abs(original.data[i + 3] - processed.data[i + 3]);
+    const change = Math.max(dr, dg, db, da);
+    if (change < 3) {
+      diff.data[i] = 8; diff.data[i + 1] = 13; diff.data[i + 2] = 22; diff.data[i + 3] = 255;
+    } else {
+      diff.data[i] = Math.min(255, 24 + dr * 3);
+      diff.data[i + 1] = Math.min(255, 80 + dg * 3);
+      diff.data[i + 2] = Math.min(255, 130 + db * 3);
+      diff.data[i + 3] = 255;
+    }
+  }
+  out.putImageData(diff, 0, 0);
+  return true;
+}
+
+function readComparePixel(img, x, y) {
+  if (!img || !img.naturalWidth || !img.naturalHeight) return null;
+  const canvas = document.createElement("canvas");
+  canvas.width = img.naturalWidth;
+  canvas.height = img.naturalHeight;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return null;
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  const data = ctx.getImageData(Math.max(0, Math.min(canvas.width - 1, x)), Math.max(0, Math.min(canvas.height - 1, y)), 1, 1).data;
+  return `rgba(${data[0]}, ${data[1]}, ${data[2]}, ${data[3]})`;
+}
+
+function updateComparePixelInspector(event) {
+  if (!comparePixelInspector || !compareModalCanvas || !compareModalOriginal?.naturalWidth || !compareModalOriginal?.naturalHeight) return;
+  const rect = compareModalCanvas.getBoundingClientRect();
+  const xRatio = (event.clientX - rect.left) / Math.max(1, rect.width);
+  const yRatio = (event.clientY - rect.top) / Math.max(1, rect.height);
+  if (xRatio < 0 || xRatio > 1 || yRatio < 0 || yRatio > 1) {
+    comparePixelInspector.textContent = "Hover image for pixel info";
+    return;
+  }
+  const x = Math.max(0, Math.min(compareModalOriginal.naturalWidth - 1, Math.floor(xRatio * compareModalOriginal.naturalWidth)));
+  const y = Math.max(0, Math.min(compareModalOriginal.naturalHeight - 1, Math.floor(yRatio * compareModalOriginal.naturalHeight)));
+  const src = readComparePixel(compareModalOriginal, x, y) || "—";
+  const out = readComparePixel(compareModalProcessed, Math.floor(xRatio * (compareModalProcessed.naturalWidth || compareModalOriginal.naturalWidth)), Math.floor(yRatio * (compareModalProcessed.naturalHeight || compareModalOriginal.naturalHeight))) || "—";
+  comparePixelInspector.textContent = `x ${x}, y ${y} · Original ${src} · Processed ${out}`;
+}
+
 function syncCompareControlsFromPalette() {
   const resize = document.getElementById("resizeScale");
   const colors = document.getElementById("paletteColors");
@@ -495,8 +579,10 @@ function updateCompareModalImages() {
   compareModalProcessed.src = processedBlobUrl;
   if (paletteCompareTitle) paletteCompareTitle.textContent = `${selectedFile?.name || "Current Canvas"} — Compare`;
   const refreshLayout = () => {
+    buildCompareDifferenceCanvas();
     updateCompareModalSlider();
     applyPaletteCompareMode({ center: true });
+    setCompareViewMode(paletteCompareViewMode);
   };
   compareModalOriginal.onload = refreshLayout;
   compareModalProcessed.onload = refreshLayout;
@@ -514,7 +600,9 @@ function openPaletteCompareViewer() {
   paletteCompareModal.setAttribute("aria-hidden", "false");
   paletteCompareMode = "fit";
   paletteCompareZoom = 1;
+  paletteCompareViewMode = "compare";
   updateCompareModalImages();
+  setCompareViewMode("compare");
 }
 
 function closePaletteCompareViewer() {
@@ -624,6 +712,7 @@ compareFitBtn?.addEventListener("click", setPaletteCompareFit);
 compareActualBtn?.addEventListener("click", () => setPaletteCompareActual(1));
 compareZoomInBtn?.addEventListener("click", () => setPaletteCompareActual((paletteCompareMode === "fit" ? 1 : paletteCompareZoom) * 1.25));
 compareZoomOutBtn?.addEventListener("click", () => setPaletteCompareActual((paletteCompareMode === "fit" ? 1 : paletteCompareZoom) / 1.25));
+compareDifferenceBtn?.addEventListener("click", () => setCompareViewMode(paletteCompareViewMode === "difference" ? "compare" : "difference"));
 paletteCompareModalStage?.addEventListener("wheel", (event) => {
   if (!paletteCompareModal || paletteCompareModal.classList.contains("hidden")) return;
   event.preventDefault();
@@ -633,6 +722,8 @@ paletteCompareModalStage?.addEventListener("wheel", (event) => {
 }, { passive: false });
 
 paletteCompareModalStage?.addEventListener("dblclick", () => setPaletteCompareFit());
+paletteCompareModalStage?.addEventListener("mousemove", updateComparePixelInspector);
+paletteCompareModalStage?.addEventListener("mouseleave", () => { if (comparePixelInspector) comparePixelInspector.textContent = "Hover image for pixel info"; });
 paletteCompareModalStage?.addEventListener("mousedown", (event) => {
   if (!paletteCompareModalStage || event.button !== 0) return;
   if (!paletteCompareSpaceDown && !event.shiftKey && !event.altKey && !event.metaKey && !event.ctrlKey) return;
@@ -861,7 +952,11 @@ async function processPalettePreview({ quiet = false } = {}) {
     processedPreview.onload = () => {
       paletteProcessedResolution = `${processedPreview.naturalWidth} × ${processedPreview.naturalHeight}`;
       updatePixelSnapAnalysis();
-      if (paletteCompareMeta && paletteCompareModal && !paletteCompareModal.classList.contains("hidden")) applyPaletteCompareMode();
+      if (paletteCompareMeta && paletteCompareModal && !paletteCompareModal.classList.contains("hidden")) {
+        buildCompareDifferenceCanvas();
+        applyPaletteCompareMode();
+        setCompareViewMode(paletteCompareViewMode);
+      }
     };
     applyPreviewMode();
     downloadBtn.disabled = false;
