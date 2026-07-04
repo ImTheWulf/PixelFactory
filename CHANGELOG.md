@@ -1,3 +1,10 @@
+## PF-0018.7 - Palette Lab save flow polish
+- Added a native Save As dialog instead of the browser prompt.
+- Save As now clearly creates a new accepted asset, never a temporary Candidate.
+- Save now only overwrites accepted assets; Candidates and uploads must use Save As.
+- Palette Lab now keeps source asset status clearer while editing and after saving.
+- Added backend protection against overwriting Candidate assets from Palette Lab.
+
 ## PF-0018.6 - Palette Lab color cleanup clarity
 - Added Original colors palette target so Palette Lab can keep the source palette without forced color reduction.
 - Removed the visible Snap Colors toggle from the main Color Cleanup UI to reduce confusion.

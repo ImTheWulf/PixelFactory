@@ -3602,3 +3602,103 @@ select option:hover {
 .pf-toggle-button-control span {
   user-select: none;
 }
+
+
+/* PF-0018.7 Palette Lab save flow polish */
+.pf-modal.hidden { display: none !important; }
+.pf-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: grid;
+  place-items: center;
+}
+.pf-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, .68);
+  backdrop-filter: blur(8px);
+}
+.pf-modal-panel {
+  position: relative;
+  width: min(520px, calc(100vw - 32px));
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(24, 32, 47, .98), rgba(10, 15, 24, .98));
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .55);
+  overflow: hidden;
+}
+.pf-modal-header,
+.pf-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.pf-modal-actions {
+  border-top: 1px solid var(--line);
+  border-bottom: 0;
+  justify-content: flex-end;
+}
+.pf-modal-header h2 {
+  margin: 0 0 4px;
+  font-size: 20px;
+}
+.pf-modal-header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.pf-modal-body {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+.pf-modal-body label {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+.pf-modal-body input,
+.pf-modal-body select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #0a0f18;
+  color: var(--text);
+  padding: 11px 12px;
+  font: inherit;
+}
+.save-as-source-card {
+  display: grid;
+  gap: 4px;
+  border: 1px solid rgba(59, 130, 246, .25);
+  border-radius: 12px;
+  background: rgba(37, 99, 235, .08);
+  padding: 12px;
+}
+.save-as-source-card span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.save-as-source-card strong {
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.save-as-source-card em {
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+  line-height: 1.4;
+}
+#savePaletteAssetBtn:disabled,
+#savePaletteAsAssetBtn:disabled {
+  cursor: not-allowed;
+}

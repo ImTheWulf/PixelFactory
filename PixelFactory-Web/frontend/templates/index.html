@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0018_6_palette_color_cleanup_clarity" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0018_7_palette_save_as_modal" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.16 · PF-0018.6</div>
+          <div class="subtitle">by Wulf · Web v0.16 · PF-0018.7</div>
         </div>
       </div>
 
@@ -478,6 +478,43 @@
   </div>
 
 
+  <div id="paletteSaveAsModal" class="pf-modal hidden" aria-hidden="true">
+    <div class="pf-modal-backdrop" data-save-as-close></div>
+    <div class="pf-modal-panel palette-save-as-panel" role="dialog" aria-modal="true" aria-label="Save Palette Lab asset as">
+      <div class="pf-modal-header">
+        <div>
+          <h2>Save As New Asset</h2>
+          <p>Create a clean accepted asset from the current Palette Lab preview.</p>
+        </div>
+        <button id="paletteSaveAsCloseBtn" type="button">Close</button>
+      </div>
+      <div class="pf-modal-body">
+        <label>Asset Name
+          <input id="paletteSaveAsName" type="text" placeholder="cleaned_tile_01" />
+        </label>
+        <label>Asset Type
+          <select id="paletteSaveAsType">
+            <option value="tile">Tile</option>
+            <option value="character">Character</option>
+            <option value="prop">Prop</option>
+            <option value="building">Building</option>
+            <option value="repair">Repair / Misc</option>
+          </select>
+        </label>
+        <div class="save-as-source-card">
+          <span>Source</span>
+          <strong id="paletteSaveAsSource">Current Palette Lab canvas</strong>
+          <em>Save As always creates an accepted Asset Browser item. It does not create a temporary Candidate.</em>
+        </div>
+      </div>
+      <div class="pf-modal-actions">
+        <button id="paletteSaveAsCancelBtn" type="button">Cancel</button>
+        <button id="paletteSaveAsConfirmBtn" type="button" class="pf-primary-action">Save New Asset</button>
+      </div>
+    </div>
+  </div>
+
+
   <div id="paletteCompareModal" class="palette-compare-modal hidden" aria-hidden="true">
     <div class="palette-compare-backdrop" data-compare-close></div>
     <div class="palette-compare-panel" role="dialog" aria-modal="true" aria-label="Palette compare viewer">
@@ -552,6 +589,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0018_6_palette_color_cleanup_clarity"></script>
+  <script src="/static/app.js?v=pf0018_7_palette_save_as_modal"></script>
 </body>
 </html>

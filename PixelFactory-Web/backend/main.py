@@ -39,7 +39,7 @@ asset_service = AssetService(PROJECT_ROOT)
 workspace_service = WorkspaceService(PROJECT_ROOT)
 export_service = ExportService(PROJECT_ROOT, asset_service)
 
-app = FastAPI(title="Pixel Factory by Wulf", version="0.16-pf0018.6-palette-color-cleanup")
+app = FastAPI(title="Pixel Factory by Wulf", version="0.16-pf0018.7-palette-save-as-modal")
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
 
@@ -539,6 +539,12 @@ async def save_palette_edit(
     pixel_size: int = Form(0),
     pixel_strength: float = Form(1.0),
 ) -> dict:
+    current_meta = asset_service.load(asset_id)
+    if not current_meta:
+        raise HTTPException(status_code=404, detail="Palette Lab save target not found")
+    if str(current_meta.get("status", "")).lower() != "accepted":
+        raise HTTPException(status_code=400, detail="Only accepted assets can be overwritten. Use Save As to create an accepted cleaned asset.")
+
     data = await image.read()
     if not data:
         raise HTTPException(status_code=400, detail="No processed image supplied")

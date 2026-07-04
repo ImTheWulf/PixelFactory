@@ -165,9 +165,9 @@ class AssetService:
     def overwrite_asset_image(self, asset_id: str, image_bytes: bytes, edit_meta: dict[str, Any] | None = None) -> dict[str, Any] | None:
         """Overwrite the active image for an existing asset and record Palette Lab edit metadata.
 
-        Palette Lab edits are not candidates. They are user edits to the loaded
-        asset. Accepted assets overwrite their accepted image; candidates overwrite
-        their current candidate image.
+        Palette Lab edits are not candidates. They are user edits to an accepted
+        asset. Candidate sources should use Save As so the cleaned result becomes
+        a deliberate accepted asset instead of another temporary generation.
         """
         meta = self.load(asset_id)
         if not meta:
