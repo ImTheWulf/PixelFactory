@@ -153,6 +153,8 @@ const compareDifferenceCanvas = document.getElementById("compareDifferenceCanvas
 const comparePixelInspector = document.getElementById("comparePixelInspector");
 const discardPalettePreviewBtn = document.getElementById("discardPalettePreviewBtn");
 const downloadPaletteResultBtn = document.getElementById("downloadPaletteResultBtn");
+const savePaletteResultBtn = document.getElementById("savePaletteResultBtn");
+const acceptPaletteResultBtn = document.getElementById("acceptPaletteResultBtn");
 const opPaletteCount = document.getElementById("opPaletteCount");
 const opResizeScale = document.getElementById("opResizeScale");
 const opPixelSize = document.getElementById("opPixelSize");
@@ -172,6 +174,7 @@ const pixelSnapModeBadge = document.getElementById("pixelSnapModeBadge");
 
 let selectedFile = null;
 let selectedFileSource = null;
+let paletteSourceAsset = null;
 let processedBlobUrl = null;
 let workspace = { has_image: false };
 let paletteDirty = false;
@@ -673,6 +676,8 @@ function clearPaletteProcessedPreview({ addHistory = false } = {}) {
   downloadBtn.disabled = true;
   if (downloadPaletteResultBtn) downloadPaletteResultBtn.disabled = true;
   if (discardPalettePreviewBtn) discardPalettePreviewBtn.disabled = true;
+  if (savePaletteResultBtn) savePaletteResultBtn.disabled = true;
+  if (acceptPaletteResultBtn) acceptPaletteResultBtn.disabled = true;
   paletteComparePanel?.classList.add("hidden");
   closePaletteCompareViewer();
   setPaletteDirty(false);
@@ -845,6 +850,14 @@ async function loadImageIntoPaletteFromUrl(url, filename = "workspace.png", sour
   const blob = await response.blob();
   selectedFile = new File([blob], filename, { type: "image/png" });
   selectedFileSource = source;
+  if (workspace?.asset_id) {
+    paletteSourceAsset = {
+      id: workspace.asset_id,
+      name: workspace.asset_name || filename,
+      type: workspace.asset_type || paletteCurrentMeta.type || "repair",
+      recipe: workspace.recipe_name || workspace.recipe_id || paletteCurrentMeta.recipe || "—",
+    };
+  }
   if (workspaceStatus) workspaceStatus.textContent = filename;
   updatePaletteLoadedState({ filename, source, detail: "Loaded into Palette Lab", meta: { status: "Clean", resolution: "loading..." } });
   originalPreview.src = `${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}`;
@@ -894,6 +907,7 @@ imageInput.addEventListener("change", () => {
   if (!file) return;
   selectedFile = file;
   selectedFileSource = "upload";
+  paletteSourceAsset = null;
   if (workspaceStatus) workspaceStatus.textContent = file.name;
   updatePaletteLoadedState({ filename: file.name, source: "upload", detail: "Loaded into Palette Lab", meta: { type: "Upload", status: "Clean", recipe: "Manual", resolution: "loading..." } });
   originalPreview.src = URL.createObjectURL(file);
@@ -962,6 +976,8 @@ async function processPalettePreview({ quiet = false } = {}) {
     downloadBtn.disabled = false;
     if (downloadPaletteResultBtn) downloadPaletteResultBtn.disabled = false;
     if (discardPalettePreviewBtn) discardPalettePreviewBtn.disabled = false;
+    if (savePaletteResultBtn) savePaletteResultBtn.disabled = false;
+    if (acceptPaletteResultBtn) acceptPaletteResultBtn.disabled = false;
     setPaletteDirty(true);
     showPaletteCompare();
     syncCompareControlsFromPalette();
@@ -1009,6 +1025,46 @@ downloadBtn.addEventListener("click", () => {
   a.remove();
   addPaletteHistory("Downloaded result", "pixel_factory_processed.png");
 });
+
+async function savePaletteProcessedAsset({ accept = false } = {}) {
+  if (!processedBlobUrl) {
+    setStatus("Process an image before saving a Palette Lab result.");
+    return null;
+  }
+
+  const blob = await fetch(processedBlobUrl).then((response) => response.blob());
+  const sourceName = paletteSourceAsset?.name || selectedFile?.name || "palette_lab_result";
+  const sourceType = paletteSourceAsset?.type || paletteCurrentMeta.type || "repair";
+  const form = new FormData();
+  form.append("image", blob, sourceName.replace(/\.png$/i, "") + "_clean.png");
+  form.append("asset_type", sourceType);
+  form.append("source_asset_id", paletteSourceAsset?.id || "");
+  form.append("source_asset_name", sourceName);
+  form.append("operation", document.getElementById("operation")?.value || "palette_lab");
+  form.append("palette_colors", document.getElementById("paletteColors")?.value || "64");
+  form.append("resize_scale", document.getElementById("resizeScale")?.value || "1");
+  form.append("pixel_size", document.getElementById("pixelSize")?.value || "0");
+  form.append("pixel_strength", pixelSnapStrength?.value || "1");
+  form.append("accept", accept ? "true" : "false");
+
+  const label = accept ? "Saving and accepting Palette Lab result..." : "Saving Palette Lab result as Candidate...";
+  setStatus(label);
+  const response = await fetch("/api/assets/from-palette", { method: "POST", body: form });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    setStatus(data.detail || `Save failed: HTTP ${response.status}`);
+    return null;
+  }
+  const asset = data.asset;
+  addPaletteHistory(accept ? "Saved + accepted result" : "Saved candidate result", asset?.name || sourceName);
+  setPaletteDirty(false, accept ? "● Saved + Accepted" : "● Saved as Candidate");
+  setStatus(accept ? "Palette Lab result saved and accepted." : "Palette Lab result saved as a Candidate.");
+  return asset;
+}
+
+savePaletteResultBtn?.addEventListener("click", () => savePaletteProcessedAsset({ accept: false }));
+acceptPaletteResultBtn?.addEventListener("click", () => savePaletteProcessedAsset({ accept: true }));
+
 
 // Character Studio
 const characterRecipe = document.getElementById("characterRecipe");
@@ -1855,6 +1911,7 @@ async function sendAssetToPalette(asset) {
   }
   await refreshWorkspace();
   await loadWorkspaceIntoPalette();
+  paletteSourceAsset = { id: asset.id, name: assetDisplayName(asset), type: asset.type || "asset", recipe: asset.recipe || asset.recipe_id || asset.generation?.recipe || "—" };
   updatePaletteMeta({
     type: asset.type || "asset",
     status: assetStatusLabel(asset),

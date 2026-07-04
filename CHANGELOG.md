@@ -1,3 +1,10 @@
+
+## PF-0017.7 — Palette Lab Save Result Flow
+
+- Added native save flow for processed Palette Lab previews.
+- Palette Lab results can now be saved as Candidate assets or saved and accepted immediately.
+- Saved cleanup results preserve source asset context, Palette Lab operation settings, and cleanup tags.
+
 ## PF-0017.6 — Difference View and Pixel Inspector
 
 - Added a Difference mode to the Palette Lab compare viewer.

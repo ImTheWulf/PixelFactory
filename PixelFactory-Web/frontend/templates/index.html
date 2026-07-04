@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0017_6_difference_pixel_inspector" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0017_7_save_processed_assets" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.16 · PF-0017.6</div>
+          <div class="subtitle">by Wulf · Web v0.16 · PF-0017.7</div>
         </div>
       </div>
 
@@ -303,7 +303,11 @@
               </div>
               <div class="palette-active-actions">
                 <button type="button" id="discardPalettePreviewBtn" disabled>Discard Preview</button>
-                <button type="button" id="downloadPaletteResultBtn" disabled class="pf-primary-action">Download Result</button>
+                <button type="button" id="downloadPaletteResultBtn" disabled>Download Result</button>
+              </div>
+              <div class="palette-active-actions">
+                <button type="button" id="savePaletteResultBtn" disabled>Save as Candidate</button>
+                <button type="button" id="acceptPaletteResultBtn" disabled class="pf-primary-action">Save + Accept</button>
               </div>
             </div>
           </div>
@@ -576,6 +580,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0017_6_difference_pixel_inspector"></script>
+  <script src="/static/app.js?v=pf0017_7_save_processed_assets"></script>
 </body>
 </html>

@@ -39,7 +39,7 @@ asset_service = AssetService(PROJECT_ROOT)
 workspace_service = WorkspaceService(PROJECT_ROOT)
 export_service = ExportService(PROJECT_ROOT, asset_service)
 
-app = FastAPI(title="Pixel Factory by Wulf", version="0.16-pf0017-2-pixel-snap-engine-ui")
+app = FastAPI(title="Pixel Factory by Wulf", version="0.16-pf0017-7-save-processed-assets")
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
 
@@ -476,6 +476,54 @@ def get_asset_image(asset_id: str) -> Response:
 
 
 
+
+
+
+@app.post("/api/assets/from-palette")
+async def save_palette_result(
+    image: UploadFile = File(...),
+    asset_type: str = Form("repair"),
+    source_asset_id: str = Form(""),
+    source_asset_name: str = Form(""),
+    operation: str = Form("palette_lab"),
+    palette_colors: int = Form(64),
+    resize_scale: int = Form(1),
+    pixel_size: int = Form(0),
+    pixel_strength: float = Form(1.0),
+    accept: bool = Form(False),
+) -> dict:
+    data = await image.read()
+    if not data:
+        raise HTTPException(status_code=400, detail="No processed image supplied")
+
+    safe_type = str(asset_type or "repair").strip().lower()
+    if safe_type in {"—", "upload", "manual", "asset"}:
+        safe_type = "repair"
+
+    base_name = str(source_asset_name or "palette_lab_result").replace(".png", "")
+    meta = _save_asset(
+        data,
+        asset_type=safe_type,
+        name=f"{base_name}_clean",
+        prompt=f"Palette Lab processed result from {base_name}",
+        workflow="palette_lab",
+        recipe_id="palette_lab.pixel_cleanup",
+        recipe_name="Palette Lab Cleanup",
+        source_asset_id=source_asset_id or None,
+        source_asset_name=source_asset_name or None,
+        operation=operation,
+        palette_colors=palette_colors,
+        resize_scale=resize_scale,
+        pixel_size=pixel_size,
+        pixel_strength=pixel_strength,
+        engine="pixel_factory",
+        tags=["palette-lab", "processed", "pixel-cleanup", safe_type],
+    )
+    if accept:
+        accepted = asset_service.accept(meta["id"])
+        if accepted:
+            meta = accepted
+    return {"ok": True, "asset": meta}
 
 @app.patch("/api/assets/{asset_id}/metadata")
 def update_asset_metadata(asset_id: str, req: AssetMetadataUpdateRequest) -> dict:
