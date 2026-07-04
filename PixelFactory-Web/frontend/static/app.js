@@ -206,6 +206,7 @@ let paletteCompareIsPanning = false;
 let paletteComparePanStart = null;
 let paletteCompareSpaceDown = false;
 let paletteCompareViewMode = "compare";
+let pixelSnapLastResult = null;
 
 function isPixelSnapLivePreviewEnabled() {
   return pixelSnapLivePreview?.checked === true;
@@ -422,15 +423,27 @@ function updateGridOverlayForImage(img, host, gridSize) {
 function updatePixelSnapAnalysis() {
   const width = originalPreview?.naturalWidth || 0;
   const height = originalPreview?.naturalHeight || 0;
-  const gridSize = getCurrentPixelSnapSize();
-  const confidence = width && height ? getPixelSnapConfidence(width, height, gridSize) : 0;
+  const estimatedGridSize = getCurrentPixelSnapSize();
+  const estimatedConfidence = width && height ? getPixelSnapConfidence(width, height, estimatedGridSize) : 0;
   const paletteTarget = getPaletteTargetValue();
-  if (pixelSnapDetectedGrid) pixelSnapDetectedGrid.textContent = width && height ? `${gridSize}px` : "—";
-  if (pixelSnapConfidence) pixelSnapConfidence.textContent = width && height ? `${confidence}%` : "—";
-  if (pixelSnapPaletteEstimate) pixelSnapPaletteEstimate.textContent = isColorCleanupActive() ? `${paletteTarget} colors` : "Original colors";
-  if (pixelSnapModeBadge) pixelSnapModeBadge.textContent = width && height ? `${gridSize}px · ${confidence}%` : (gridSize ? `${gridSize}px grid` : "Auto grid");
+  const hasProcessedReadout = Boolean(pixelSnapLastResult?.grid && processedBlobUrl);
+  const gridSize = hasProcessedReadout ? Number(pixelSnapLastResult.grid) : estimatedGridSize;
+  const confidence = hasProcessedReadout ? Number(pixelSnapLastResult.confidence || estimatedConfidence) : estimatedConfidence;
+  const paletteLabel = hasProcessedReadout
+    ? (Number(pixelSnapLastResult.paletteTarget || 0) > 0 ? `${Number(pixelSnapLastResult.paletteTarget)} colors` : "Original colors")
+    : (isColorCleanupActive() ? `${paletteTarget} colors` : "Original colors");
+  const suffix = hasProcessedReadout ? "" : " est.";
+  if (pixelSnapDetectedGrid) pixelSnapDetectedGrid.textContent = width && height ? `${gridSize}px${suffix}` : "—";
+  if (pixelSnapConfidence) pixelSnapConfidence.textContent = width && height ? `${confidence}%${suffix}` : "—";
+  if (pixelSnapPaletteEstimate) pixelSnapPaletteEstimate.textContent = paletteLabel;
+  if (pixelSnapModeBadge) pixelSnapModeBadge.textContent = width && height ? `${gridSize}px · ${confidence}%${suffix}` : (gridSize ? `${gridSize}px grid` : "Auto grid");
 
   updatePixelSnapGridOverlays();
+}
+
+function clearPixelSnapProcessedReadout() {
+  pixelSnapLastResult = null;
+  updatePixelSnapAnalysis();
 }
 
 function updatePixelSnapGridOverlays() {
@@ -1054,19 +1067,19 @@ window.addEventListener("resize", () => {
 compareDownloadBtn?.addEventListener("click", () => downloadBtn?.click());
 compareProcessBtn?.addEventListener("click", processPreviewFromCompareViewer);
 [compareResizeScale, comparePaletteColors, comparePixelSize, compareOperation, comparePixelSnapEnabled, comparePaletteEnabled, compareResizeEnabled].forEach((control) => {
-  control?.addEventListener("change", () => preservePaletteScroll(() => { syncCompareOperationFromToggles(); syncPaletteControlsFromCompare(); scheduleComparePreviewUpdate(); }));
-  control?.addEventListener("input", () => preservePaletteScroll(() => { syncCompareOperationFromToggles(); syncPaletteControlsFromCompare(); scheduleComparePreviewUpdate(); }));
+  control?.addEventListener("change", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncCompareOperationFromToggles(); syncPaletteControlsFromCompare(); scheduleComparePreviewUpdate(); }));
+  control?.addEventListener("input", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncCompareOperationFromToggles(); syncPaletteControlsFromCompare(); scheduleComparePreviewUpdate(); }));
 });
 [document.getElementById("resizeScale"), document.getElementById("paletteColors"), pixelSnapGridSize, document.getElementById("operation"), pixelSnapEnabled, paletteEnabled, resizeEnabled].forEach((control) => {
-  control?.addEventListener("change", () => preservePaletteScroll(() => { syncOperationFromToolToggles(); updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); }));
-  control?.addEventListener("input", () => preservePaletteScroll(() => { syncOperationFromToolToggles(); updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); }));
+  control?.addEventListener("change", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncOperationFromToolToggles(); updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); }));
+  control?.addEventListener("input", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncOperationFromToolToggles(); updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); }));
 });
 document.querySelectorAll(".pf-toggle-button-control input[type='checkbox']").forEach((input) => {
   input.addEventListener("change", () => preservePaletteScroll(updateToolToggleLabels));
   input.addEventListener("input", () => preservePaletteScroll(updateToolToggleLabels));
 });
 
-function resetPaletteLab() {
+function resetPaletteLab({ keepDirty = false } = {}) {
   window.clearTimeout(paletteAutoProcessTimer);
   window.clearTimeout(compareAutoProcessTimer);
   if (processedBlobUrl) URL.revokeObjectURL(processedBlobUrl);
@@ -1076,6 +1089,7 @@ function resetPaletteLab() {
   revokePaletteCanvasObjectUrl();
   paletteSourceAsset = null;
   paletteProcessedResolution = "—";
+  pixelSnapLastResult = null;
   paletteDirty = false;
   [originalPreview, processedPreview, compareOriginalPreview, compareProcessedPreview, compareModalOriginal, compareModalProcessed].filter(Boolean).forEach((img) => {
     img.removeAttribute("src");
@@ -1109,22 +1123,26 @@ document.getElementById("resizeScale")?.addEventListener("change", updateOperati
 document.getElementById("pixelSize")?.addEventListener("change", updateOperationStackLabels);
 document.getElementById("operation")?.addEventListener("change", updateOperationStackLabels);
 pixelSnapGridSize?.addEventListener("change", () => preservePaletteScroll(() => {
+  clearPixelSnapProcessedReadout();
   syncPixelSnapPanelToOperation();
   updatePixelSnapAnalysis();
   schedulePalettePreviewUpdate();
 }));
 pixelSnapStrength?.addEventListener("input", () => preservePaletteScroll(() => {
+  clearPixelSnapProcessedReadout();
   syncPixelSnapPanelToOperation();
   updatePixelSnapAnalysis();
   schedulePalettePreviewUpdate();
 }));
 pixelSnapPalette?.addEventListener("change", () => preservePaletteScroll(() => {
+  clearPixelSnapProcessedReadout();
   if (paletteEnabled && pixelSnapPalette.checked) paletteEnabled.checked = true;
   syncPixelSnapPanelToOperation();
   updatePixelSnapAnalysis();
   schedulePalettePreviewUpdate();
 }));
 pixelSnapAlpha?.addEventListener("change", () => preservePaletteScroll(() => {
+  clearPixelSnapProcessedReadout();
   syncPixelSnapPanelToOperation();
   schedulePalettePreviewUpdate();
 }));
@@ -1300,6 +1318,12 @@ async function processPalettePreview({ quiet = false } = {}) {
       } catch (_) {}
       throw new Error(detail);
     }
+    pixelSnapLastResult = {
+      grid: response.headers.get("X-PF-Detected-Grid"),
+      confidence: response.headers.get("X-PF-Grid-Confidence"),
+      paletteTarget: response.headers.get("X-PF-Palette-Target"),
+      resizeScale: response.headers.get("X-PF-Resize-Scale"),
+    };
     const blob = await response.blob();
     if (processedBlobUrl) URL.revokeObjectURL(processedBlobUrl);
     processedBlobUrl = URL.createObjectURL(blob);

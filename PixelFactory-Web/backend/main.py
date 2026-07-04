@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import io
 import json
+import math
 import random
 import shutil
 import uuid
@@ -13,7 +14,7 @@ from typing import Literal
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
-from PIL import Image
+from PIL import Image, ImageChops, ImageStat
 from pydantic import BaseModel
 
 from backend.comfy.client import ComfyError, comfy_ui_workflow_to_api, patch_character_workflow
@@ -39,7 +40,7 @@ asset_service = AssetService(PROJECT_ROOT)
 workspace_service = WorkspaceService(PROJECT_ROOT)
 export_service = ExportService(PROJECT_ROOT, asset_service)
 
-app = FastAPI(title="Pixel Factory by Wulf", version="0.16-pf0018.8-palette-apply-canvas-flow")
+app = FastAPI(title="Pixel Factory by Wulf", version="0.16-pf0018.9-native-pixel-snap-detection")
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
 
@@ -58,20 +59,15 @@ def _read_image(data: bytes) -> Image.Image:
     return img.convert("RGBA")
 
 
-def _png_response(img: Image.Image) -> Response:
+def _png_response(img: Image.Image, headers: dict[str, str] | None = None) -> Response:
     buf = io.BytesIO()
     img.save(buf, format="PNG")
-    return Response(content=buf.getvalue(), media_type="image/png")
+    return Response(content=buf.getvalue(), media_type="image/png", headers=headers or {})
 
 
 
 def _auto_pixel_size(width: int, height: int) -> int:
-    """Small local Pixel Snapper-style heuristic for AI pixel-art cleanup.
-
-    This is not the upstream Sprite Fusion WASM/Rust implementation yet. It is a
-    lightweight foundation that gives Palette Lab a usable snap-to-grid pass while
-    leaving room to vendor the real MIT Pixel Snapper engine later.
-    """
+    """Fallback pixel-size guess for Palette Lab's native Pixel Snap pass."""
     smallest = max(1, min(width, height))
     if smallest >= 1024:
         return 32
@@ -82,6 +78,60 @@ def _auto_pixel_size(width: int, height: int) -> int:
     if smallest >= 128:
         return 4
     return 2
+
+
+def _candidate_pixel_sizes(width: int, height: int) -> list[int]:
+    smallest = max(1, min(width, height))
+    return [px for px in (2, 4, 8, 16, 32, 64) if px <= max(1, smallest // 2)] or [1]
+
+
+def _reconstruction_error(img: Image.Image, pixel_size: int) -> float:
+    """Score how well an image survives a snap/downsample/rebuild at a size.
+
+    This is intentionally native and local. It follows the Pixel Snapper idea of
+    finding the grid that best represents the artwork, without depending on the
+    Sprite Fusion UI, WASM bundle, or a second server.
+    """
+    w, h = img.size
+    px = max(1, int(pixel_size or 1))
+    sw = max(1, round(w / px))
+    sh = max(1, round(h / px))
+    small = img.resize((sw, sh), Image.Resampling.BOX)
+    rebuilt = small.resize((w, h), Image.Resampling.NEAREST)
+    diff = ImageChops.difference(img.convert("RGB"), rebuilt.convert("RGB"))
+    stat = ImageStat.Stat(diff)
+    return float(sum(stat.mean) / max(1, len(stat.mean)))
+
+
+def _detect_pixel_size(img: Image.Image, override: int = 0) -> tuple[int, int]:
+    """Return detected grid size and a readable confidence score.
+
+    Manual override always wins. Auto mode compares several grid candidates and
+    blends reconstruction error with the size-based fallback so Auto stays stable
+    on noisy AI output but can still improve when a clearer grid is present.
+    """
+    w, h = img.size
+    smallest = max(1, min(w, h))
+    if override and override > 0:
+        px = max(1, min(int(override), max(1, smallest // 2)))
+        confidence = 94 if (w % px == 0 and h % px == 0) else 82
+        return px, confidence
+
+    fallback = _auto_pixel_size(w, h)
+    candidates = _candidate_pixel_sizes(w, h)
+    scored: list[tuple[float, int, float]] = []
+    for px in candidates:
+        error = _reconstruction_error(img, px)
+        fallback_penalty = abs(math.log2(max(px, 1) / max(fallback, 1))) * 4.0
+        small_grid_penalty = max(0.0, 3.0 - math.log2(max(px, 2))) * 1.25
+        scored.append((error + fallback_penalty + small_grid_penalty, px, error))
+
+    scored.sort(key=lambda item: item[0])
+    best_score, best_px, best_error = scored[0]
+    second_score = scored[1][0] if len(scored) > 1 else best_score + 8.0
+    margin = max(0.0, second_score - best_score)
+    confidence = int(max(35, min(98, 96 - best_error * 1.7 + margin * 2.5)))
+    return best_px, confidence
 
 
 def _quantize_rgba(img: Image.Image, colors: int) -> Image.Image:
@@ -111,9 +161,7 @@ def _pixel_snap_rgba(
     nearest-neighbor upscales back to the original size.
     """
     w, h = img.size
-    px = int(pixel_size or 0)
-    if px <= 0:
-        px = _auto_pixel_size(w, h)
+    px, _confidence = _detect_pixel_size(img, int(pixel_size or 0))
     px = max(1, min(px, max(1, min(w, h) // 2)))
 
     snapped_w = max(1, round(w / px))
@@ -157,6 +205,7 @@ async def process_image(
     pixel_strength = max(0.0, min(1.0, float(pixel_strength or 1.0)))
 
     original = img.copy()
+    detected_grid, grid_confidence = _detect_pixel_size(original, pixel_size if pixel_size > 0 else 0)
 
     if operation == "pixel_snap":
         img = _pixel_snap_rgba(img, pixel_size=pixel_size, palette_colors=palette_colors, quantize=bool(snap_palette) and palette_colors > 0)
@@ -175,7 +224,13 @@ async def process_image(
         w, h = img.size
         img = img.resize((w * resize_scale, h * resize_scale), Image.Resampling.NEAREST)
 
-    return _png_response(img)
+    headers = {
+        "X-PF-Detected-Grid": str(detected_grid),
+        "X-PF-Grid-Confidence": str(grid_confidence),
+        "X-PF-Palette-Target": str(palette_colors if bool(snap_palette) and palette_colors > 0 else 0),
+        "X-PF-Resize-Scale": str(resize_scale),
+    }
+    return _png_response(img, headers=headers)
 
 
 class ComfyStatusRequest(BaseModel):

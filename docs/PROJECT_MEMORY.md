@@ -435,3 +435,9 @@ Current direction:
 - show confidence/readout information so users understand what Pixel Factory is doing
 - keep the tool inside Palette Lab's design system
 - use live preview when possible, with manual Apply available as fallback
+---
+
+## PF-0018.9 Native Pixel Snap Detection
+
+Palette Lab Pixel Snap remains native to Pixel Factory. The Sprite Fusion Pixel Snapper project is a design/reference point only. Pixel Factory now performs local grid detection and returns detected grid/confidence metadata from its own backend processing route. Do not add external Pixel Snapper UI, external web servers, or alternate export targets unless the owner explicitly asks.
+

@@ -1,3 +1,9 @@
+## PF-0018.9 - Native Pixel Snap detection pass
+- Improved Palette Lab's native Pixel Snap auto-detection using image reconstruction scoring instead of only canvas-size guessing.
+- Backend now returns detected grid, confidence, palette target, and resize scale with every Palette Lab process result.
+- Pixel Snap readout now shows processed-result metadata after Update Preview and falls back to estimated values before processing.
+- Kept the workflow native to Pixel Factory; no external Pixel Snapper UI, web server, or route dependency was added.
+
 ## PF-0018.8 - Palette Lab apply preview flow
 - Added Apply Preview so processed output can become the active Palette Lab canvas without immediately saving.
 - Save / Save As / Download can now use either the current processed preview or an applied unsaved canvas.
