@@ -27,5 +27,8 @@ Older issue and architecture notes have been preserved inside:
 
 These are not redundant doc roots. They are archives/reference material inside the canonical `/docs` folder.
 
+### PF-0018.8
+Palette Lab apply-preview workflow: processed results can be applied to the active canvas, then saved, saved as a new accepted asset, downloaded, or discarded without creating Candidates.
+
 ### PF-0018.4
 Palette Lab compare viewer polish: compact controls, clearer synced review controls, better toolbar alignment, and stronger grid overlay layering.

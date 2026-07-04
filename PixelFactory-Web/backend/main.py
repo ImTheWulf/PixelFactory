@@ -39,7 +39,7 @@ asset_service = AssetService(PROJECT_ROOT)
 workspace_service = WorkspaceService(PROJECT_ROOT)
 export_service = ExportService(PROJECT_ROOT, asset_service)
 
-app = FastAPI(title="Pixel Factory by Wulf", version="0.16-pf0018.7-palette-save-as-modal")
+app = FastAPI(title="Pixel Factory by Wulf", version="0.16-pf0018.8-palette-apply-canvas-flow")
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
 

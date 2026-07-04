@@ -154,6 +154,7 @@ const compareDifferenceBtn = document.getElementById("compareDifferenceBtn");
 const compareDifferenceCanvas = document.getElementById("compareDifferenceCanvas");
 const comparePixelInspector = document.getElementById("comparePixelInspector");
 const discardPalettePreviewBtn = document.getElementById("discardPalettePreviewBtn");
+const applyPalettePreviewBtn = document.getElementById("applyPalettePreviewBtn");
 const downloadPaletteResultBtn = document.getElementById("downloadPaletteResultBtn");
 const savePaletteAssetBtn = document.getElementById("savePaletteAssetBtn");
 const savePaletteAsAssetBtn = document.getElementById("savePaletteAsAssetBtn");
@@ -191,6 +192,7 @@ let selectedFile = null;
 let selectedFileSource = null;
 let paletteSourceAsset = null;
 let processedBlobUrl = null;
+let paletteCanvasObjectUrl = null;
 let workspace = { has_image: false };
 let paletteDirty = false;
 let paletteHistoryEntries = [];
@@ -237,16 +239,28 @@ function canOverwriteCurrentPaletteAsset() {
   return Boolean(paletteSourceAsset?.id && String(paletteSourceAsset?.status || "").toLowerCase() === "accepted");
 }
 
+function hasPaletteSaveableCanvas() {
+  return Boolean(processedBlobUrl || (selectedFile && paletteDirty));
+}
+
 function updatePaletteSaveControls() {
   const hasPreview = Boolean(processedBlobUrl);
+  const hasSaveable = hasPaletteSaveableCanvas();
+  if (applyPalettePreviewBtn) {
+    applyPalettePreviewBtn.disabled = !hasPreview;
+    applyPalettePreviewBtn.title = hasPreview ? "Apply the processed preview to the current Palette Lab canvas without saving yet." : "Update the preview before applying.";
+  }
+  if (downloadBtn) downloadBtn.disabled = !hasSaveable;
+  if (downloadPaletteResultBtn) downloadPaletteResultBtn.disabled = !hasSaveable;
+  if (discardPalettePreviewBtn) discardPalettePreviewBtn.disabled = !(selectedFile || hasPreview || paletteDirty);
   if (savePaletteAsAssetBtn) {
-    savePaletteAsAssetBtn.disabled = !hasPreview;
-    savePaletteAsAssetBtn.title = hasPreview ? "Create a new accepted asset from this Palette Lab preview." : "Update the preview before saving.";
+    savePaletteAsAssetBtn.disabled = !hasSaveable;
+    savePaletteAsAssetBtn.title = hasSaveable ? "Create a new accepted asset from the current Palette Lab canvas." : "Update or apply a preview before saving.";
   }
   if (savePaletteAssetBtn) {
-    savePaletteAssetBtn.disabled = !hasPreview || !canOverwriteCurrentPaletteAsset();
-    if (!hasPreview) {
-      savePaletteAssetBtn.title = "Update the preview before saving.";
+    savePaletteAssetBtn.disabled = !hasSaveable || !canOverwriteCurrentPaletteAsset();
+    if (!hasSaveable) {
+      savePaletteAssetBtn.title = "Update or apply a preview before saving.";
     } else if (!paletteSourceAsset?.id) {
       savePaletteAssetBtn.title = "Local uploads must use Save As to create an accepted asset.";
     } else if (!canOverwriteCurrentPaletteAsset()) {
@@ -807,6 +821,57 @@ function setPaletteCompareZoomAtPoint(nextZoom, clientX, clientY) {
   });
 }
 
+function revokePaletteCanvasObjectUrl() {
+  if (paletteCanvasObjectUrl) {
+    URL.revokeObjectURL(paletteCanvasObjectUrl);
+    paletteCanvasObjectUrl = null;
+  }
+}
+
+function setOriginalPreviewFromBlob(blob, filename = "palette_canvas.png") {
+  revokePaletteCanvasObjectUrl();
+  paletteCanvasObjectUrl = URL.createObjectURL(blob);
+  originalPreview.src = paletteCanvasObjectUrl;
+  originalPreview.classList.add("pf-viewable-image");
+  originalPreview.dataset.viewerTitle = filename;
+}
+
+async function getPaletteOutputBlob() {
+  if (processedBlobUrl) {
+    const response = await fetch(processedBlobUrl);
+    return response.blob();
+  }
+  if (selectedFile && paletteDirty) return selectedFile;
+  return null;
+}
+
+async function promotePaletteBlobToCanvas(blob, filename = "palette_canvas.png", { dirty = true, detail = "Applied preview to canvas", source = "applied", history = true } = {}) {
+  if (!blob) return;
+  const file = new File([blob], filename, { type: blob.type || "image/png" });
+  selectedFile = file;
+  selectedFileSource = source;
+  originalPreview.onload = () => {
+    updatePaletteMeta({ resolution: `${originalPreview.naturalWidth} × ${originalPreview.naturalHeight}` });
+    updatePixelSnapAnalysis();
+    showPaletteCompare({ resetSlider: true });
+  };
+  setOriginalPreviewFromBlob(blob, filename);
+  updatePaletteLoadedState({
+    filename,
+    source,
+    detail,
+    meta: {
+      type: paletteCurrentMeta.type || paletteSourceAsset?.type || "—",
+      status: dirty ? "Unsaved" : normalizePaletteAssetStatus(paletteSourceAsset?.status || "accepted"),
+      recipe: paletteCurrentMeta.recipe || paletteSourceAsset?.recipe || "—",
+      resolution: paletteProcessedResolution && paletteProcessedResolution !== "—" ? paletteProcessedResolution : paletteCurrentMeta.resolution,
+    },
+  });
+  setPaletteDirty(dirty, dirty ? "● Unsaved Changes" : "● Saved");
+  if (history) addPaletteHistory(dirty ? "Applied preview" : "Saved canvas", filename);
+  updatePaletteSaveControls();
+}
+
 function showPaletteCompare({ resetSlider = false } = {}) {
   if (!paletteComparePanel || !selectedFile) return;
   const originalSrc = originalPreview?.getAttribute("src");
@@ -820,7 +885,7 @@ function showPaletteCompare({ resetSlider = false } = {}) {
   requestAnimationFrame(updatePixelSnapGridOverlays);
 }
 
-function clearPaletteProcessedPreview({ addHistory = false } = {}) {
+function clearPaletteProcessedPreview({ addHistory = false, keepDirty = false, keepCanvasState = false } = {}) {
   processedPreview.removeAttribute("src");
   processedPreview.classList.remove("pf-viewable-image");
   if (processedBlobUrl) URL.revokeObjectURL(processedBlobUrl);
@@ -838,15 +903,15 @@ function clearPaletteProcessedPreview({ addHistory = false } = {}) {
   if (selectedFile) showPaletteCompare({ resetSlider: true });
   else paletteComparePanel?.classList.add("hidden");
   closePaletteCompareViewer();
-  setPaletteDirty(false);
+  if (!keepDirty) setPaletteDirty(false);
   updatePixelSnapGridOverlays();
-  updatePaletteLoadedState({ filename: selectedFile?.name || "Current Canvas", source: selectedFileSource || "workspace", detail: selectedFile ? "Loaded into Palette Lab" : "No asset loaded" });
+  if (!keepCanvasState) updatePaletteLoadedState({ filename: selectedFile?.name || "Current Canvas", source: selectedFileSource || "workspace", detail: selectedFile ? "Loaded into Palette Lab" : "No asset loaded" });
   if (addHistory) addPaletteHistory("Discarded preview", "Returned to original source image");
 }
 
 function updatePaletteLoadedState({ filename = "Untitled image", source = "workspace", detail = "Ready for cleanup", meta = null } = {}) {
   if (!paletteLoadedState) return;
-  const sourceLabel = source === "upload" ? "Local upload" : source === "workspace" ? "Current asset" : source;
+  const sourceLabel = source === "upload" ? "Local upload" : source === "workspace" || source === "asset" ? "Current asset" : source === "applied" ? "Unsaved canvas" : source;
   paletteLoadedState.innerHTML = `<strong>${escapeHtml(filename)}</strong><span>${escapeHtml(sourceLabel)} · ${escapeHtml(detail)}</span>`;
   if (meta) updatePaletteMeta(meta);
 }
@@ -1008,6 +1073,7 @@ function resetPaletteLab() {
   processedBlobUrl = null;
   selectedFile = null;
   selectedFileSource = null;
+  revokePaletteCanvasObjectUrl();
   paletteSourceAsset = null;
   paletteProcessedResolution = "—";
   paletteDirty = false;
@@ -1024,11 +1090,14 @@ function resetPaletteLab() {
   renderPaletteHistory();
   setPaletteDirty(false, "● Clean");
   updatePixelSnapAnalysis();
-  if (downloadBtn) downloadBtn.disabled = true;
-  if (downloadPaletteResultBtn) downloadPaletteResultBtn.disabled = true;
-  if (discardPalettePreviewBtn) discardPalettePreviewBtn.disabled = true;
-  if (savePaletteAssetBtn) savePaletteAssetBtn.disabled = true;
-  if (savePaletteAsAssetBtn) savePaletteAsAssetBtn.disabled = true;
+  if (applyPalettePreviewBtn) applyPalettePreviewBtn.disabled = true;
+  if (!keepDirty) {
+    if (downloadBtn) downloadBtn.disabled = true;
+    if (downloadPaletteResultBtn) downloadPaletteResultBtn.disabled = true;
+    if (discardPalettePreviewBtn) discardPalettePreviewBtn.disabled = true;
+    if (savePaletteAssetBtn) savePaletteAssetBtn.disabled = true;
+    if (savePaletteAsAssetBtn) savePaletteAsAssetBtn.disabled = true;
+  }
   updatePaletteSaveControls();
   setStatus("Palette Lab reset.");
 }
@@ -1182,9 +1251,7 @@ imageInput?.addEventListener("change", () => {
   paletteSourceAsset = null;
   if (workspaceStatus) workspaceStatus.textContent = file.name;
   updatePaletteLoadedState({ filename: file.name, source: "upload", detail: "Loaded into Palette Lab", meta: { type: "Upload", status: "Clean", recipe: "Manual", resolution: "loading..." } });
-  originalPreview.src = URL.createObjectURL(file);
-  originalPreview.classList.add("pf-viewable-image");
-  originalPreview.dataset.viewerTitle = file.name;
+  setOriginalPreviewFromBlob(file, file.name);
   clearPaletteProcessedPreview();
   updatePaletteSaveControls();
   addPaletteHistory("Loaded upload", file.name);
@@ -1250,6 +1317,7 @@ async function processPalettePreview({ quiet = false } = {}) {
     };
     applyPreviewMode();
     downloadBtn.disabled = false;
+    if (applyPalettePreviewBtn) applyPalettePreviewBtn.disabled = false;
     if (downloadPaletteResultBtn) downloadPaletteResultBtn.disabled = false;
     if (discardPalettePreviewBtn) discardPalettePreviewBtn.disabled = false;
     updatePaletteSaveControls();
@@ -1291,16 +1359,40 @@ function schedulePalettePreviewUpdate() {
 
 processBtn.addEventListener("click", () => processPalettePreview());
 
-downloadBtn.addEventListener("click", () => {
-  if (!processedBlobUrl) return;
+downloadBtn.addEventListener("click", async () => {
+  const blob = await getPaletteOutputBlob();
+  if (!blob) return;
+  const objectUrl = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = processedBlobUrl;
-  a.download = "pixel_factory_processed.png";
+  a.href = objectUrl;
+  a.download = processedBlobUrl ? "pixel_factory_processed.png" : (selectedFile?.name || "pixel_factory_canvas.png");
   document.body.appendChild(a);
   a.click();
   a.remove();
-  addPaletteHistory("Downloaded result", "pixel_factory_processed.png");
+  URL.revokeObjectURL(objectUrl);
+  addPaletteHistory("Downloaded result", a.download);
 });
+
+async function applyPalettePreviewToCanvas() {
+  if (!processedBlobUrl) {
+    setStatus("Update the preview before applying it to the canvas.");
+    return;
+  }
+  const blob = await fetch(processedBlobUrl).then((response) => response.blob());
+  const filename = selectedFile?.name || paletteSourceAsset?.name || "palette_lab_canvas.png";
+  await promotePaletteBlobToCanvas(blob, filename, {
+    dirty: true,
+    detail: "Preview applied to canvas · unsaved",
+    source: paletteSourceAsset?.id ? "asset" : "applied",
+    history: true,
+  });
+  clearPaletteProcessedPreview({ keepDirty: true, keepCanvasState: true });
+  setPaletteDirty(true, "● Unsaved Changes");
+  updatePaletteSaveControls();
+  setStatus("Applied processed preview to the Palette Lab canvas. Save or Save As when ready.");
+}
+
+applyPalettePreviewBtn?.addEventListener("click", applyPalettePreviewToCanvas);
 
 function buildPaletteSaveForm(blob, filename, extra = {}) {
   const form = new FormData();
@@ -1315,8 +1407,8 @@ function buildPaletteSaveForm(blob, filename, extra = {}) {
 }
 
 function openPaletteSaveAsDialog() {
-  if (!processedBlobUrl) {
-    setStatus("Update the preview before saving Palette Lab changes.");
+  if (!hasPaletteSaveableCanvas()) {
+    setStatus("Update or apply a preview before saving Palette Lab changes.");
     return;
   }
   if (paletteSaveAsName) paletteSaveAsName.value = suggestedPaletteSaveAsName();
@@ -1351,12 +1443,11 @@ async function confirmPaletteSaveAs() {
 }
 
 async function savePaletteEdit({ saveAs = false, saveAsName = "", saveAsType = "" } = {}) {
-  if (!processedBlobUrl) {
-    setStatus("Update the preview before saving Palette Lab changes.");
+  const blob = await getPaletteOutputBlob();
+  if (!blob) {
+    setStatus("Update or apply a preview before saving Palette Lab changes.");
     return null;
   }
-
-  const blob = await fetch(processedBlobUrl).then((response) => response.blob());
   const sourceName = paletteSourceAsset?.name || selectedFile?.name || "palette_lab_result";
   const cleanBase = sourceName.replace(/\.png$/i, "");
   const sourceType = paletteSourceAsset?.type || paletteCurrentMeta.type || "repair";
@@ -1401,13 +1492,20 @@ async function savePaletteEdit({ saveAs = false, saveAsName = "", saveAsType = "
       recipe: asset.recipe_name || asset.recipe_id || paletteCurrentMeta.recipe || "—",
       resolution: paletteProcessedResolution || paletteCurrentMeta.resolution || "—",
     });
+    await promotePaletteBlobToCanvas(blob, `${asset.name || sourceName}.png`, {
+      dirty: false,
+      detail: "Saved in Asset Browser",
+      source: "asset",
+      history: false,
+    });
+    clearPaletteProcessedPreview({ keepDirty: true, keepCanvasState: true });
     updatePaletteLoadedState({ filename: asset.name || sourceName, source: "asset", detail: "Saved in Asset Browser", meta: paletteCurrentMeta });
   }
   addPaletteHistory(saveAs ? "Saved As" : "Saved", asset?.name || sourceName);
   setPaletteDirty(false, "● Saved");
   updatePaletteSaveControls();
   loadAssets?.();
-  setStatus(saveAs || !canOverwriteCurrentPaletteAsset() ? "Palette Lab result saved as a new accepted asset." : "Palette Lab changes saved to current asset.");
+  setStatus(saveAs ? "Palette Lab result saved as a new accepted asset." : "Palette Lab changes saved to current asset.");
   return asset;
 }
 

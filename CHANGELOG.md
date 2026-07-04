@@ -1,3 +1,10 @@
+## PF-0018.8 - Palette Lab apply preview flow
+- Added Apply Preview so processed output can become the active Palette Lab canvas without immediately saving.
+- Save / Save As / Download can now use either the current processed preview or an applied unsaved canvas.
+- Applying a preview marks the canvas as unsaved and keeps the current accepted asset relationship intact.
+- Saving a Palette Lab result promotes the saved image back into the active canvas and clears stale processed-preview state.
+- Kept Candidate generation separate from Palette Lab editing; Save As still creates accepted assets only.
+
 ## PF-0018.7 - Palette Lab save flow polish
 - Added a native Save As dialog instead of the browser prompt.
 - Save As now clearly creates a new accepted asset, never a temporary Candidate.
