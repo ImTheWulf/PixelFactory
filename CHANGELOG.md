@@ -382,3 +382,10 @@ Quick favorite toggle and seed UI cleanup.
 - Added Pixel Snap operation modes for preview processing.
 - Enabled Pixel Snap cleanup card in Palette Lab.
 - This is a local foundation inspired by Sprite Fusion Pixel Snapper; upstream engine integration can be evaluated later.
+
+
+## PF-0018.1
+- Unified Palette Lab layout around the loaded canvas.
+- Moved Processing Pipeline and History into the canvas area.
+- Removed duplicate sidebar Pixel Size control; Pixel Snap Grid Size now drives snap pixel size.
+- Added preview camera controls and compare grid toggle.

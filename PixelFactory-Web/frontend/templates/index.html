@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0018_palette_save_flow" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0018_1_palette_layout_unify" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.16 · PF-0018</div>
+          <div class="subtitle">by Wulf · Web v0.16 · PF-0018.1</div>
         </div>
       </div>
 
@@ -63,16 +63,7 @@
           <option value="256">256</option>
         </select>
 
-        <label>Pixel Size</label>
-        <select id="pixelSize">
-          <option value="0" selected>Auto</option>
-          <option value="2">2 px</option>
-          <option value="4">4 px</option>
-          <option value="8">8 px</option>
-          <option value="16">16 px</option>
-          <option value="32">32 px</option>
-          <option value="64">64 px</option>
-        </select>
+        <input id="pixelSize" type="hidden" value="0" />
 
         <label>Operation</label>
         <select id="operation">
@@ -310,22 +301,46 @@
                 <button type="button" id="savePaletteAsAssetBtn" disabled>Save As...</button>
               </div>
             </div>
+            <div class="palette-workflow-inline">
+              <details class="preview-card palette-operation-card palette-workflow-details">
+                <summary>
+                  <strong>Processing Pipeline</strong>
+                  <span class="palette-panel-hint">Current processing plan</span>
+                </summary>
+                <div id="paletteOperationStack" class="palette-operation-stack">
+                  <div class="palette-operation-row" data-op="palette"><strong>Palette reduction</strong><span id="opPaletteCount">64 colors</span></div>
+                  <div class="palette-operation-row" data-op="resize"><strong>Nearest-neighbor resize</strong><span id="opResizeScale">2x</span></div>
+                  <div class="palette-operation-row" id="opPixelSnapRow" data-op="pixel-snap"><strong>Pixel Snap</strong><span id="opPixelSize">Auto</span></div>
+                  <div class="palette-operation-row muted" data-op="chroma"><strong>Chroma Key</strong><em>coming</em></div>
+                </div>
+              </details>
+              <details class="preview-card palette-history-card palette-workflow-details">
+                <summary>
+                  <strong>History</strong>
+                  <span class="palette-panel-hint">Recent workspace actions</span>
+                </summary>
+                <ol id="paletteHistory" class="palette-history-list">
+                  <li>No asset loaded.</li>
+                </ol>
+              </details>
+            </div>
+
           </div>
 
           <section class="palette-preview-grid">
             <div class="preview-card palette-preview-card">
               <div class="section-title-row">
                 <h2>Original</h2>
-                <span class="palette-panel-hint">Source image</span>
+                <div class="preview-camera-actions"><button type="button" data-preview-action="original-fit">Fit</button><button type="button" data-preview-action="original-actual">1:1</button></div>
               </div>
-              <div class="viewport palette-viewport"><img id="originalPreview" alt="Original preview" /></div>
+              <div class="viewport palette-viewport" data-preview-host="original"><img id="originalPreview" alt="Original preview" /></div>
             </div>
             <div class="preview-card palette-preview-card">
               <div class="section-title-row">
                 <h2>Processed</h2>
-                <span class="palette-panel-hint">Output preview</span>
+                <div class="preview-camera-actions"><select id="previewModeInline"><option value="fit">Fit to Window</option><option value="actual">Actual Pixels</option></select><button type="button" data-preview-action="processed-fit">Fit</button><button type="button" data-preview-action="processed-actual">1:1</button></div>
               </div>
-              <div class="viewport palette-viewport"><img id="processedPreview" alt="Processed preview" /></div>
+              <div class="viewport palette-viewport" data-preview-host="processed"><img id="processedPreview" alt="Processed preview" /></div>
             </div>
           </section>
 
@@ -344,30 +359,6 @@
             </div>
           </section>
 
-          <section class="palette-workflow-grid palette-collapsed-workflow">
-            <details class="preview-card palette-operation-card palette-workflow-details">
-              <summary>
-                <strong>Processing Pipeline</strong>
-                <span class="palette-panel-hint">Current processing plan</span>
-              </summary>
-              <div id="paletteOperationStack" class="palette-operation-stack">
-                <div class="palette-operation-row" data-op="palette"><strong>Palette reduction</strong><span id="opPaletteCount">64 colors</span></div>
-                <div class="palette-operation-row" data-op="resize"><strong>Nearest-neighbor resize</strong><span id="opResizeScale">2x</span></div>
-                <div class="palette-operation-row" id="opPixelSnapRow" data-op="pixel-snap"><strong>Pixel Snap</strong><span id="opPixelSize">Auto</span></div>
-                <div class="palette-operation-row muted" data-op="chroma"><strong>Chroma Key</strong><em>coming</em></div>
-              </div>
-            </details>
-
-            <details class="preview-card palette-history-card palette-workflow-details">
-              <summary>
-                <strong>History</strong>
-                <span class="palette-panel-hint">Recent workspace actions</span>
-              </summary>
-              <ol id="paletteHistory" class="palette-history-list">
-                <li>No asset loaded.</li>
-              </ol>
-            </details>
-          </section>
 
           <section class="preview-card palette-tool-dock pixel-snap-panel">
             <div class="section-title-row">
@@ -533,8 +524,9 @@
       <div class="palette-compare-modal-controls">
         <label><span>Resize</span><select id="compareResizeScale"><option value="1">1x</option><option value="2">2x</option><option value="3">3x</option><option value="4">4x</option></select></label>
         <label><span>Colors</span><select id="comparePaletteColors"><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="14">14</option><option value="16">16</option><option value="18">18</option><option value="20">20</option><option value="22">22</option><option value="24">24</option><option value="32">32</option><option value="64">64</option><option value="128">128</option><option value="256">256</option></select></label>
-        <label><span>Pixel Size</span><select id="comparePixelSize"><option value="0">Auto</option><option value="2">2 px</option><option value="4">4 px</option><option value="8">8 px</option><option value="16">16 px</option><option value="32">32 px</option><option value="64">64 px</option></select></label>
+        <label><span>Grid Size</span><select id="comparePixelSize"><option value="0">Auto</option><option value="2">2 px</option><option value="4">4 px</option><option value="8">8 px</option><option value="16">16 px</option><option value="32">32 px</option><option value="64">64 px</option></select></label>
         <label><span>Operation</span><select id="compareOperation"><option value="resize_palette">Palette + Nearest Resize</option><option value="palette">Palette Only</option><option value="resize">Nearest Resize Only</option><option value="pixel_snap">Pixel Snap + Palette + Resize</option><option value="pixel_snap_only">Pixel Snap Only</option></select></label>
+        <label class="compare-grid-toggle"><span>Grid</span><button id="compareGridToggle" type="button">Grid Off</button></label>
       </div>
       <div id="paletteCompareModalStage" class="palette-compare-modal-stage" title="Mouse wheel zoom · Space+drag pan · double-click fit">
         <div id="compareModalCanvas" class="palette-compare-modal-canvas">
@@ -580,6 +572,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0018_palette_save_flow"></script>
+  <script src="/static/app.js?v=pf0018_1_palette_layout_unify"></script>
 </body>
 </html>
