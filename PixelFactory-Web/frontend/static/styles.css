@@ -3702,3 +3702,16 @@ select option:hover {
 #savePaletteAsAssetBtn:disabled {
   cursor: not-allowed;
 }
+
+/* PF-0018.10 cleanup diagnostics */
+.pixel-snap-readout {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.pixel-snap-readout div {
+  min-height: 38px;
+}
+@media (max-width: 1200px) {
+  .pixel-snap-readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

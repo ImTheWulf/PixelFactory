@@ -1,3 +1,10 @@
+
+## PF-0018.10 - Palette cleanup diagnostics
+
+- Added native Pixel Snap cleanup diagnostics after processing.
+- Backend now returns source/output color counts, changed-pixel count, changed percentage, detected grid, confidence, and resize scale.
+- Palette Lab readout now shows Colors, Pixels Changed, and Resize so users can understand what the cleanup actually did.
+
 ## PF-0018.9 - Native Pixel Snap detection pass
 - Improved Palette Lab's native Pixel Snap auto-detection using image reconstruction scoring instead of only canvas-size guessing.
 - Backend now returns detected grid, confidence, palette target, and resize scale with every Palette Lab process result.

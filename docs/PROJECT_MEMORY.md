@@ -441,3 +441,7 @@ Current direction:
 
 Palette Lab Pixel Snap remains native to Pixel Factory. The Sprite Fusion Pixel Snapper project is a design/reference point only. Pixel Factory now performs local grid detection and returns detected grid/confidence metadata from its own backend processing route. Do not add external Pixel Snapper UI, external web servers, or alternate export targets unless the owner explicitly asks.
 
+
+## PF-0018.10 Palette Cleanup Diagnostics
+
+Palette Lab Pixel Snap is native. The current direction is to make every cleanup operation explain itself. After processing, the backend returns detected grid, confidence, palette target, resize scale, source/output colors, and changed-pixel percentage. This supports the Pixel Snapper-inspired goal of making AI pixel-art cleanup visible, testable, and understandable inside Pixel Factory without external services.

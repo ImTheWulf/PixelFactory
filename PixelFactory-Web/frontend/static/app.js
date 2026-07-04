@@ -180,6 +180,9 @@ const pixelSnapLivePreview = document.getElementById("pixelSnapLivePreview");
 const pixelSnapDetectedGrid = document.getElementById("pixelSnapDetectedGrid");
 const pixelSnapConfidence = document.getElementById("pixelSnapConfidence");
 const pixelSnapPaletteEstimate = document.getElementById("pixelSnapPaletteEstimate");
+const pixelSnapColorDelta = document.getElementById("pixelSnapColorDelta");
+const pixelSnapChangeAmount = document.getElementById("pixelSnapChangeAmount");
+const pixelSnapResizeReadout = document.getElementById("pixelSnapResizeReadout");
 const pixelSnapModeBadge = document.getElementById("pixelSnapModeBadge");
 const pixelSnapEnabled = document.getElementById("pixelSnapEnabled");
 const paletteEnabled = document.getElementById("paletteEnabled");
@@ -436,6 +439,19 @@ function updatePixelSnapAnalysis() {
   if (pixelSnapDetectedGrid) pixelSnapDetectedGrid.textContent = width && height ? `${gridSize}px${suffix}` : "—";
   if (pixelSnapConfidence) pixelSnapConfidence.textContent = width && height ? `${confidence}%${suffix}` : "—";
   if (pixelSnapPaletteEstimate) pixelSnapPaletteEstimate.textContent = paletteLabel;
+  if (pixelSnapColorDelta) {
+    const sourceColors = Number(pixelSnapLastResult?.sourceColors || 0);
+    const outputColors = Number(pixelSnapLastResult?.outputColors || 0);
+    pixelSnapColorDelta.textContent = hasProcessedReadout && sourceColors && outputColors ? `${sourceColors} → ${outputColors}` : "—";
+  }
+  if (pixelSnapChangeAmount) {
+    const percent = pixelSnapLastResult?.changedPercent;
+    pixelSnapChangeAmount.textContent = hasProcessedReadout && percent !== undefined && percent !== null ? `${percent}%` : "—";
+  }
+  if (pixelSnapResizeReadout) {
+    const scale = hasProcessedReadout ? Number(pixelSnapLastResult?.resizeScale || 1) : Number(document.getElementById("resizeScale")?.value || 1);
+    pixelSnapResizeReadout.textContent = `${scale}x`;
+  }
   if (pixelSnapModeBadge) pixelSnapModeBadge.textContent = width && height ? `${gridSize}px · ${confidence}%${suffix}` : (gridSize ? `${gridSize}px grid` : "Auto grid");
 
   updatePixelSnapGridOverlays();
@@ -1323,6 +1339,10 @@ async function processPalettePreview({ quiet = false } = {}) {
       confidence: response.headers.get("X-PF-Grid-Confidence"),
       paletteTarget: response.headers.get("X-PF-Palette-Target"),
       resizeScale: response.headers.get("X-PF-Resize-Scale"),
+      sourceColors: response.headers.get("X-PF-Source-Colors"),
+      outputColors: response.headers.get("X-PF-Output-Colors"),
+      changedPixels: response.headers.get("X-PF-Changed-Pixels"),
+      changedPercent: response.headers.get("X-PF-Changed-Percent"),
     };
     const blob = await response.blob();
     if (processedBlobUrl) URL.revokeObjectURL(processedBlobUrl);
@@ -1356,7 +1376,8 @@ async function processPalettePreview({ quiet = false } = {}) {
     const pixelSizeText = pixelSizeLabel === "0" ? "auto grid" : `${pixelSizeLabel}px grid`;
     const strengthText = document.getElementById("operation")?.value?.startsWith("pixel_snap") ? ` · ${Math.round(Number(pixelSnapStrength?.value || 1) * 100)}% snap` : "";
     updatePaletteLoadedState({ filename: selectedFile?.name || "Processed preview", source: selectedFileSource || "workspace", detail: `Processed preview ready${paletteProcessedResolution !== "—" ? ` · ${paletteProcessedResolution}` : ""}` });
-    addPaletteHistory(operationLabel, `${colorLabel} · ${scaleLabel}x · ${pixelSizeText}${strengthText}`);
+    const changedText = pixelSnapLastResult?.changedPercent ? ` · ${pixelSnapLastResult.changedPercent}% changed` : "";
+    addPaletteHistory(operationLabel, `${colorLabel} · ${scaleLabel}x · ${pixelSizeText}${strengthText}${changedText}`);
     setStatus("Palette Lab preview updated.");
   } catch (err) {
     setStatus(`Error: ${err.message}`);

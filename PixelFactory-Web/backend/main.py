@@ -40,7 +40,7 @@ asset_service = AssetService(PROJECT_ROOT)
 workspace_service = WorkspaceService(PROJECT_ROOT)
 export_service = ExportService(PROJECT_ROOT, asset_service)
 
-app = FastAPI(title="Pixel Factory by Wulf", version="0.16-pf0018.9-native-pixel-snap-detection")
+app = FastAPI(title="Pixel Factory by Wulf", version="0.16-pf0018.10-palette-cleanup-diagnostics")
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
 
@@ -134,6 +134,31 @@ def _detect_pixel_size(img: Image.Image, override: int = 0) -> tuple[int, int]:
     return best_px, confidence
 
 
+
+def _rgba_color_count(img: Image.Image, limit: int = 100000) -> int:
+    """Count unique RGBA colors with a safe cap for UI diagnostics."""
+    try:
+        colors = img.convert("RGBA").getcolors(maxcolors=limit)
+        if colors is None:
+            return limit
+        return len(colors)
+    except Exception:
+        return 0
+
+
+def _changed_pixel_stats(before: Image.Image, after: Image.Image) -> tuple[int, float]:
+    """Return changed pixel count and percentage between two same-size previews."""
+    if before.size != after.size:
+        before = before.resize(after.size, Image.Resampling.NEAREST)
+    b = before.convert("RGBA")
+    a = after.convert("RGBA")
+    changed = 0
+    total = max(1, a.size[0] * a.size[1])
+    for bp, ap in zip(b.getdata(), a.getdata()):
+        if bp != ap:
+            changed += 1
+    return changed, round((changed / total) * 100.0, 2)
+
 def _quantize_rgba(img: Image.Image, colors: int) -> Image.Image:
     colors = int(colors or 0)
     if colors <= 0:
@@ -205,6 +230,7 @@ async def process_image(
     pixel_strength = max(0.0, min(1.0, float(pixel_strength or 1.0)))
 
     original = img.copy()
+    source_color_count = _rgba_color_count(original)
     detected_grid, grid_confidence = _detect_pixel_size(original, pixel_size if pixel_size > 0 else 0)
 
     if operation == "pixel_snap":
@@ -224,11 +250,18 @@ async def process_image(
         w, h = img.size
         img = img.resize((w * resize_scale, h * resize_scale), Image.Resampling.NEAREST)
 
+    output_color_count = _rgba_color_count(img)
+    changed_pixels, changed_percent = _changed_pixel_stats(original, img)
+
     headers = {
         "X-PF-Detected-Grid": str(detected_grid),
         "X-PF-Grid-Confidence": str(grid_confidence),
         "X-PF-Palette-Target": str(palette_colors if bool(snap_palette) and palette_colors > 0 else 0),
         "X-PF-Resize-Scale": str(resize_scale),
+        "X-PF-Source-Colors": str(source_color_count),
+        "X-PF-Output-Colors": str(output_color_count),
+        "X-PF-Changed-Pixels": str(changed_pixels),
+        "X-PF-Changed-Percent": str(changed_percent),
     }
     return _png_response(img, headers=headers)
 
