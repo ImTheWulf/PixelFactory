@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0018_2_palette_tools_unify" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0018_3_tool_toggle_polish" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.16 · PF-0018.2</div>
+          <div class="subtitle">by Wulf · Web v0.16 · PF-0018.3</div>
         </div>
       </div>
 
@@ -324,27 +324,34 @@
             <div class="pixel-snap-layout">
               <div class="pixel-snap-control-grid pixel-snap-tool-groups">
                 <fieldset class="pixel-tool-group">
-                  <legend><label class="pf-inline-toggle"><input id="pixelSnapEnabled" type="checkbox" checked /> Pixel Snap</label></legend>
+                  <legend>Pixel Snap</legend>
                   <label><span>Grid Size</span><select id="pixelSnapGridSize"><option value="0" selected>Auto detect</option><option value="2">2 px</option><option value="4">4 px</option><option value="8">8 px</option><option value="16">16 px</option><option value="32">32 px</option><option value="64">64 px</option></select></label>
                   <label><span>Strength</span><input id="pixelSnapStrength" type="range" min="0.25" max="1" step="0.05" value="1" /><em id="pixelSnapStrengthValue">100%</em></label>
+                  <label class="pf-toggle-button-control"><input id="pixelSnapEnabled" type="checkbox" checked /><span data-on="Pixel Snap On" data-off="Pixel Snap Off">Pixel Snap On</span></label>
                 </fieldset>
 
                 <fieldset class="pixel-tool-group">
-                  <legend><label class="pf-inline-toggle"><input id="paletteEnabled" type="checkbox" checked /> Color Cleanup</label></legend>
+                  <legend>Color Cleanup</legend>
                   <label><span>Palette Colors</span><select id="paletteColors"><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="14">14</option><option value="16">16</option><option value="18">18</option><option value="20">20</option><option value="22">22</option><option value="24">24</option><option value="32">32</option><option value="64" selected>64</option><option value="128">128</option><option value="256">256</option></select></label>
-                  <label class="pixel-snap-toggle"><input id="pixelSnapPalette" type="checkbox" checked /> <span>Snap colors to palette</span></label>
+                  <div class="pf-toggle-row">
+                    <label class="pf-toggle-button-control"><input id="paletteEnabled" type="checkbox" checked /><span data-on="Color Cleanup On" data-off="Color Cleanup Off">Color Cleanup On</span></label>
+                    <label class="pf-toggle-button-control"><input id="pixelSnapPalette" type="checkbox" checked /><span data-on="Snap Colors On" data-off="Snap Colors Off">Snap Colors On</span></label>
+                  </div>
                 </fieldset>
 
                 <fieldset class="pixel-tool-group">
-                  <legend><label class="pf-inline-toggle"><input id="resizeEnabled" type="checkbox" checked /> Resize</label></legend>
+                  <legend>Resize</legend>
                   <label><span>Resize Scale</span><select id="resizeScale"><option value="1">1x</option><option value="2" selected>2x</option><option value="3">3x</option><option value="4">4x</option><option value="8">8x</option></select></label>
+                  <label class="pf-toggle-button-control"><input id="resizeEnabled" type="checkbox" checked /><span data-on="Resize On" data-off="Resize Off">Resize On</span></label>
                 </fieldset>
 
                 <fieldset class="pixel-tool-group">
                   <legend>Preview Options</legend>
-                  <label class="pixel-snap-toggle"><input id="pixelSnapAlpha" type="checkbox" checked /> <span>Preserve transparency</span></label>
-                  <label class="pixel-snap-toggle"><input id="pixelSnapShowGrid" type="checkbox" /> <span>Show grid in compare viewer</span></label>
-                  <label class="pixel-snap-toggle"><input id="pixelSnapLivePreview" type="checkbox" checked /> <span>Auto-update preview</span></label>
+                  <div class="pf-toggle-row pf-toggle-row-three">
+                    <label class="pf-toggle-button-control"><input id="pixelSnapAlpha" type="checkbox" checked /><span data-on="Transparency On" data-off="Transparency Off">Transparency On</span></label>
+                    <label class="pf-toggle-button-control"><input id="pixelSnapShowGrid" type="checkbox" /><span data-on="Grid On" data-off="Grid Off">Grid Off</span></label>
+                    <label class="pf-toggle-button-control"><input id="pixelSnapLivePreview" type="checkbox" checked /><span data-on="Auto-update On" data-off="Auto-update Off">Auto-update On</span></label>
+                  </div>
                 </fieldset>
               </div>
 
@@ -495,9 +502,9 @@
         <label><span>Colors</span><select id="comparePaletteColors"><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="14">14</option><option value="16">16</option><option value="18">18</option><option value="20">20</option><option value="22">22</option><option value="24">24</option><option value="32">32</option><option value="64">64</option><option value="128">128</option><option value="256">256</option></select></label>
         <label><span>Grid Size</span><select id="comparePixelSize"><option value="0">Auto</option><option value="2">2 px</option><option value="4">4 px</option><option value="8">8 px</option><option value="16">16 px</option><option value="32">32 px</option><option value="64">64 px</option></select></label>
         <input id="compareOperation" type="hidden" value="pixel_snap" />
-        <label class="compare-toggle"><span>Pixel Snap</span><input id="comparePixelSnapEnabled" type="checkbox" checked /></label>
-        <label class="compare-toggle"><span>Color Cleanup</span><input id="comparePaletteEnabled" type="checkbox" checked /></label>
-        <label class="compare-toggle"><span>Resize</span><input id="compareResizeEnabled" type="checkbox" checked /></label>
+        <label class="pf-toggle-button-control compare-toggle-button"><input id="comparePixelSnapEnabled" type="checkbox" checked /><span data-on="Pixel Snap On" data-off="Pixel Snap Off">Pixel Snap On</span></label>
+        <label class="pf-toggle-button-control compare-toggle-button"><input id="comparePaletteEnabled" type="checkbox" checked /><span data-on="Color Cleanup On" data-off="Color Cleanup Off">Color Cleanup On</span></label>
+        <label class="pf-toggle-button-control compare-toggle-button"><input id="compareResizeEnabled" type="checkbox" checked /><span data-on="Resize On" data-off="Resize Off">Resize On</span></label>
         <label class="compare-grid-toggle"><span>Grid</span><button id="compareGridToggle" type="button">Grid Off</button></label>
       </div>
       <div id="paletteCompareModalStage" class="palette-compare-modal-stage" title="Mouse wheel zoom · Space+drag pan · double-click fit">

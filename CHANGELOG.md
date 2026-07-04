@@ -1,4 +1,11 @@
 
+## PF-0018.3 - Palette Lab tool toggle polish
+- Polished Palette Lab tool toggles into consistent on/off pill buttons.
+- Added green/red toggle states for Pixel Snap, Color Cleanup, Resize, grid, transparency, and auto-update controls.
+- Tightened Pixel Snap tool layout so toggles sit with their related settings.
+- Kept `.venv` excluded from release zip.
+
+
 ## PF-0018.2 - Palette Lab tool controls cleanup
 - Moved Palette Lab load/upload flow into the main canvas header.
 - Consolidated resize, palette, and Pixel Snap settings into the Pixel Snap tool panel.

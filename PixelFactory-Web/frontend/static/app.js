@@ -415,6 +415,7 @@ function updateOperationStackLabels() {
   if (opPixelSnapRow) opPixelSnapRow.classList.toggle("active", snapOn || operation.startsWith("pixel_snap"));
   if (pixelSnapStrengthValue) pixelSnapStrengthValue.textContent = `${Math.round(snapStrength * 100)}%`;
   if (pixelSnapModeBadge) pixelSnapModeBadge.textContent = snapOn ? (pixelSize === "0" ? "Auto grid" : `${pixelSize}px grid`) : "Pixel Snap off";
+  updateToolToggleLabels();
 }
 
 function updateCompareSlider() {
@@ -436,6 +437,21 @@ function updateCompareGridToggleLabel() {
   const enabled = pixelSnapShowGrid?.checked === true;
   compareGridToggle.textContent = enabled ? "Grid On" : "Grid Off";
   compareGridToggle.classList.toggle("active", enabled);
+  compareGridToggle.classList.toggle("is-off", !enabled);
+  updateToolToggleLabels();
+}
+
+function updateToolToggleLabels() {
+  document.querySelectorAll(".pf-toggle-button-control input[type='checkbox']").forEach((input) => {
+    const label = input.closest(".pf-toggle-button-control");
+    const text = label?.querySelector("span");
+    if (!label || !text) return;
+    const onText = text.dataset.on || text.textContent || "On";
+    const offText = text.dataset.off || onText.replace(/On$/, "Off");
+    text.textContent = input.checked ? onText : offText;
+    label.classList.toggle("is-on", input.checked);
+    label.classList.toggle("is-off", !input.checked);
+  });
 }
 
 function toggleCompareGrid() {
@@ -907,6 +923,10 @@ compareProcessBtn?.addEventListener("click", processPreviewFromCompareViewer);
 [document.getElementById("resizeScale"), document.getElementById("paletteColors"), pixelSnapGridSize, document.getElementById("operation"), pixelSnapEnabled, paletteEnabled, resizeEnabled].forEach((control) => {
   control?.addEventListener("change", () => { syncOperationFromToolToggles(); updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); });
   control?.addEventListener("input", () => { syncOperationFromToolToggles(); updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); });
+});
+document.querySelectorAll(".pf-toggle-button-control input[type='checkbox']").forEach((input) => {
+  input.addEventListener("change", updateToolToggleLabels);
+  input.addEventListener("input", updateToolToggleLabels);
 });
 discardPalettePreviewBtn?.addEventListener("click", () => clearPaletteProcessedPreview({ addHistory: true }));
 downloadPaletteResultBtn?.addEventListener("click", () => downloadBtn?.click());
@@ -2619,6 +2639,7 @@ document.addEventListener("click", (event) => {
 
 // Startup
 (async function initPixelFactory() {
+  updateToolToggleLabels();
   applyPreviewMode();
   await refreshWorkspace();
   await loadAssets().catch(() => {});

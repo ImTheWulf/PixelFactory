@@ -3269,3 +3269,138 @@ select option:hover {
     grid-template-columns: 1fr;
   }
 }
+
+/* PF-0018.3 Tool toggle polish */
+.pixel-snap-tool-groups {
+  grid-template-columns: repeat(3, minmax(240px, 1fr));
+  align-items: stretch;
+}
+.pixel-tool-group {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pixel-tool-group legend {
+  font-size: 13px;
+  letter-spacing: .02em;
+}
+.pixel-tool-group label span:first-child {
+  margin-bottom: 6px;
+}
+.pf-toggle-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: auto;
+}
+.pf-toggle-row-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 0;
+}
+.pf-toggle-button-control {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 34px;
+  cursor: pointer;
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin-top: 6px !important;
+}
+.pf-toggle-button-control input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.pf-toggle-button-control span {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(239, 68, 68, .40);
+  background: rgba(127, 29, 29, .20);
+  color: #fecaca !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  line-height: 1.1;
+  text-align: center;
+  margin: 0 !important;
+  transition: border-color .14s ease, background .14s ease, color .14s ease, box-shadow .14s ease;
+}
+.pf-toggle-button-control input:checked + span,
+.pf-toggle-button-control.is-on span {
+  border-color: rgba(34, 197, 94, .55);
+  background: rgba(20, 83, 45, .24);
+  color: #bbf7d0 !important;
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, .08) inset;
+}
+.pf-toggle-button-control:hover span {
+  border-color: rgba(96, 165, 250, .65);
+}
+.pf-toggle-button-control input:focus-visible + span {
+  outline: 2px solid rgba(96, 165, 250, .85);
+  outline-offset: 2px;
+}
+.pixel-tool-group:has(#pixelSnapEnabled:not(:checked)) select,
+.pixel-tool-group:has(#pixelSnapEnabled:not(:checked)) input[type="range"],
+.pixel-tool-group:has(#paletteEnabled:not(:checked)) select,
+.pixel-tool-group:has(#resizeEnabled:not(:checked)) select {
+  opacity: .55;
+}
+.palette-compare-modal-controls {
+  grid-template-columns: 120px 150px 140px minmax(120px, .7fr) minmax(120px, .7fr) minmax(120px, .7fr) 88px !important;
+  gap: 8px !important;
+}
+.compare-toggle-button {
+  align-self: end;
+  min-height: 38px;
+  margin-top: 0 !important;
+}
+.compare-toggle-button span,
+.compare-grid-toggle button {
+  min-height: 38px !important;
+  font-size: 12px !important;
+}
+.compare-grid-toggle button {
+  border-color: rgba(239, 68, 68, .40);
+  background: rgba(127, 29, 29, .20);
+  color: #fecaca;
+  font-weight: 900;
+}
+.compare-grid-toggle button.active {
+  border-color: rgba(34, 197, 94, .55);
+  background: rgba(20, 83, 45, .24);
+  color: #bbf7d0;
+}
+.compare-grid-toggle span {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+@media (max-width: 1480px) {
+  .pixel-snap-tool-groups {
+    grid-template-columns: repeat(2, minmax(240px, 1fr));
+  }
+  .pf-toggle-row-three {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 1180px) {
+  .pixel-snap-tool-groups,
+  .pf-toggle-row,
+  .palette-compare-modal-controls {
+    grid-template-columns: 1fr !important;
+  }
+}
+.pixel-tool-group:has(#pixelSnapEnabled:checked) select,
+.pixel-tool-group:has(#pixelSnapEnabled:checked) input[type="range"],
+.pixel-tool-group:has(#paletteEnabled:checked) select,
+.pixel-tool-group:has(#resizeEnabled:checked) select {
+  opacity: 1;
+}
