@@ -2874,7 +2874,11 @@ select option:hover {
   }
 }
 
+<<<<<<< HEAD
 /* PF-0017.4 Pixel Snap live preview/grid lock polish */
+=======
+/* PF-0017.3 Pixel Snap live preview/grid lock polish */
+>>>>>>> aeabed633420bce9dac491c86285e5e35aaaae67
 .pf-grid-overlay.locked {
   inset: 0 auto auto 0;
   transform: none !important;
@@ -2885,6 +2889,7 @@ select option:hover {
 .pixel-snap-toggle input#pixelSnapLivePreview + span::after {
   content: "";
 }
+<<<<<<< HEAD
 
 
 /* PF-0017.4 Palette Lab cleanup */
@@ -2964,3 +2969,5 @@ select option:hover {
 @media (max-width: 1180px) {
   .palette-collapsed-workflow { grid-template-columns: 1fr; }
 }
+=======
+>>>>>>> aeabed633420bce9dac491c86285e5e35aaaae67
