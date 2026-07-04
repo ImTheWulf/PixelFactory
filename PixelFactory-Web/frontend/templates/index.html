@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.16 · PF-0018.10</div>
+          <div class="subtitle">by Wulf · Web v0.16 · PF-0019.0</div>
         </div>
       </div>
 
@@ -250,23 +250,30 @@
                 <button type="button" id="savePaletteAsAssetBtn" disabled>Save As...</button>
               </div>
             </div>
-            <div class="palette-workflow-inline">
+            <div class="palette-workflow-inline palette-workflow-compact">
               <details class="preview-card palette-operation-card palette-workflow-details">
                 <summary>
-                  <strong>Processing Pipeline</strong>
-                  <span class="palette-panel-hint">Current processing plan</span>
+                  <strong>Pipeline</strong>
+                  <span id="pipelineChipSummary" class="palette-pipeline-chips" aria-label="Current processing plan">
+                    <em data-pipeline-chip="pixel">Pixel Snap</em>
+                    <em data-pipeline-chip="palette">Palette</em>
+                    <em data-pipeline-chip="resize">Resize</em>
+                    <em data-pipeline-chip="alpha">Alpha</em>
+                  </span>
                 </summary>
                 <div id="paletteOperationStack" class="palette-operation-stack">
-                  <div class="palette-operation-row" data-op="palette"><strong>Palette reduction</strong><span id="opPaletteCount">64 colors</span></div>
+                  <div class="palette-operation-row" data-op="palette"><strong>Palette Normalize</strong><span id="opPaletteCount">Original colors</span></div>
                   <div class="palette-operation-row" data-op="resize"><strong>Nearest-neighbor resize</strong><span id="opResizeScale">2x</span></div>
                   <div class="palette-operation-row" id="opPixelSnapRow" data-op="pixel-snap"><strong>Pixel Snap</strong><span id="opPixelSize">Auto</span></div>
-                  <div class="palette-operation-row muted" data-op="chroma"><strong>Chroma Key</strong><em>coming</em></div>
+                  <div class="palette-operation-row muted" data-op="chroma"><strong>Transparency Cleanup</strong><em>coming</em></div>
+                  <div class="palette-operation-row muted" data-op="edge"><strong>Edge Cleanup</strong><em>coming</em></div>
+                  <div class="palette-operation-row muted" data-op="orphan"><strong>Orphan Cleanup</strong><em>coming</em></div>
                 </div>
               </details>
               <details class="preview-card palette-history-card palette-workflow-details">
                 <summary>
                   <strong>History</strong>
-                  <span class="palette-panel-hint">Recent workspace actions</span>
+                  <span class="palette-panel-hint">Undo-style timeline coming</span>
                 </summary>
                 <ol id="paletteHistory" class="palette-history-list">
                   <li>No asset loaded.</li>
@@ -293,17 +300,29 @@
             </div>
           </section>
 
-          <section id="paletteComparePanel" class="preview-card palette-compare-card palette-primary-compare">
-            <div class="section-title-row">
-              <h2>Before / After Compare</h2>
-              <div class="palette-compare-actions"><span class="palette-panel-hint">Main cleanup canvas · drag slider to compare source and processed output</span><button id="processBtn" type="button" class="pf-primary-action">Update Preview</button><button id="downloadBtn" type="button" disabled>Download PNG</button></div>
+          <section id="paletteComparePanel" class="preview-card palette-compare-card palette-primary-compare palette-editor-canvas">
+            <div class="section-title-row palette-canvas-toolbar">
+              <div>
+                <h2>Canvas</h2>
+                <span class="palette-panel-hint">Primary cleanup workspace · drag slider to compare current result with source</span>
+              </div>
+              <div class="palette-compare-actions palette-canvas-actions">
+                <button id="mainCanvasFitBtn" type="button">Fit</button>
+                <button id="mainCanvasActualBtn" type="button">1:1</button>
+                <button id="mainCanvasGridToggle" type="button" class="pf-state-toggle is-off">Grid Off</button>
+                <button id="mainCanvasDifferenceBtn" type="button">Difference</button>
+                <button id="openCompareViewerBtn" type="button">Inspect</button>
+                <button id="processBtn" type="button" class="pf-primary-action">Update Preview</button>
+                <button id="downloadBtn" type="button" disabled>Download PNG</button>
+              </div>
             </div>
             <div class="palette-compare-shell">
-              <button id="openCompareViewerBtn" class="palette-compare-stage" type="button" title="Open full-screen compare viewer">
+              <div id="mainPaletteCanvasStage" class="palette-compare-stage palette-main-canvas-stage" title="Wheel zoom · Shift/Space drag pan · double-click inspect">
                 <img id="compareOriginalPreview" alt="Compare original" />
                 <div id="compareProcessedClip" class="palette-compare-processed"><img id="compareProcessedPreview" alt="Compare processed" /></div>
+                <canvas id="mainDifferenceCanvas" class="palette-main-difference" aria-label="Main difference preview"></canvas>
                 <div id="compareDivider" class="palette-compare-divider"></div>
-              </button>
+              </div>
               <input id="compareSlider" type="range" min="0" max="100" value="50" />
             </div>
           </section>
@@ -316,8 +335,8 @@
           <section class="preview-card palette-tool-dock pixel-snap-panel">
             <div class="section-title-row">
               <div>
-                <h2>Pixel Snap</h2>
-                <p class="palette-panel-subtitle">Native Pixel Factory cleanup for AI pixel-art: detect grid, snap blocks, tighten palette, and preserve transparency.</p>
+                <h2>Repair Toolbox</h2>
+                <p class="palette-panel-subtitle">Native Pixel Factory cleanup for AI pixel-art. Tools update the single canvas preview; fullscreen is for inspection only.</p>
               </div>
               <span id="pixelSnapModeBadge" class="tool-mode-badge">Auto grid</span>
             </div>
@@ -532,22 +551,21 @@
           <button id="compareFitBtn" type="button">Fit</button>
           <button id="compareActualBtn" type="button">1:1</button>
           <button id="compareDifferenceBtn" type="button">Difference</button>
+          <button id="compareGridToggle" type="button" class="pf-state-toggle is-off">Grid Off</button>
           <button id="compareZoomInBtn" type="button">+</button>
-          <button id="compareProcessBtn" type="button" class="pf-primary-action">Process / Update</button>
           <button id="compareDownloadBtn" type="button">Download</button>
           <button id="compareCloseBtn" type="button">Close</button>
         </div>
       </div>
-      <div class="palette-compare-modal-controls">
-        <div class="compare-controls-title"><strong>Review Controls</strong><span>Synced with Palette Lab</span></div>
-        <label><span>Resize</span><select id="compareResizeScale"><option value="1">1x</option><option value="2">2x</option><option value="3">3x</option><option value="4">4x</option></select></label>
-        <label><span>Palette Target</span><select id="comparePaletteColors"><option value="0">Original</option><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="14">14</option><option value="16">16</option><option value="18">18</option><option value="20">20</option><option value="22">22</option><option value="24">24</option><option value="32">32</option><option value="64">64</option><option value="128">128</option><option value="256">256</option></select></label>
-        <label><span>Grid Size</span><select id="comparePixelSize"><option value="0">Auto</option><option value="2">2 px</option><option value="4">4 px</option><option value="8">8 px</option><option value="16">16 px</option><option value="32">32 px</option><option value="64">64 px</option></select></label>
+      <div class="palette-compare-modal-controls inspection-only-note">
+        <span>Inspection mode only. Repair settings live on the main Palette Lab canvas.</span>
+        <input id="compareResizeScale" type="hidden" value="2" />
+        <input id="comparePaletteColors" type="hidden" value="0" />
+        <input id="comparePixelSize" type="hidden" value="0" />
         <input id="compareOperation" type="hidden" value="pixel_snap" />
-        <label class="pf-toggle-button-control compare-toggle-button"><input id="comparePixelSnapEnabled" type="checkbox" checked /><span data-on="Pixel Snap On" data-off="Pixel Snap Off">Pixel Snap On</span></label>
-        <label class="pf-toggle-button-control compare-toggle-button"><input id="comparePaletteEnabled" type="checkbox" checked /><span data-on="Color Cleanup On" data-off="Color Cleanup Off">Color Cleanup On</span></label>
-        <label class="pf-toggle-button-control compare-toggle-button"><input id="compareResizeEnabled" type="checkbox" checked /><span data-on="Resize On" data-off="Resize Off">Resize On</span></label>
-        <label class="compare-grid-toggle"><span>Grid</span><button id="compareGridToggle" type="button">Grid Off</button></label>
+        <input id="comparePixelSnapEnabled" type="checkbox" checked hidden />
+        <input id="comparePaletteEnabled" type="checkbox" checked hidden />
+        <input id="compareResizeEnabled" type="checkbox" checked hidden />
       </div>
       <div id="paletteCompareModalStage" class="palette-compare-modal-stage" title="Mouse wheel zoom · Space+drag pan · double-click fit">
         <div id="compareModalCanvas" class="palette-compare-modal-canvas">

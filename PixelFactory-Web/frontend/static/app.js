@@ -128,6 +128,12 @@ const compareProcessedPreview = document.getElementById("compareProcessedPreview
 const compareProcessedClip = document.getElementById("compareProcessedClip");
 const compareDivider = document.getElementById("compareDivider");
 const openCompareViewerBtn = document.getElementById("openCompareViewerBtn");
+const mainPaletteCanvasStage = document.getElementById("mainPaletteCanvasStage");
+const mainCanvasFitBtn = document.getElementById("mainCanvasFitBtn");
+const mainCanvasActualBtn = document.getElementById("mainCanvasActualBtn");
+const mainCanvasGridToggle = document.getElementById("mainCanvasGridToggle");
+const mainCanvasDifferenceBtn = document.getElementById("mainCanvasDifferenceBtn");
+const mainDifferenceCanvas = document.getElementById("mainDifferenceCanvas");
 const paletteCompareModal = document.getElementById("paletteCompareModal");
 const paletteCompareTitle = document.getElementById("paletteCompareTitle");
 const paletteCompareMeta = document.getElementById("paletteCompareMeta");
@@ -209,6 +215,8 @@ let paletteCompareIsPanning = false;
 let paletteComparePanStart = null;
 let paletteCompareSpaceDown = false;
 let paletteCompareViewMode = "compare";
+let paletteMainViewMode = "compare";
+let paletteMainCanvasMode = "fit";
 let pixelSnapLastResult = null;
 
 function isPixelSnapLivePreviewEnabled() {
@@ -545,11 +553,13 @@ function updateCompareModalSlider() {
 
 
 function updateCompareGridToggleLabel() {
-  if (!compareGridToggle) return;
   const enabled = pixelSnapShowGrid?.checked === true;
-  compareGridToggle.textContent = enabled ? "Grid On" : "Grid Off";
-  compareGridToggle.classList.toggle("active", enabled);
-  compareGridToggle.classList.toggle("is-off", !enabled);
+  [compareGridToggle, mainCanvasGridToggle].filter(Boolean).forEach((btn) => {
+    btn.textContent = enabled ? "Grid On" : "Grid Off";
+    btn.classList.toggle("active", enabled);
+    btn.classList.toggle("is-on", enabled);
+    btn.classList.toggle("is-off", !enabled);
+  });
   updateToolToggleLabels();
 }
 
@@ -623,6 +633,62 @@ function buildCompareDifferenceCanvas() {
   }
   out.putImageData(diff, 0, 0);
   return true;
+}
+
+function buildMainDifferenceCanvas() {
+  if (!mainDifferenceCanvas || !compareOriginalPreview || !compareProcessedPreview) return false;
+  if (!compareOriginalPreview.naturalWidth || !compareOriginalPreview.naturalHeight || !compareProcessedPreview.naturalWidth || !compareProcessedPreview.naturalHeight) return false;
+  const width = compareOriginalPreview.naturalWidth;
+  const height = compareOriginalPreview.naturalHeight;
+  mainDifferenceCanvas.width = width;
+  mainDifferenceCanvas.height = height;
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  const out = mainDifferenceCanvas.getContext("2d");
+  if (!ctx || !out) return false;
+  ctx.clearRect(0, 0, width, height);
+  ctx.drawImage(compareOriginalPreview, 0, 0, width, height);
+  const original = ctx.getImageData(0, 0, width, height);
+  ctx.clearRect(0, 0, width, height);
+  ctx.drawImage(compareProcessedPreview, 0, 0, width, height);
+  const processed = ctx.getImageData(0, 0, width, height);
+  const diff = out.createImageData(width, height);
+  for (let i = 0; i < diff.data.length; i += 4) {
+    const dr = Math.abs(original.data[i] - processed.data[i]);
+    const dg = Math.abs(original.data[i + 1] - processed.data[i + 1]);
+    const db = Math.abs(original.data[i + 2] - processed.data[i + 2]);
+    const da = Math.abs(original.data[i + 3] - processed.data[i + 3]);
+    const change = Math.max(dr, dg, db, da);
+    if (change < 3) {
+      diff.data[i] = 8; diff.data[i + 1] = 13; diff.data[i + 2] = 22; diff.data[i + 3] = 255;
+    } else {
+      diff.data[i] = Math.min(255, 24 + dr * 3);
+      diff.data[i + 1] = Math.min(255, 80 + dg * 3);
+      diff.data[i + 2] = Math.min(255, 130 + db * 3);
+      diff.data[i + 3] = 255;
+    }
+  }
+  out.putImageData(diff, 0, 0);
+  return true;
+}
+
+function setMainCanvasViewMode(mode = "compare") {
+  paletteMainViewMode = mode === "difference" ? "difference" : "compare";
+  paletteComparePanel?.classList.toggle("difference-mode", paletteMainViewMode === "difference");
+  mainCanvasDifferenceBtn?.classList.toggle("active", paletteMainViewMode === "difference");
+  if (compareSlider) compareSlider.disabled = paletteMainViewMode === "difference";
+  if (paletteMainViewMode === "difference") buildMainDifferenceCanvas();
+  updateCompareSlider();
+}
+
+function setMainCanvasPreviewMode(mode = "fit") {
+  paletteMainCanvasMode = mode === "actual" ? "actual" : "fit";
+  mainPaletteCanvasStage?.classList.toggle("actual", paletteMainCanvasMode === "actual");
+  mainCanvasFitBtn?.classList.toggle("active", paletteMainCanvasMode === "fit");
+  mainCanvasActualBtn?.classList.toggle("active", paletteMainCanvasMode === "actual");
+  requestAnimationFrame(updatePixelSnapGridOverlays);
 }
 
 function readComparePixel(img, x, y) {
@@ -911,6 +977,8 @@ function showPaletteCompare({ resetSlider = false } = {}) {
   if (compareProcessedPreview) compareProcessedPreview.src = hasProcessed ? processedBlobUrl : originalSrc;
   paletteComparePanel.classList.remove("hidden");
   updateCompareSlider();
+  buildMainDifferenceCanvas();
+  setMainCanvasViewMode(paletteMainViewMode);
   requestAnimationFrame(updatePixelSnapGridOverlays);
 }
 
@@ -1022,6 +1090,11 @@ attachMiniPreviewCamera(document.querySelector('[data-preview-host="processed"]'
 compareSlider?.addEventListener("input", updateCompareSlider);
 compareModalSlider?.addEventListener("input", updateCompareModalSlider);
 openCompareViewerBtn?.addEventListener("click", openPaletteCompareViewer);
+mainPaletteCanvasStage?.addEventListener("dblclick", openPaletteCompareViewer);
+mainCanvasFitBtn?.addEventListener("click", () => setMainCanvasPreviewMode("fit"));
+mainCanvasActualBtn?.addEventListener("click", () => setMainCanvasPreviewMode("actual"));
+mainCanvasGridToggle?.addEventListener("click", toggleCompareGrid);
+mainCanvasDifferenceBtn?.addEventListener("click", () => setMainCanvasViewMode(paletteMainViewMode === "difference" ? "compare" : "difference"));
 compareCloseBtn?.addEventListener("click", closePaletteCompareViewer);
 document.querySelector("[data-compare-close]")?.addEventListener("click", closePaletteCompareViewer);
 compareFitBtn?.addEventListener("click", setPaletteCompareFit);
@@ -1369,7 +1442,7 @@ async function processPalettePreview({ quiet = false } = {}) {
     showPaletteCompare({ resetSlider: true });
     syncCompareControlsFromPalette();
     if (paletteCompareModal && !paletteCompareModal.classList.contains("hidden")) updateCompareModalImages();
-    const operationLabel = document.getElementById("operation")?.selectedOptions?.[0]?.textContent || "Process";
+    const operationLabel = "Process";
     const scaleLabel = document.getElementById("resizeScale")?.value || "1";
     const colorLabel = paletteTargetLabel();
     const pixelSizeLabel = pixelSnapGridSize?.value || document.getElementById("pixelSize")?.value || "0";

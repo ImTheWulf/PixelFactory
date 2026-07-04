@@ -1,3 +1,12 @@
+## PF-0019.0 - Palette Lab single-canvas consolidation
+
+- Consolidated Palette Lab around one primary Canvas instead of duplicate Original/Processed/Compare work areas.
+- Reframed fullscreen compare as inspection mode only.
+- Moved editing controls back to the main Palette Lab repair toolbox.
+- Added canvas toolbar actions for Fit, 1:1, Grid, Difference, Inspect, Update Preview, and Download.
+- Converted Processing Pipeline into compact chips with an expandable detail view.
+- Kept History collapsed as an undo-style timeline foundation.
+
 
 ## PF-0018.10 - Palette cleanup diagnostics
 

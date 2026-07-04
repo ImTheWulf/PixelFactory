@@ -1,3 +1,8 @@
+### PF-0019.0
+- Palette Lab single-canvas workflow consolidation.
+- Fullscreen compare is now inspection-focused instead of a duplicate editor.
+- Repair controls remain in the main Palette Lab workspace.
+
 # Pixel Factory Docs
 
 This `/docs` folder is the single source of truth for Pixel Factory planning, architecture, and project memory.
