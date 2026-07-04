@@ -403,3 +403,9 @@ Quick favorite toggle and seed UI cleanup.
 - Moved Processing Pipeline and History into the canvas area.
 - Removed duplicate sidebar Pixel Size control; Pixel Snap Grid Size now drives snap pixel size.
 - Added preview camera controls and compare grid toggle.
+
+## PF-0018.4 - Compare Viewer Control Polish
+- Tightened Palette Lab compare viewer controls so the image area stays dominant.
+- Added a compact Review Controls label to clarify compare controls are synced with Palette Lab.
+- Polished compare toolbar button sizing/alignment.
+- Strengthened compare grid overlay layering and on/off visual states.

@@ -3404,3 +3404,127 @@ select option:hover {
 .pixel-tool-group:has(#resizeEnabled:checked) select {
   opacity: 1;
 }
+
+
+/* PF-0018.4 Compare viewer control polish */
+.palette-compare-panel {
+  grid-template-rows: auto auto minmax(0, 1fr) auto !important;
+}
+.palette-compare-toolbar {
+  min-height: 46px;
+  padding: 8px 12px !important;
+}
+.palette-compare-toolbar .image-viewer-actions {
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+.palette-compare-toolbar .image-viewer-actions button,
+.palette-compare-toolbar .image-viewer-actions a {
+  min-height: 30px;
+  height: 30px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+.palette-compare-modal-controls {
+  display: grid !important;
+  grid-template-columns: minmax(120px, 160px) 104px 126px 118px minmax(180px, 1fr) 112px 112px 96px !important;
+  align-items: end !important;
+  gap: 7px !important;
+  padding: 6px 10px 8px !important;
+  min-height: 54px;
+  background: rgba(9, 14, 23, .92) !important;
+}
+.compare-controls-title {
+  align-self: center;
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+  color: var(--text);
+  font-size: 12px;
+}
+.compare-controls-title span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.palette-compare-modal-controls label {
+  gap: 3px !important;
+  margin: 0 !important;
+}
+.palette-compare-modal-controls label > span:first-child,
+.compare-grid-toggle span {
+  font-size: 10px !important;
+  line-height: 1;
+  margin-bottom: 2px !important;
+  color: #91a4c0 !important;
+}
+.palette-compare-modal-controls select {
+  min-height: 30px !important;
+  height: 30px !important;
+  padding: 4px 8px !important;
+  font-size: 12px !important;
+}
+.compare-toggle-button,
+.compare-grid-toggle {
+  align-self: end !important;
+  min-height: 30px !important;
+}
+.compare-toggle-button span,
+.compare-grid-toggle button {
+  min-height: 30px !important;
+  height: 30px !important;
+  padding: 0 8px !important;
+  font-size: 11px !important;
+  white-space: nowrap;
+}
+.compare-grid-toggle button:not(.active) {
+  border-color: rgba(239, 68, 68, .48) !important;
+  background: rgba(127, 29, 29, .22) !important;
+  color: #fecaca !important;
+}
+.compare-grid-toggle button.active {
+  border-color: rgba(34, 197, 94, .62) !important;
+  background: rgba(20, 83, 45, .28) !important;
+  color: #bbf7d0 !important;
+}
+.palette-compare-modal-stage {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(37,99,235,.06), transparent 42%),
+    #05080d !important;
+}
+.palette-compare-modal-canvas > .pf-grid-overlay {
+  z-index: 4;
+  pointer-events: none;
+  opacity: .36;
+  mix-blend-mode: screen;
+  background-position: 0 0 !important;
+}
+.palette-compare-modal-canvas .palette-compare-modal-divider {
+  z-index: 5;
+}
+.palette-compare-modal-footer {
+  padding: 8px 10px 10px !important;
+}
+.palette-compare-modal-footer input[type="range"] {
+  height: 18px;
+}
+.compare-pixel-inspector {
+  font-size: 11px;
+  padding: 5px 9px;
+}
+@media (max-width: 1480px) {
+  .palette-compare-modal-controls {
+    grid-template-columns: repeat(4, minmax(96px, 1fr)) !important;
+  }
+  .compare-controls-title {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 900px) {
+  .palette-compare-modal-controls {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}

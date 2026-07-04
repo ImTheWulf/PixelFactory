@@ -26,3 +26,6 @@ Older issue and architecture notes have been preserved inside:
 - `docs/reference/`
 
 These are not redundant doc roots. They are archives/reference material inside the canonical `/docs` folder.
+
+### PF-0018.4
+Palette Lab compare viewer polish: compact controls, clearer synced review controls, better toolbar alignment, and stronger grid overlay layering.
