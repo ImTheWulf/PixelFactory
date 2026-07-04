@@ -183,6 +183,10 @@ let paletteCompareIsPanning = false;
 let paletteComparePanStart = null;
 let paletteCompareSpaceDown = false;
 
+function isPixelSnapLivePreviewEnabled() {
+  return pixelSnapLivePreview?.checked === true;
+}
+
 function getAutoPixelSnapSize(width, height) {
   const smallest = Math.max(1, Math.min(Number(width) || 1, Number(height) || 1));
   if (smallest >= 1024) return 32;
@@ -231,12 +235,32 @@ function updateGridOverlayForImage(img, host, gridSize) {
     return;
   }
 
-  const imgRect = img.getBoundingClientRect();
+  const grid = Math.max(1, Number(gridSize) || 1);
   const hostRect = host.getBoundingClientRect();
+  const imgRect = img.getBoundingClientRect();
+
+  // Compare modal uses a real zoomable canvas. Lock the grid to the canvas itself
+  // instead of re-measuring the image every frame. This keeps the overlay static
+  // while zooming/panning and prevents it from drifting when the before/after
+  // slider is moved.
+  if (host === compareModalCanvas || host?.classList?.contains("palette-compare-modal-canvas")) {
+    const width = Math.max(1, hostRect.width);
+    const height = Math.max(1, hostRect.height);
+    const columns = Math.max(1, img.naturalWidth / grid);
+    const rows = Math.max(1, img.naturalHeight / grid);
+    overlay.style.left = "0px";
+    overlay.style.top = "0px";
+    overlay.style.width = `${width}px`;
+    overlay.style.height = `${height}px`;
+    overlay.style.backgroundSize = `${Math.max(2, width / columns)}px ${Math.max(2, height / rows)}px`;
+    overlay.classList.add("active", "locked");
+    return;
+  }
+
   const width = Math.max(1, imgRect.width);
   const height = Math.max(1, imgRect.height);
-  const columns = Math.max(1, img.naturalWidth / Math.max(1, gridSize));
-  const rows = Math.max(1, img.naturalHeight / Math.max(1, gridSize));
+  const columns = Math.max(1, img.naturalWidth / grid);
+  const rows = Math.max(1, img.naturalHeight / grid);
 
   overlay.style.left = `${imgRect.left - hostRect.left + host.scrollLeft}px`;
   overlay.style.top = `${imgRect.top - hostRect.top + host.scrollTop}px`;
@@ -244,6 +268,7 @@ function updateGridOverlayForImage(img, host, gridSize) {
   overlay.style.height = `${height}px`;
   overlay.style.backgroundSize = `${Math.max(2, width / columns)}px ${Math.max(2, height / rows)}px`;
   overlay.classList.add("active");
+  overlay.classList.remove("locked");
 }
 
 function updatePixelSnapAnalysis() {
@@ -386,6 +411,11 @@ let compareAutoProcessTimer = null;
 function scheduleComparePreviewUpdate() {
   if (!paletteCompareModal || paletteCompareModal.classList.contains("hidden")) return;
   if (!selectedFile) return;
+  if (!isPixelSnapLivePreviewEnabled()) {
+    setPaletteDirty(true, "● Preview pending");
+    setStatus("Auto-update preview is off. Click Process / Update when ready.");
+    return;
+  }
   window.clearTimeout(compareAutoProcessTimer);
   compareAutoProcessTimer = window.setTimeout(() => {
     processPreviewFromCompareViewer();
@@ -436,6 +466,7 @@ function applyPaletteCompareMode({ center = false } = {}) {
     const resLabel = paletteProcessedResolution && paletteProcessedResolution !== "—" ? ` · Output ${paletteProcessedResolution}` : "";
     paletteCompareMeta.textContent = `${scaleLabel} · Source ${sourceLabel}${resLabel}`;
   }
+  requestAnimationFrame(updatePixelSnapGridOverlays);
   if (center) {
     requestAnimationFrame(centerPaletteCompareCanvas);
   }
@@ -637,24 +668,34 @@ document.getElementById("operation")?.addEventListener("change", updateOperation
 pixelSnapGridSize?.addEventListener("change", () => {
   syncPixelSnapPanelToOperation();
   updatePixelSnapAnalysis();
-  if (pixelSnapLivePreview?.checked !== false) schedulePalettePreviewUpdate();
+  schedulePalettePreviewUpdate();
 });
 pixelSnapStrength?.addEventListener("input", () => {
   syncPixelSnapPanelToOperation();
   updatePixelSnapAnalysis();
-  if (pixelSnapLivePreview?.checked !== false) schedulePalettePreviewUpdate();
+  schedulePalettePreviewUpdate();
 });
 pixelSnapPalette?.addEventListener("change", () => {
   syncPixelSnapPanelToOperation();
   updatePixelSnapAnalysis();
-  if (pixelSnapLivePreview?.checked !== false) schedulePalettePreviewUpdate();
+  schedulePalettePreviewUpdate();
 });
 pixelSnapAlpha?.addEventListener("change", () => {
   syncPixelSnapPanelToOperation();
-  if (pixelSnapLivePreview?.checked !== false) schedulePalettePreviewUpdate();
+  schedulePalettePreviewUpdate();
 });
 pixelSnapShowGrid?.addEventListener("change", updatePixelSnapGridOverlays);
-pixelSnapLivePreview?.addEventListener("change", updatePixelSnapAnalysis);
+pixelSnapLivePreview?.addEventListener("change", () => {
+  updatePixelSnapAnalysis();
+  if (isPixelSnapLivePreviewEnabled()) {
+    setStatus("Auto-update preview enabled.");
+    schedulePalettePreviewUpdate();
+  } else {
+    window.clearTimeout(paletteAutoProcessTimer);
+    window.clearTimeout(compareAutoProcessTimer);
+    setStatus("Auto-update preview disabled. Use Update Preview manually.");
+  }
+});
 pixelSnapToolBtn?.addEventListener("click", () => {
   syncPixelSnapPanelToOperation();
   updateOperationStackLabels();
@@ -837,6 +878,12 @@ async function processPalettePreview({ quiet = false } = {}) {
 
 function schedulePalettePreviewUpdate() {
   if (!selectedFile) return;
+  if (!isPixelSnapLivePreviewEnabled()) {
+    window.clearTimeout(paletteAutoProcessTimer);
+    setPaletteDirty(true, "● Preview pending");
+    setStatus("Auto-update preview is off. Click Update Preview when ready.");
+    return;
+  }
   window.clearTimeout(paletteAutoProcessTimer);
   setPaletteDirty(true, "● Preview pending");
   paletteAutoProcessTimer = window.setTimeout(() => processPalettePreview({ quiet: true }), 350);

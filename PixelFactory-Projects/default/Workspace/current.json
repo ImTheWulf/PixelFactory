@@ -2,15 +2,15 @@
   "has_image": true,
   "image_path": "Workspace/current.png",
   "image_url": "/api/workspace/image",
-  "updated": "2026-07-03T21:43:11",
+  "updated": "2026-07-03T22:10:54",
   "source": "asset",
-  "asset_id": "20260703_214247_34db694d",
+  "asset_id": "20260703_061523_e1b19907",
   "asset_name": "top_down_pixel_art_game_tile_seamless_repeating__01",
   "asset_type": "tile",
-  "status": "incoming",
+  "status": "accepted",
   "prompt": "top-down pixel art game tile, seamless repeating texture, orthographic view, flat lighting, crisp pixels, limited color palette, {prompt}",
   "recipe_id": "tile.cobblestone",
   "workflow": "tile",
-  "width": 1024,
-  "height": 1024
+  "width": 512,
+  "height": 512
 }

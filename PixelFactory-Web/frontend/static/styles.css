@@ -2873,3 +2873,15 @@ select option:hover {
     grid-template-columns: 1fr;
   }
 }
+
+/* PF-0017.3 Pixel Snap live preview/grid lock polish */
+.pf-grid-overlay.locked {
+  inset: 0 auto auto 0;
+  transform: none !important;
+}
+.palette-compare-modal-canvas > .pf-grid-overlay {
+  z-index: 4;
+}
+.pixel-snap-toggle input#pixelSnapLivePreview + span::after {
+  content: "";
+}
