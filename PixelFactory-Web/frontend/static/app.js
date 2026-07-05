@@ -3116,3 +3116,22 @@ document.addEventListener("click", (event) => {
     }, true);
   });
 })();
+
+
+// PF-0019.6 Repair Toolbox tabs: one active tool panel, canvas remains primary.
+(() => {
+  const tabs = Array.from(document.querySelectorAll('[data-repair-tab]'));
+  const panes = Array.from(document.querySelectorAll('[data-repair-pane]'));
+  if (!tabs.length || !panes.length) return;
+  function setRepairTab(name) {
+    tabs.forEach((tab) => tab.classList.toggle('active', tab.dataset.repairTab === name));
+    panes.forEach((pane) => pane.classList.toggle('active', pane.dataset.repairPane === name));
+  }
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', (event) => {
+      event.preventDefault();
+      setRepairTab(tab.dataset.repairTab || 'snap');
+    });
+  });
+  setRepairTab('snap');
+})();

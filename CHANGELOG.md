@@ -1,3 +1,12 @@
+
+## PF-0019.6 - Palette Lab v2 UI refactor
+- Rebuilt Repair Toolbox as a compact tabbed tool-options panel.
+- Moved Preview/Transparency controls into canvas toolbar.
+- Removed redundant visible Apply Preview and Download PNG from canvas toolbar.
+- Kept project/file actions in the Palette Lab sidebar.
+- Made canvas the hero workspace with tighter header/tool spacing.
+- Added fixed bottom status footer and compact Pipeline/History drawers.
+
 ## PF-0019.4 - Palette Lab layout + canvas stability
 - Compressed the Palette Lab page header so the canvas starts higher and gets more workspace.
 - Added a persistent bottom Palette Lab status footer for preview/load/save messages.

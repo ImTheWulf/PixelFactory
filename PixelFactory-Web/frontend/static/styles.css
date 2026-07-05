@@ -4389,3 +4389,248 @@ select option:hover {
   .palette-status-footer { left: 0 !important; width: 100vw !important; }
   .pixel-snap-tool-groups { grid-template-columns: 1fr !important; }
 }
+
+/* PF-0019.6 Palette Lab v2 major UI refactor */
+#paletteView .pf-page-hero {
+  display: none !important;
+}
+#paletteView {
+  padding-top: 12px !important;
+}
+.palette-workspace-layout {
+  gap: 10px !important;
+  padding-bottom: 28px !important;
+}
+.palette-toolbox-v2 {
+  order: 1 !important;
+  padding: 12px 14px !important;
+  min-height: 0 !important;
+}
+.palette-toolbox-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.palette-toolbox-head h2 {
+  margin: 0 0 3px !important;
+  font-size: 16px !important;
+}
+.palette-toolbox-head .palette-panel-subtitle {
+  margin: 0 !important;
+  font-size: 12px !important;
+  color: var(--muted);
+}
+.repair-tool-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.repair-tool-tab {
+  width: auto !important;
+  min-width: 86px !important;
+  min-height: 30px !important;
+  height: 30px !important;
+  padding: 0 10px !important;
+  border-radius: 9px !important;
+  font-size: 12px !important;
+}
+.repair-tool-tab.active {
+  border-color: rgba(96,165,250,.75) !important;
+  background: linear-gradient(180deg, rgba(37,99,235,.32), rgba(29,78,216,.20)) !important;
+  color: #fff !important;
+  box-shadow: 0 0 0 1px rgba(96,165,250,.16) inset;
+}
+.repair-tool-tab.disabled {
+  opacity: .45;
+}
+.repair-tool-active-panel,
+.pixel-snap-layout.repair-tool-active-panel {
+  display: block !important;
+}
+.repair-tool-panel-grid,
+.pixel-snap-panel .repair-tool-panel-grid {
+  display: block !important;
+}
+.repair-tool-pane {
+  display: none !important;
+}
+.repair-tool-pane.active {
+  display: block !important;
+}
+.palette-toolbox-v2 .pixel-tool-group,
+.pixel-snap-panel .pixel-tool-group.repair-tool-pane {
+  min-height: 0 !important;
+  padding: 12px !important;
+}
+.repair-tool-inline {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) minmax(160px, 260px);
+  gap: 10px;
+  align-items: end;
+}
+.repair-tool-inline > label {
+  margin: 0 !important;
+}
+.repair-tool-inline select,
+.repair-tool-inline input[type="range"] {
+  min-height: 34px !important;
+}
+.repair-tool-inline .pf-toggle-button-control {
+  align-self: end;
+}
+.repair-tool-inline .pf-toggle-button-control span {
+  min-height: 34px !important;
+}
+.repair-preview-inline {
+  grid-template-columns: minmax(170px, 260px) minmax(0, 1fr);
+  align-items: center;
+}
+.repair-preview-inline .palette-panel-hint {
+  margin: 0 !important;
+}
+.palette-toolbox-v2 .pixel-tool-note {
+  margin: 8px 2px 0 !important;
+  font-size: 12px !important;
+}
+.palette-toolbox-v2 .compact-tools,
+.palette-toolbox-v2 .palette-tool-grid {
+  display: none !important;
+}
+.palette-editor-canvas {
+  order: 2 !important;
+  min-height: calc(100vh - 250px) !important;
+  padding: 12px !important;
+}
+.palette-canvas-toolbar {
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 10px !important;
+  align-items: start !important;
+}
+.palette-canvas-title-block h2 {
+  font-size: 15px !important;
+  margin: 0 !important;
+}
+.palette-canvas-title-block .palette-panel-hint {
+  font-size: 11px !important;
+}
+.canvas-diagnostics-strip {
+  gap: 5px !important;
+  margin-top: 3px !important;
+}
+.canvas-diagnostics-strip span {
+  min-height: 20px !important;
+  padding: 2px 7px !important;
+  font-size: 10.5px !important;
+}
+.palette-canvas-actions {
+  display: flex !important;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px !important;
+}
+.palette-canvas-actions button,
+.palette-canvas-actions .canvas-toggle-control span {
+  min-height: 30px !important;
+  height: 30px !important;
+  padding: 0 10px !important;
+  font-size: 11.5px !important;
+  border-radius: 8px !important;
+}
+.palette-canvas-actions #processBtn {
+  min-width: 86px !important;
+}
+.palette-canvas-actions #downloadBtn,
+.palette-canvas-actions #applyPalettePreviewBtn {
+  display: none !important;
+}
+.canvas-toggle-control {
+  margin: 0 !important;
+  width: auto !important;
+}
+.canvas-toggle-control input {
+  display: none !important;
+}
+.palette-compare-shell {
+  margin-top: 8px !important;
+}
+.palette-main-canvas-stage {
+  height: min(72vh, 820px) !important;
+  min-height: 540px !important;
+}
+.palette-workspace-layout > .palette-workflow-strip {
+  order: 3 !important;
+  margin-top: 0 !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.palette-workflow-strip .palette-workflow-details:not([open]) {
+  min-height: 34px !important;
+  max-height: 34px !important;
+  padding: 0 !important;
+}
+.palette-workflow-strip .palette-workflow-details summary {
+  min-height: 34px !important;
+  padding: 0 10px !important;
+}
+.palette-workflow-strip .palette-workflow-details[open] {
+  max-height: 190px !important;
+  overflow: auto !important;
+}
+.palette-status-footer {
+  position: fixed !important;
+  left: var(--sidebar-width, 276px) !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  height: 24px !important;
+  display: flex !important;
+  align-items: center;
+  padding: 0 14px !important;
+  border-top: 1px solid rgba(96,165,250,.18);
+  background: rgba(8, 13, 21, .96);
+  color: var(--muted);
+  font-size: 11px !important;
+  z-index: 30;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar #status {
+  display: none !important;
+}
+.palette-side-status .panel-hint {
+  min-height: 0 !important;
+  max-height: 90px;
+  overflow: hidden;
+  font-size: 11px !important;
+}
+.palette-side-status .palette-source-card,
+.palette-side-status .palette-sidebar-meta,
+.palette-side-status .palette-dirty-state,
+.palette-side-status .palette-side-actions,
+.palette-side-status .panel-hint {
+  margin-top: 8px !important;
+}
+.palette-side-actions button,
+.palette-side-actions .pf-button-like {
+  min-height: 32px !important;
+  font-size: 11.5px !important;
+}
+@media (max-width: 1300px) {
+  .repair-tool-inline {
+    grid-template-columns: 1fr !important;
+  }
+  .palette-workspace-layout > .palette-workflow-strip {
+    grid-template-columns: 1fr !important;
+  }
+  .palette-canvas-toolbar {
+    grid-template-columns: 1fr !important;
+  }
+  .palette-canvas-actions {
+    justify-content: flex-start;
+  }
+}

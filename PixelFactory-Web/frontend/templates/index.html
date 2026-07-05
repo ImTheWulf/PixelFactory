@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0019_5_toolbox_canvas_finish" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0019_6_palette_lab_v2_refactor" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.16 · PF-0019.5</div>
+          <div class="subtitle">by Wulf · Web v0.16 · PF-0019.6</div>
         </div>
       </div>
 
@@ -284,59 +284,65 @@
             </div>
           </section>
 
-          <section class="preview-card palette-tool-dock pixel-snap-panel">
-            <div class="section-title-row">
+          <section class="preview-card palette-tool-dock pixel-snap-panel palette-toolbox-v2">
+            <div class="palette-toolbox-head">
               <div>
                 <h2>Repair Toolbox</h2>
-                <p class="palette-panel-subtitle">Native Pixel Factory cleanup for AI pixel-art. Tools update the single canvas preview; fullscreen is for inspection only.</p>
+                <p class="palette-panel-subtitle">Tool options for the active canvas. Fullscreen is inspection only.</p>
               </div>
               <span id="pixelSnapModeBadge" class="tool-mode-badge">Auto grid</span>
             </div>
 
-            <div class="pixel-snap-layout">
-              <div class="pixel-snap-control-grid pixel-snap-tool-groups">
-                <fieldset class="pixel-tool-group">
-                  <legend>Pixel Snap</legend>
-                  <label><span>Grid Size</span><select id="pixelSnapGridSize"><option value="0" selected>Auto detect</option><option value="2">2 px</option><option value="4">4 px</option><option value="8">8 px</option><option value="16">16 px</option><option value="32">32 px</option><option value="64">64 px</option></select></label>
-                  <label><span>Strength</span><input id="pixelSnapStrength" type="range" min="0.25" max="1" step="0.05" value="1" /><em id="pixelSnapStrengthValue">100%</em></label>
-                  <label class="pf-toggle-button-control"><input id="pixelSnapEnabled" type="checkbox" checked /><span data-on="Pixel Snap On" data-off="Pixel Snap Off">Pixel Snap On</span></label>
-                </fieldset>
-
-                <fieldset class="pixel-tool-group">
-                  <legend>Color Cleanup</legend>
-                  <label><span>Palette Target</span><select id="paletteColors"><option value="0" selected>Original colors</option><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="14">14</option><option value="16">16</option><option value="18">18</option><option value="20">20</option><option value="22">22</option><option value="24">24</option><option value="32">32</option><option value="64">64</option><option value="128">128</option><option value="256">256</option></select></label>
-                  <p class="pixel-tool-note">Original keeps the source palette. Pick a number only when you want Palette Lab to reduce/merge colors.</p>
-                  <div class="pf-toggle-row">
-                    <label class="pf-toggle-button-control"><input id="paletteEnabled" type="checkbox" checked /><span data-on="Color Cleanup On" data-off="Color Cleanup Off">Color Cleanup On</span></label>
-                  </div>
-                </fieldset>
-
-                <fieldset class="pixel-tool-group">
-                  <legend>Resize</legend>
-                  <label><span>Resize Scale</span><select id="resizeScale"><option value="1">1x</option><option value="2" selected>2x</option><option value="3">3x</option><option value="4">4x</option><option value="8">8x</option></select></label>
-                  <label class="pf-toggle-button-control"><input id="resizeEnabled" type="checkbox" checked /><span data-on="Resize On" data-off="Resize Off">Resize On</span></label>
-                </fieldset>
-
-                <fieldset class="pixel-tool-group">
-                  <legend>Preview Options</legend>
-                  <div class="pf-toggle-row pf-toggle-row-three">
-                    <label class="pf-toggle-button-control"><input id="pixelSnapAlpha" type="checkbox" checked /><span data-on="Transparency On" data-off="Transparency Off">Transparency On</span></label>
-                    <label class="pf-toggle-button-control"><input id="pixelSnapShowGrid" type="checkbox" /><span data-on="Grid On" data-off="Grid Off">Grid Off</span></label>
-                    <label class="pf-toggle-button-control"><input id="pixelSnapLivePreview" type="checkbox" checked /><span data-on="Auto-update On" data-off="Auto-update Off">Auto-update On</span></label>
-                  </div>
-                </fieldset>
-              </div>
-
-              <div class="pixel-snap-actions palette-tool-help">
-                <button type="button" id="pixelSnapToolBtn" class="hidden" aria-hidden="true" tabindex="-1">Force Update</button>
-                <p id="pixelSnapHint" class="palette-panel-hint">Use Auto for most AI-generated tiles and sprites. Manual grid size is useful when you know the intended pixel block size.</p>
-              </div>
+            <div class="repair-tool-tabs" role="tablist" aria-label="Palette Lab repair tools">
+              <button type="button" class="repair-tool-tab active" data-repair-tab="snap">Pixel Snap</button>
+              <button type="button" class="repair-tool-tab" data-repair-tab="palette">Palette</button>
+              <button type="button" class="repair-tool-tab" data-repair-tab="resize">Resize</button>
+              <button type="button" class="repair-tool-tab" data-repair-tab="preview">Preview</button>
+              <button type="button" class="repair-tool-tab disabled" disabled>Repair Brush</button>
+              <button type="button" class="repair-tool-tab disabled" disabled>Chroma Key</button>
+              <button type="button" class="repair-tool-tab disabled" disabled>Edge Cleanup</button>
             </div>
 
-            <div class="palette-tool-grid compact-tools">
-              <button type="button" class="palette-tool-card" disabled><strong>Repair Brush</strong><span>Future hand cleanup.</span></button>
-              <button type="button" class="palette-tool-card" disabled><strong>Chroma Key</strong><span>Future solid-background removal.</span></button>
-              <button type="button" class="palette-tool-card" disabled><strong>Edge Cleanup</strong><span>Future transparent-edge polish.</span></button>
+            <div class="pixel-snap-layout repair-tool-active-panel">
+              <div class="pixel-snap-control-grid pixel-snap-tool-groups repair-tool-panel-grid">
+                <fieldset class="pixel-tool-group repair-tool-pane active" data-repair-pane="snap">
+                  <legend>Pixel Snap</legend>
+                  <div class="repair-tool-inline">
+                    <label><span>Grid Size</span><select id="pixelSnapGridSize"><option value="0" selected>Auto detect</option><option value="2">2 px</option><option value="4">4 px</option><option value="8">8 px</option><option value="16">16 px</option><option value="32">32 px</option><option value="64">64 px</option></select></label>
+                    <label><span>Strength</span><input id="pixelSnapStrength" type="range" min="0.25" max="1" step="0.05" value="1" /><em id="pixelSnapStrengthValue">100%</em></label>
+                    <label class="pf-toggle-button-control"><input id="pixelSnapEnabled" type="checkbox" checked /><span data-on="Pixel Snap On" data-off="Pixel Snap Off">Pixel Snap On</span></label>
+                  </div>
+                </fieldset>
+
+                <fieldset class="pixel-tool-group repair-tool-pane" data-repair-pane="palette">
+                  <legend>Palette</legend>
+                  <div class="repair-tool-inline">
+                    <label><span>Palette Target</span><select id="paletteColors"><option value="0" selected>Original colors</option><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="14">14</option><option value="16">16</option><option value="18">18</option><option value="20">20</option><option value="22">22</option><option value="24">24</option><option value="32">32</option><option value="64">64</option><option value="128">128</option><option value="256">256</option></select></label>
+                    <label class="pf-toggle-button-control"><input id="paletteEnabled" type="checkbox" checked /><span data-on="Color Cleanup On" data-off="Color Cleanup Off">Color Cleanup On</span></label>
+                  </div>
+                  <p class="pixel-tool-note">Original keeps the source palette. Pick a number only when you want Palette Lab to reduce or merge colors.</p>
+                </fieldset>
+
+                <fieldset class="pixel-tool-group repair-tool-pane" data-repair-pane="resize">
+                  <legend>Resize</legend>
+                  <div class="repair-tool-inline">
+                    <label><span>Resize Scale</span><select id="resizeScale"><option value="1">1x</option><option value="2" selected>2x</option><option value="3">3x</option><option value="4">4x</option><option value="8">8x</option></select></label>
+                    <label class="pf-toggle-button-control"><input id="resizeEnabled" type="checkbox" checked /><span data-on="Resize On" data-off="Resize Off">Resize On</span></label>
+                  </div>
+                </fieldset>
+
+                <fieldset class="pixel-tool-group repair-tool-pane" data-repair-pane="preview">
+                  <legend>Preview</legend>
+                  <div class="repair-tool-inline repair-preview-inline">
+                    <label class="pf-toggle-button-control"><input id="pixelSnapLivePreview" type="checkbox" checked /><span data-on="Auto-update On" data-off="Auto-update Off">Auto-update On</span></label>
+                    <p id="pixelSnapHint" class="palette-panel-hint">Auto works for most generated tiles and sprites. Manual grid size helps when you know the intended pixel block size.</p>
+                  </div>
+                </fieldset>
+              </div>
+
+              <div class="pixel-snap-actions palette-tool-help hidden" aria-hidden="true">
+                <button type="button" id="pixelSnapToolBtn" class="hidden" aria-hidden="true" tabindex="-1">Force Update</button>
+              </div>
             </div>
           </section>
 
@@ -358,11 +364,13 @@
                 <button id="mainCanvasFitBtn" type="button" class="pf-view-toggle">Fit</button>
                 <button id="mainCanvasActualBtn" type="button" class="pf-view-toggle">1:1</button>
                 <button id="mainCanvasGridToggle" type="button" class="pf-state-toggle is-off">Grid Off</button>
-                <button id="mainCanvasDifferenceBtn" type="button">Difference</button>
+                <label class="pf-toggle-button-control canvas-toggle-control"><input id="pixelSnapAlpha" type="checkbox" checked /><span data-on="Transparency On" data-off="Transparency Off">Transparency On</span></label>
+                <button id="mainCanvasDifferenceBtn" type="button" class="pf-state-toggle is-off">Difference Off</button>
                 <button id="openCompareViewerBtn" type="button">Inspect</button>
-                <button type="button" id="applyPalettePreviewBtn" disabled>Apply Preview</button>
-                <button id="processBtn" type="button" class="pf-primary-action">Update Preview</button>
-                <button id="downloadBtn" type="button" disabled>Download PNG</button>
+                <button id="processBtn" type="button" class="pf-primary-action">Update</button>
+                <button type="button" id="applyPalettePreviewBtn" disabled class="hidden" aria-hidden="true" tabindex="-1">Apply Preview</button>
+                <button id="downloadBtn" type="button" disabled class="hidden" aria-hidden="true" tabindex="-1">Download PNG</button>
+                <input id="pixelSnapShowGrid" type="checkbox" class="hidden" />
               </div>
             </div>
             <div class="palette-compare-shell">
@@ -600,6 +608,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0019_5_toolbox_canvas_finish"></script>
+  <script src="/static/app.js?v=pf0019_6_palette_lab_v2_refactor"></script>
 </body>
 </html>
