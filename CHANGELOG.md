@@ -1,3 +1,12 @@
+## PF-0019.2 - Palette Lab canvas polish
+
+- Moved loaded asset metadata into the Palette Lab sidebar so the main workspace gives more room to the canvas.
+- Removed the redundant New Tile action from the Palette Lab canvas header.
+- Inspect now opens the current image even when no processed preview exists.
+- Difference now has a clear On/Off toggle state in both canvas and fullscreen inspection.
+- Improved 1:1 canvas behavior so actual-pixel view recenters instead of snapping awkwardly.
+- Tightened grid refresh after Fit / 1:1 / Difference changes.
+
 ## PF-0019.1 - Palette Lab canvas controls cleanup
 
 - Moved Palette Lab diagnostics into the main Canvas header as compact chips.

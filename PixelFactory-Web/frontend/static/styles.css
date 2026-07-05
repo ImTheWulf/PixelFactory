@@ -4015,3 +4015,117 @@ select option:hover {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* PF-0019.2 Palette Lab canvas polish */
+.palette-side-status .workspace-status {
+  display: grid;
+  gap: 4px;
+  line-height: 1.25;
+}
+.palette-side-status .workspace-status strong {
+  display: block;
+  color: var(--text);
+  font-size: 12px;
+  word-break: break-word;
+}
+.palette-side-status .workspace-status span,
+.palette-side-status .workspace-status small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.workspace-side-meta {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+.workspace-side-meta div {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border: 1px solid rgba(59, 130, 246, .20);
+  border-radius: 10px;
+  background: rgba(2, 6, 12, .45);
+}
+.workspace-side-meta span {
+  color: var(--muted);
+  font-size: 10px;
+}
+.workspace-side-meta strong {
+  color: var(--text);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.palette-active-card {
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 280px) !important;
+  padding: 10px 14px !important;
+  min-height: unset !important;
+}
+.palette-active-card .palette-active-main,
+.palette-active-card .palette-workflow-inline {
+  display: none !important;
+}
+.palette-active-card .palette-active-side {
+  grid-column: 2;
+  justify-self: end;
+  width: 100%;
+}
+.palette-active-card .palette-active-actions:first-of-type,
+.palette-active-card .palette-active-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+.palette-active-card .palette-dirty-state {
+  justify-self: end;
+  width: fit-content;
+}
+.palette-editor-canvas {
+  min-height: calc(100vh - 210px) !important;
+}
+.palette-main-canvas-stage.actual {
+  overflow: auto;
+  cursor: grab;
+}
+.palette-main-canvas-stage.actual > img,
+.palette-main-canvas-stage.actual .palette-compare-processed > img,
+.palette-main-canvas-stage.actual .palette-main-difference {
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: none !important;
+  left: 50% !important;
+  top: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translate(-50%, -50%) !important;
+}
+.palette-main-canvas-stage.actual .palette-compare-processed {
+  overflow: hidden;
+}
+.palette-main-canvas-stage.actual .palette-compare-divider {
+  z-index: 8;
+}
+.palette-canvas-actions #mainCanvasDifferenceBtn.is-on,
+.palette-compare-toolbar #compareDifferenceBtn.is-on {
+  border-color: rgba(59, 130, 246, .72) !important;
+  background: rgba(37, 99, 235, .28) !important;
+  color: #dbeafe !important;
+}
+.palette-compare-card.difference-mode .canvas-diagnostics-strip::after {
+  content: "Difference highlights changed pixels";
+  color: var(--muted);
+  border: 1px solid rgba(59, 130, 246, .22);
+  background: rgba(37, 99, 235, .10);
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 11px;
+}
+@media (max-width: 1100px) {
+  .palette-active-card { grid-template-columns: 1fr !important; }
+  .palette-active-card .palette-active-side { grid-column: 1; justify-self: stretch; }
+}

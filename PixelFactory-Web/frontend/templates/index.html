@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0018_10_native_pixel_snap_detection" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0019_2_palette_canvas_polish" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.16 · PF-0019.1</div>
+          <div class="subtitle">by Wulf · Web v0.16 · PF-0019.2</div>
         </div>
       </div>
 
@@ -34,7 +34,13 @@
           <label>Current Asset</label>
           <div id="workspaceStatus" class="workspace-status">No asset loaded</div>
         </div>
-        <p class="panel-hint">Use the canvas header and Pixel Snap panel to load, preview, save, or download.</p>
+        <div id="workspaceSideMeta" class="workspace-side-meta">
+          <div><span>Type</span><strong>—</strong></div>
+          <div><span>Status</span><strong>Empty</strong></div>
+          <div><span>Recipe</span><strong>—</strong></div>
+          <div><span>Resolution</span><strong>—</strong></div>
+        </div>
+        <p class="panel-hint">Palette Lab is a single-canvas cleanup workspace. Repair settings live in the toolbox; fullscreen is inspection only.</p>
       </section>
 
       <section id="characterControls" class="panel view-controls hidden">
@@ -238,7 +244,6 @@
               <div class="palette-active-actions">
                 <button type="button" data-start-view="assets">Browse Assets</button>
                 <label class="pf-button-like" for="imageInput">Load Image<input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp" /></label>
-                <button type="button" data-start-view="tile" class="pf-primary-action">New Tile</button>
               </div>
               <div class="palette-active-actions palette-output-actions">
                 <button type="button" id="discardPalettePreviewBtn" disabled>Discard</button>
@@ -315,7 +320,7 @@
                 <button id="mainCanvasFitBtn" type="button">Fit</button>
                 <button id="mainCanvasActualBtn" type="button">1:1</button>
                 <button id="mainCanvasGridToggle" type="button" class="pf-state-toggle is-off">Grid Off</button>
-                <button id="mainCanvasDifferenceBtn" type="button">Difference</button>
+                <button id="mainCanvasDifferenceBtn" type="button" class="pf-state-toggle is-off">Difference Off</button>
                 <button id="openCompareViewerBtn" type="button">Inspect</button>
                 <button type="button" id="applyPalettePreviewBtn" disabled>Apply Preview</button>
                 <button id="processBtn" type="button" class="pf-primary-action">Update Preview</button>
@@ -548,7 +553,7 @@
           <button id="compareZoomOutBtn" type="button">−</button>
           <button id="compareFitBtn" type="button">Fit</button>
           <button id="compareActualBtn" type="button">1:1</button>
-          <button id="compareDifferenceBtn" type="button">Difference</button>
+          <button id="compareDifferenceBtn" type="button" class="pf-state-toggle is-off">Difference Off</button>
           <button id="compareGridToggle" type="button" class="pf-state-toggle is-off">Grid Off</button>
           <button id="compareZoomInBtn" type="button">+</button>
           <button id="compareDownloadBtn" type="button">Download</button>

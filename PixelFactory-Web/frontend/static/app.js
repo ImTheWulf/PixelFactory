@@ -116,6 +116,7 @@ const downloadBtn = document.getElementById("downloadBtn");
 const previewMode = document.getElementById("previewMode");
 const previewModeInline = document.getElementById("previewModeInline");
 const workspaceStatus = document.getElementById("workspaceStatus");
+const workspaceSideMeta = document.getElementById("workspaceSideMeta");
 const changePaletteAssetBtn = document.getElementById("changePaletteAssetBtn");
 const paletteLoadedState = document.getElementById("paletteLoadedState");
 const paletteWorkspaceMeta = document.getElementById("paletteWorkspaceMeta");
@@ -491,14 +492,15 @@ function setPaletteDirty(isDirty, label = null) {
 
 function updatePaletteMeta(meta = {}) {
   paletteCurrentMeta = { ...paletteCurrentMeta, ...meta };
-  if (!paletteWorkspaceMeta) return;
   const rows = [
     ["Type", paletteCurrentMeta.type || "—"],
     ["Status", paletteCurrentMeta.status || "—"],
     ["Recipe", paletteCurrentMeta.recipe || "—"],
     ["Resolution", paletteCurrentMeta.resolution || "—"],
   ];
-  paletteWorkspaceMeta.innerHTML = rows.map(([label, value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("");
+  const html = rows.map(([label, value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("");
+  if (paletteWorkspaceMeta) paletteWorkspaceMeta.innerHTML = html;
+  if (workspaceSideMeta) workspaceSideMeta.innerHTML = html;
 }
 
 function addPaletteHistory(label, detail = "") {
@@ -585,15 +587,23 @@ function toggleCompareGrid() {
 
 function setCompareViewMode(mode = "compare") {
   paletteCompareViewMode = mode === "difference" ? "difference" : "compare";
-  compareModalCanvas?.classList.toggle("difference-mode", paletteCompareViewMode === "difference");
-  compareDifferenceBtn?.classList.toggle("active", paletteCompareViewMode === "difference");
-  if (compareModalSlider) compareModalSlider.disabled = paletteCompareViewMode === "difference";
+  const isDifference = paletteCompareViewMode === "difference";
+  compareModalCanvas?.classList.toggle("difference-mode", isDifference);
+  if (compareDifferenceBtn) {
+    compareDifferenceBtn.classList.toggle("active", isDifference);
+    compareDifferenceBtn.classList.toggle("is-on", isDifference);
+    compareDifferenceBtn.classList.toggle("is-off", !isDifference);
+    compareDifferenceBtn.textContent = isDifference ? "Difference On" : "Difference Off";
+    compareDifferenceBtn.title = "Difference mode highlights pixels changed by the current preview.";
+  }
+  if (compareModalSlider) compareModalSlider.disabled = isDifference;
   if (paletteCompareMeta) {
     const base = paletteCompareMeta.textContent.split(" · View")[0];
-    paletteCompareMeta.textContent = `${base} · View ${paletteCompareViewMode === "difference" ? "Difference" : "Before/After"}`;
+    paletteCompareMeta.textContent = `${base} · View ${isDifference ? "Difference" : "Before/After"}`;
   }
-  if (paletteCompareViewMode === "difference") buildCompareDifferenceCanvas();
+  if (isDifference) buildCompareDifferenceCanvas();
   updateCompareModalSlider();
+  requestAnimationFrame(updatePixelSnapGridOverlays);
 }
 
 function buildCompareDifferenceCanvas() {
@@ -676,19 +686,35 @@ function buildMainDifferenceCanvas() {
 
 function setMainCanvasViewMode(mode = "compare") {
   paletteMainViewMode = mode === "difference" ? "difference" : "compare";
-  paletteComparePanel?.classList.toggle("difference-mode", paletteMainViewMode === "difference");
-  mainCanvasDifferenceBtn?.classList.toggle("active", paletteMainViewMode === "difference");
-  if (compareSlider) compareSlider.disabled = paletteMainViewMode === "difference";
-  if (paletteMainViewMode === "difference") buildMainDifferenceCanvas();
+  const isDifference = paletteMainViewMode === "difference";
+  paletteComparePanel?.classList.toggle("difference-mode", isDifference);
+  if (mainCanvasDifferenceBtn) {
+    mainCanvasDifferenceBtn.classList.toggle("active", isDifference);
+    mainCanvasDifferenceBtn.classList.toggle("is-on", isDifference);
+    mainCanvasDifferenceBtn.classList.toggle("is-off", !isDifference);
+    mainCanvasDifferenceBtn.textContent = isDifference ? "Difference On" : "Difference Off";
+    mainCanvasDifferenceBtn.title = "Difference mode highlights pixels changed by the current preview.";
+  }
+  if (compareSlider) compareSlider.disabled = isDifference;
+  if (isDifference) buildMainDifferenceCanvas();
   updateCompareSlider();
+  requestAnimationFrame(updatePixelSnapGridOverlays);
 }
 
 function setMainCanvasPreviewMode(mode = "fit") {
   paletteMainCanvasMode = mode === "actual" ? "actual" : "fit";
-  mainPaletteCanvasStage?.classList.toggle("actual", paletteMainCanvasMode === "actual");
-  mainCanvasFitBtn?.classList.toggle("active", paletteMainCanvasMode === "fit");
-  mainCanvasActualBtn?.classList.toggle("active", paletteMainCanvasMode === "actual");
-  requestAnimationFrame(updatePixelSnapGridOverlays);
+  const isActual = paletteMainCanvasMode === "actual";
+  mainPaletteCanvasStage?.classList.toggle("actual", isActual);
+  mainCanvasFitBtn?.classList.toggle("active", !isActual);
+  mainCanvasActualBtn?.classList.toggle("active", isActual);
+  requestAnimationFrame(() => {
+    if (mainPaletteCanvasStage && isActual) {
+      mainPaletteCanvasStage.scrollLeft = Math.max(0, (mainPaletteCanvasStage.scrollWidth - mainPaletteCanvasStage.clientWidth) / 2);
+      mainPaletteCanvasStage.scrollTop = Math.max(0, (mainPaletteCanvasStage.scrollHeight - mainPaletteCanvasStage.clientHeight) / 2);
+    }
+    updateCompareSlider();
+    updatePixelSnapGridOverlays();
+  });
 }
 
 function readComparePixel(img, x, y) {
@@ -856,10 +882,16 @@ function updateCompareModalImages() {
 }
 
 function openPaletteCompareViewer() {
-  if (!paletteCompareModal || !processedBlobUrl) {
-    setStatus("Process a preview before opening the compare viewer.");
+  const originalSrc = originalPreview?.getAttribute("src");
+  if (!originalSrc) {
+    setStatus("Load an asset before inspecting.");
     return;
   }
+  if (!processedBlobUrl) {
+    openImageViewer(originalSrc, selectedFile?.name || paletteSourceAsset?.name || "Current Palette Lab canvas");
+    return;
+  }
+  if (!paletteCompareModal) return;
   syncCompareControlsFromPalette();
   paletteCompareModal.classList.remove("hidden");
   paletteCompareModal.setAttribute("aria-hidden", "false");
@@ -1007,9 +1039,10 @@ function clearPaletteProcessedPreview({ addHistory = false, keepDirty = false, k
 }
 
 function updatePaletteLoadedState({ filename = "Untitled image", source = "workspace", detail = "Ready for cleanup", meta = null } = {}) {
-  if (!paletteLoadedState) return;
   const sourceLabel = source === "upload" ? "Local upload" : source === "workspace" || source === "asset" ? "Current asset" : source === "applied" ? "Unsaved canvas" : source;
-  paletteLoadedState.innerHTML = `<strong>${escapeHtml(filename)}</strong><span>${escapeHtml(sourceLabel)} · ${escapeHtml(detail)}</span>`;
+  const loadedHtml = `<strong>${escapeHtml(filename)}</strong><span>${escapeHtml(sourceLabel)} · ${escapeHtml(detail)}</span>`;
+  if (paletteLoadedState) paletteLoadedState.innerHTML = loadedHtml;
+  if (workspaceStatus) workspaceStatus.innerHTML = `<strong>${escapeHtml(filename)}</strong><span>${escapeHtml(sourceLabel)}</span><small>${escapeHtml(detail)}</small>`;
   if (meta) updatePaletteMeta(meta);
 }
 
@@ -1263,15 +1296,13 @@ async function refreshWorkspace({ quiet = true } = {}) {
     const response = await fetch("/api/workspace");
     const data = await response.json();
     workspace = data.workspace || { has_image: false };
-    if (workspaceStatus) {
-      workspaceStatus.textContent = selectedFile
-        ? `${selectedFile.name || workspace.asset_name || "Loaded asset"}`
-        : "No asset loaded";
+    if (workspaceStatus && !selectedFile) {
+      workspaceStatus.textContent = "No asset loaded";
     }
     if (!quiet && workspace.has_image) setStatus("Current asset is available.");
     return workspace;
   } catch (err) {
-    if (workspaceStatus) workspaceStatus.textContent = selectedFile ? selectedFile.name : "No asset loaded";
+    if (workspaceStatus && !selectedFile) workspaceStatus.textContent = "No asset loaded";
     if (!quiet) setStatus(`Workspace error: ${err.message}`);
     return { has_image: false };
   }
@@ -3032,7 +3063,7 @@ document.addEventListener("click", (event) => {
   await checkComfy({ quiet: true });
 })();
 
-// PF-0019.1: Palette Lab control clicks must never yank the page scroll position.
+// PF-0019.2: Palette Lab control clicks must never yank the page scroll position.
 (function stabilizePaletteLabControlScroll() {
   const paletteView = document.getElementById("paletteView");
   if (!paletteView) return;
