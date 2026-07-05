@@ -1,0 +1,9 @@
+PF-0028 fix smart downscale toggle state/reporting
+
+- Added backend requested/applied/grid headers for Smart Downscale
+- Updated diagnostics to show Smart Downscale On when requested
+- Updated Pixel Report pipeline chip to distinguish requested vs applied
+- Fixed alpha preservation after Smart Downscale changes image dimensions
+- Fixed blend safety when Smart Downscale changes image dimensions before snap strength blending
+- Updated version/cache markers to PF-0028
+- No Asset Browser changes

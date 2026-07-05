@@ -41,7 +41,7 @@ asset_service = AssetService(PROJECT_ROOT)
 workspace_service = WorkspaceService(PROJECT_ROOT)
 export_service = ExportService(PROJECT_ROOT, asset_service)
 
-app = FastAPI(title="Pixel Factory by Wulf", version="0.19-pf0027-smart-downscale")
+app = FastAPI(title="Pixel Factory by Wulf", version="0.20-pf0028-smart-downscale-reporting")
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
 
@@ -171,6 +171,17 @@ def _changed_pixel_stats(before: Image.Image, after: Image.Image) -> tuple[int, 
         if bp != ap:
             changed += 1
     return changed, round((changed / total) * 100.0, 2)
+
+
+def _match_alpha_size(alpha: Image.Image, size: tuple[int, int]) -> Image.Image:
+    """Resize an alpha channel to match the current processing image safely."""
+    return alpha if alpha.size == size else alpha.resize(size, Image.Resampling.NEAREST)
+
+def _blend_with_matching_size(base: Image.Image, overlay: Image.Image, amount: float) -> Image.Image:
+    """Blend while resizing the base image when earlier stages changed dimensions."""
+    if base.size != overlay.size:
+        base = base.resize(overlay.size, Image.Resampling.NEAREST)
+    return Image.blend(base.convert("RGBA"), overlay.convert("RGBA"), amount)
 
 def _quantize_rgba(img: Image.Image, colors: int) -> Image.Image:
     colors = int(colors or 0)
@@ -461,27 +472,32 @@ async def process_image(
         changed, _percent = _changed_pixel_stats(before_step, after_step)
         step_stats[name] = changed
 
-    if smart_downscale and detected_grid > 1:
+    smart_downscale_requested = bool(smart_downscale)
+    smart_downscale_applied = False
+    smart_downscale_grid = detected_grid if detected_grid > 1 else 1
+
+    if smart_downscale_requested and smart_downscale_grid > 1:
         before_step = img.copy()
         img = _smart_downscale_rgba(
             img,
-            pixel_size=detected_grid,
+            pixel_size=smart_downscale_grid,
             palette_colors=palette_colors,
             quantize=bool(snap_palette) and palette_colors > 0,
         )
+        smart_downscale_applied = img.size != before_step.size
         record_step("smart_downscale", before_step, img)
 
     if operation == "pixel_snap":
         before_step = img.copy()
         img = _pixel_snap_rgba(img, pixel_size=pixel_size, palette_colors=palette_colors, quantize=bool(snap_palette) and palette_colors > 0)
         if pixel_strength < 0.999:
-            img = Image.blend(original, img, pixel_strength)
+            img = _blend_with_matching_size(original, img, pixel_strength)
         record_step("pixel_snap", before_step, img)
     elif operation == "pixel_snap_only":
         before_step = img.copy()
         img = _pixel_snap_rgba(img, pixel_size=pixel_size, palette_colors=palette_colors, quantize=False)
         if pixel_strength < 0.999:
-            img = Image.blend(original, img, pixel_strength)
+            img = _blend_with_matching_size(original, img, pixel_strength)
         record_step("pixel_snap", before_step, img)
     elif operation in {"palette", "resize_palette"}:
         before_step = img.copy()
@@ -505,7 +521,7 @@ async def process_image(
 
     if preserve_alpha and img.mode == "RGBA":
         before_step = img.copy()
-        img.putalpha(original.getchannel("A"))
+        img.putalpha(_match_alpha_size(original.getchannel("A"), img.size))
         record_step("alpha_preserve", before_step, img)
 
     if operation in {"resize", "resize_palette", "pixel_snap"} and resize_scale > 1:
@@ -536,7 +552,10 @@ async def process_image(
         "X-PF-Edge-Cleanup": "true" if edge_cleanup else "false",
         "X-PF-Edge-Strength": str(max(0, min(100, int(round(float(edge_strength or 0) * 100))))),
         "X-PF-Processing-MS": str(max(0, int(round((perf_counter() - started_at) * 1000)))),
-        "X-PF-Smart-Downscale": "true" if smart_downscale else "false",
+        "X-PF-Smart-Downscale": "true" if smart_downscale_applied else "false",
+        "X-PF-Smart-Downscale-Requested": "true" if smart_downscale_requested else "false",
+        "X-PF-Smart-Downscale-Applied": "true" if smart_downscale_applied else "false",
+        "X-PF-Smart-Downscale-Grid": str(smart_downscale_grid),
         "X-PF-Step-Smart-Downscale": str(step_stats.get("smart_downscale", 0)),
         "X-PF-Step-Pixel-Snap": str(step_stats.get("pixel_snap", 0)),
         "X-PF-Step-Palette-Quantize": str(step_stats.get("palette_quantize", 0)),

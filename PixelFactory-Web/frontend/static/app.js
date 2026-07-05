@@ -551,6 +551,21 @@ function renderPaletteHistory() {
     .join("");
 }
 
+
+function boolFlag(value) {
+  return String(value ?? "").toLowerCase() === "true";
+}
+
+function smartDownscaleState(result = pixelSnapLastResult || {}) {
+  const requested = boolFlag(result.smartDownscaleRequested) || (result.smartDownscaleRequested == null && smartDownscaleEnabled?.checked === true);
+  const applied = boolFlag(result.smartDownscale) || boolFlag(result.smartDownscaleApplied);
+  const grid = result.smartDownscaleGrid || result.grid || "—";
+  let detail = "off";
+  if (requested && applied) detail = `on · source ÷ ${grid} grid`;
+  else if (requested) detail = "on · no downscale applied";
+  return { requested, applied, grid, detail };
+}
+
 function renderCleanupDiagnostics() {
   if (!cleanupDiagnosticsList) return;
   const result = pixelSnapLastResult || {};
@@ -568,7 +583,7 @@ function renderCleanupDiagnostics() {
   const enabledText = (on) => on ? "enabled" : "off";
   const resizePixels = num(result.stepResizePixels);
   const rows = [
-    ["Smart Downscale", fmt(result.stepSmartDownscale), result.smartDownscale === "true" ? `source ÷ ${result.grid || "—"} grid` : "off"],
+    ["Smart Downscale", fmt(result.stepSmartDownscale), smartDownscaleState(result).detail],
     ["Pixel Snap", fmt(result.stepPixelSnap), `grid ${result.grid || "—"} · ${result.confidence || "—"}% confidence`],
     ["Palette Quantize", fmt(result.stepPaletteQuantize), result.paletteTarget && Number(result.paletteTarget) > 0 ? `${result.paletteTarget} target colors` : "original color count"],
     ["Palette Normalize", fmt(result.stepPaletteNormalize), `${enabledText(result.paletteNormalize === "true")} · tolerance ${result.normalizeTolerance || "—"}`],
@@ -615,7 +630,7 @@ function renderPixelReport() {
   const outputSize = outputWidth && outputHeight ? `${outputWidth} × ${outputHeight}` : "—";
   const spriteSize = spriteWidth && spriteHeight ? `${spriteWidth} × ${spriteHeight}` : "—";
   const pipeline = [
-    ["Smart Downscale", result.smartDownscale === "true", `${fmt(result.stepSmartDownscale)} px`],
+    ["Smart Downscale", smartDownscaleState(result).requested, smartDownscaleState(result).applied ? `${fmt(result.stepSmartDownscale)} px` : smartDownscaleState(result).detail],
     ["Pixel Snap", pixelSnapEnabled?.checked !== false, `${fmt(result.stepPixelSnap)} px`],
     ["Palette Quantize", isColorCleanupActive(), result.paletteTarget && Number(result.paletteTarget) > 0 ? `${result.paletteTarget} colors` : "original"],
     ["Palette Normalize", result.paletteNormalize === "true", `${fmt(result.stepPaletteNormalize)} px`],
@@ -1874,7 +1889,8 @@ async function processPalettePreview({ quiet = false } = {}) {
   form.append("normalize_tolerance", paletteNormalizeTolerance?.value || "8");
   form.append("edge_cleanup", edgeCleanupEnabled?.checked === true ? "true" : "false");
   form.append("edge_strength", edgeCleanupStrength?.value || "0.30");
-  form.append("smart_downscale", smartDownscaleEnabled?.checked === true ? "true" : "false");
+  const smartDownscaleRequested = smartDownscaleEnabled?.checked === true;
+  form.append("smart_downscale", smartDownscaleRequested ? "true" : "false");
   form.append("operation", document.getElementById("operation").value);
 
   try {
@@ -1903,6 +1919,9 @@ async function processPalettePreview({ quiet = false } = {}) {
       edgeStrength: response.headers.get("X-PF-Edge-Strength"),
       processingMs: response.headers.get("X-PF-Processing-MS"),
       smartDownscale: response.headers.get("X-PF-Smart-Downscale"),
+      smartDownscaleRequested: response.headers.get("X-PF-Smart-Downscale-Requested") || (smartDownscaleRequested ? "true" : "false"),
+      smartDownscaleApplied: response.headers.get("X-PF-Smart-Downscale-Applied") || response.headers.get("X-PF-Smart-Downscale"),
+      smartDownscaleGrid: response.headers.get("X-PF-Smart-Downscale-Grid"),
       stepSmartDownscale: response.headers.get("X-PF-Step-Smart-Downscale"),
       stepPixelSnap: response.headers.get("X-PF-Step-Pixel-Snap"),
       stepPaletteQuantize: response.headers.get("X-PF-Step-Palette-Quantize"),

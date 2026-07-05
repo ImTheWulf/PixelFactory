@@ -1,4 +1,17 @@
 
+PF-0028
+--------
+Added:
+- Smart Downscale requested/applied state reporting.
+
+Fixed:
+- Smart Downscale diagnostics now match the toggle state.
+- Added backend headers for requested/applied/grid status.
+
+Changed:
+- Version/cache markers updated to PF-0028.
+
+
 ## PF-0027 - Smart Downscale v1
 
 Added:
