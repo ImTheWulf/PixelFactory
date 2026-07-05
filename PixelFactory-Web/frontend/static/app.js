@@ -122,6 +122,7 @@ const paletteWorkspaceMeta = document.getElementById("paletteWorkspaceMeta");
 const paletteDirtyState = document.getElementById("paletteDirtyState");
 const paletteHistory = document.getElementById("paletteHistory");
 const paletteComparePanel = document.getElementById("paletteComparePanel");
+const paletteStatusFooter = document.getElementById("paletteStatusFooter");
 const compareSlider = document.getElementById("compareSlider");
 const compareOriginalPreview = document.getElementById("compareOriginalPreview");
 const compareProcessedPreview = document.getElementById("compareProcessedPreview");
@@ -489,6 +490,10 @@ function setPaletteDirty(isDirty, label = null) {
   paletteDirtyState.textContent = label || (paletteDirty ? "● Modified Preview" : "● Clean");
 }
 
+function setPaletteFooterStatus(message = "Palette Lab ready.") {
+  if (paletteStatusFooter) paletteStatusFooter.textContent = message;
+}
+
 function updatePaletteMeta(meta = {}) {
   paletteCurrentMeta = { ...paletteCurrentMeta, ...meta };
   if (!paletteWorkspaceMeta) return;
@@ -688,6 +693,18 @@ function setMainCanvasViewMode(mode = "compare") {
   requestAnimationFrame(updatePixelSnapGridOverlays);
 }
 
+function applyMainCanvasActualSize() {
+  if (!mainPaletteCanvasStage) return;
+  const ow = compareOriginalPreview?.naturalWidth || originalPreview?.naturalWidth || 0;
+  const oh = compareOriginalPreview?.naturalHeight || originalPreview?.naturalHeight || 0;
+  const pw = compareProcessedPreview?.naturalWidth || processedPreview?.naturalWidth || ow;
+  const ph = compareProcessedPreview?.naturalHeight || processedPreview?.naturalHeight || oh;
+  const targetW = Math.max(1, ow, pw);
+  const targetH = Math.max(1, oh, ph);
+  mainPaletteCanvasStage.style.setProperty("--main-canvas-actual-width", `${targetW}px`);
+  mainPaletteCanvasStage.style.setProperty("--main-canvas-actual-height", `${targetH}px`);
+}
+
 function centerMainCanvasStage() {
   if (!mainPaletteCanvasStage) return;
   requestAnimationFrame(() => {
@@ -699,6 +716,7 @@ function centerMainCanvasStage() {
 
 function setMainCanvasPreviewMode(mode = "fit") {
   paletteMainCanvasMode = mode === "actual" ? "actual" : "fit";
+  applyMainCanvasActualSize();
   mainPaletteCanvasStage?.classList.toggle("actual", paletteMainCanvasMode === "actual");
   mainCanvasFitBtn?.classList.toggle("active", paletteMainCanvasMode === "fit");
   mainCanvasActualBtn?.classList.toggle("active", paletteMainCanvasMode === "actual");
@@ -989,8 +1007,15 @@ function showPaletteCompare({ resetSlider = false } = {}) {
   if (!originalSrc) return;
   const hasProcessed = Boolean(processedBlobUrl);
   if (compareSlider && resetSlider) compareSlider.value = hasProcessed ? "50" : "0";
-  if (compareOriginalPreview) compareOriginalPreview.src = originalSrc;
-  if (compareProcessedPreview) compareProcessedPreview.src = hasProcessed ? processedBlobUrl : originalSrc;
+  if (compareOriginalPreview) {
+    compareOriginalPreview.onload = () => { applyMainCanvasActualSize(); requestAnimationFrame(updatePixelSnapGridOverlays); };
+    compareOriginalPreview.src = originalSrc;
+  }
+  if (compareProcessedPreview) {
+    compareProcessedPreview.onload = () => { applyMainCanvasActualSize(); requestAnimationFrame(updatePixelSnapGridOverlays); };
+    compareProcessedPreview.src = hasProcessed ? processedBlobUrl : originalSrc;
+  }
+  applyMainCanvasActualSize();
   paletteComparePanel.classList.remove("hidden");
   updateCompareSlider();
   buildMainDifferenceCanvas();
@@ -1027,6 +1052,7 @@ function updatePaletteLoadedState({ filename = "Untitled image", source = "works
   if (paletteLoadedState) {
     paletteLoadedState.innerHTML = `<strong>${escapeHtml(filename)}</strong><span>${escapeHtml(sourceLabel)} · ${escapeHtml(detail)}</span>`;
   }
+  setPaletteFooterStatus(`${sourceLabel}: ${filename || "No asset loaded"} · ${detail}`);
   if (workspaceStatus) workspaceStatus.textContent = filename || "No asset loaded";
   if (meta) updatePaletteMeta(meta);
 }

@@ -1,3 +1,11 @@
+## PF-0019.4 - Palette Lab layout + canvas stability
+- Compressed the Palette Lab page header so the canvas starts higher and gets more workspace.
+- Added a persistent bottom Palette Lab status footer for preview/load/save messages.
+- Kept asset identity and save/load controls in the left Palette Lab sidebar.
+- Tightened collapsed Pipeline/History spacing so they stop wasting vertical room.
+- Improved main canvas 1:1 sizing by aligning source/processed views against a shared actual-size canvas.
+- Updated cache/version labels to PF-0019.4.
+
 ## PF-0019.1 - Palette Lab canvas controls cleanup
 
 - Moved Palette Lab diagnostics into the main Canvas header as compact chips.

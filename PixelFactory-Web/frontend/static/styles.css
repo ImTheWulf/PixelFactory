@@ -4112,3 +4112,119 @@ select option:hover {
   background: rgba(20, 83, 45, .28) !important;
   color: #bbf7d0 !important;
 }
+
+/* PF-0019.4 Palette Lab layout + canvas stability */
+#paletteView > .pf-page-hero {
+  display: none !important;
+}
+#paletteView {
+  padding-top: 12px !important;
+  padding-bottom: 36px !important;
+}
+.palette-workspace-layout {
+  gap: 12px !important;
+}
+.palette-editor-canvas {
+  min-height: calc(100vh - 132px) !important;
+  padding: 14px !important;
+}
+.palette-main-canvas-stage {
+  height: calc(100vh - 270px) !important;
+  min-height: 560px !important;
+}
+.palette-canvas-toolbar {
+  gap: 10px !important;
+  align-items: start !important;
+}
+.canvas-diagnostics-strip {
+  gap: 5px !important;
+}
+.canvas-diagnostics-strip span {
+  font-size: 10px !important;
+  padding: 3px 7px !important;
+}
+.palette-workspace-layout > .palette-workflow-strip {
+  order: 4 !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  gap: 10px !important;
+}
+.palette-workflow-compact .palette-workflow-details:not([open]) {
+  min-height: 36px !important;
+  max-height: 36px !important;
+}
+.palette-workflow-details summary {
+  min-height: 34px !important;
+  padding-block: 8px !important;
+}
+.palette-status-footer {
+  position: fixed;
+  left: var(--sidebar-width, 300px);
+  right: 0;
+  bottom: 0;
+  z-index: 35;
+  min-height: 26px;
+  padding: 5px 14px;
+  border-top: 1px solid rgba(42, 56, 77, .92);
+  background: rgba(9, 14, 23, .96);
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.palette-side-status #paletteLoadedState {
+  display: none !important;
+}
+.palette-side-status .palette-dirty-state {
+  justify-content: center;
+  margin-top: 10px;
+}
+.palette-side-actions {
+  display: grid;
+  gap: 8px;
+}
+.palette-side-actions button,
+.palette-side-actions .pf-button-like {
+  min-height: 34px !important;
+  font-size: 12px !important;
+}
+.palette-tool-dock {
+  order: 3 !important;
+}
+.palette-tool-dock .section-title-row {
+  margin-bottom: 8px !important;
+}
+.pixel-snap-layout {
+  grid-template-columns: 1fr !important;
+}
+.pixel-snap-actions.palette-tool-help {
+  display: none !important;
+}
+.pixel-snap-tool-groups {
+  grid-template-columns: repeat(3, minmax(220px, 1fr)) !important;
+}
+.pixel-snap-tool-groups .pixel-tool-group:nth-child(4) {
+  grid-column: 1 / -1;
+  min-height: auto !important;
+}
+.palette-main-canvas-stage.actual > img,
+.palette-main-canvas-stage.actual .palette-compare-processed > img,
+.palette-main-canvas-stage.actual .palette-main-difference {
+  width: var(--main-canvas-actual-width, auto) !important;
+  height: var(--main-canvas-actual-height, auto) !important;
+  max-width: none !important;
+  max-height: none !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  object-fit: fill !important;
+}
+.palette-main-canvas-stage.actual .palette-compare-processed {
+  width: 100% !important;
+  height: 100% !important;
+}
+@media (max-width: 1200px) {
+  .pixel-snap-tool-groups { grid-template-columns: 1fr !important; }
+  .palette-workspace-layout > .palette-workflow-strip { grid-template-columns: 1fr !important; }
+  .palette-status-footer { left: 0; }
+}
