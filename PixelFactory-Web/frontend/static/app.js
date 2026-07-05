@@ -203,6 +203,8 @@ const cleanupDiagnosticsSummary = document.getElementById("cleanupDiagnosticsSum
 const cleanupDiagnosticsList = document.getElementById("cleanupDiagnosticsList");
 const imageMetadataSummary = document.getElementById("imageMetadataSummary");
 const imageMetadataList = document.getElementById("imageMetadataList");
+const processingHistorySummary = document.getElementById("processingHistorySummary");
+const processingHistoryList = document.getElementById("processingHistoryList");
 const pixelSnapModeBadge = document.getElementById("pixelSnapModeBadge");
 const pixelSnapEnabled = document.getElementById("pixelSnapEnabled");
 const paletteEnabled = document.getElementById("paletteEnabled");
@@ -219,6 +221,7 @@ let paletteCanvasObjectUrl = null;
 let workspace = { has_image: false };
 let paletteDirty = false;
 let paletteHistoryEntries = [];
+let processingHistoryEntries = [];
 let paletteCurrentMeta = { type: "—", status: "No canvas loaded", recipe: "—", resolution: "—" };
 let paletteCompareZoom = 1;
 let paletteCompareMode = "fit";
@@ -579,6 +582,48 @@ function renderCleanupDiagnostics() {
   }
 }
 
+
+function addProcessingHistoryEntry() {
+  if (!processingHistoryList || !pixelSnapLastResult?.processingMs) return;
+  const result = pixelSnapLastResult || {};
+  const sourceWidth = Number(result.sourceWidth || originalPreview?.naturalWidth || 0);
+  const sourceHeight = Number(result.sourceHeight || originalPreview?.naturalHeight || 0);
+  const outputWidth = Number(result.outputWidth || processedPreview?.naturalWidth || 0);
+  const outputHeight = Number(result.outputHeight || processedPreview?.naturalHeight || 0);
+  const sourceColors = Number(result.sourceColors || 0);
+  const outputColors = Number(result.outputColors || 0);
+  const stamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  processingHistoryEntries.unshift({
+    stamp,
+    filename: selectedFile?.name || "workspace.png",
+    sourceSize: sourceWidth && sourceHeight ? `${sourceWidth} × ${sourceHeight}` : "—",
+    outputSize: outputWidth && outputHeight ? `${outputWidth} × ${outputHeight}` : "—",
+    colors: sourceColors && outputColors ? `${sourceColors} → ${outputColors}` : (outputColors ? `${outputColors}` : "—"),
+    changed: result.changedPercent ? `${result.changedPercent}%` : "0%",
+    ms: result.processingMs || "—",
+  });
+  processingHistoryEntries = processingHistoryEntries.slice(0, 8);
+  renderProcessingHistory();
+}
+
+function renderProcessingHistory() {
+  if (!processingHistoryList) return;
+  if (!processingHistoryEntries.length) {
+    if (processingHistorySummary) processingHistorySummary.textContent = "Waiting for first process";
+    processingHistoryList.innerHTML = '<div class="cleanup-diagnostic-empty">Process an image to build a local session history.</div>';
+    return;
+  }
+  processingHistoryList.innerHTML = processingHistoryEntries.map((entry) => `
+    <div class="processing-history-row">
+      <strong>${escapeHtml(entry.stamp)}</strong>
+      <span>${escapeHtml(entry.filename)}</span>
+      <em>${escapeHtml(entry.sourceSize)} → ${escapeHtml(entry.outputSize)} · ${escapeHtml(entry.colors)} colors · ${escapeHtml(entry.changed)} changed · ${escapeHtml(entry.ms)} ms</em>
+    </div>`).join("");
+  if (processingHistorySummary) {
+    const latest = processingHistoryEntries[0];
+    processingHistorySummary.textContent = `${processingHistoryEntries.length} saved · Last ${latest.ms} ms`;
+  }
+}
 
 function renderImageMetadata() {
   if (!imageMetadataList) return;
@@ -1360,6 +1405,7 @@ function resetPaletteLab({ keepDirty = false } = {}) {
   updatePaletteMeta({ type: "—", status: "Empty", recipe: "—", resolution: "—" });
   paletteHistoryEntries = [];
   renderPaletteHistory();
+  renderProcessingHistory();
   setPaletteDirty(false, "● Clean");
   updatePixelSnapAnalysis();
   if (applyPalettePreviewBtn) applyPalettePreviewBtn.disabled = true;
@@ -1647,6 +1693,7 @@ async function processPalettePreview({ quiet = false } = {}) {
     };
     renderCleanupDiagnostics();
     renderImageMetadata();
+    addProcessingHistoryEntry();
     const blob = await response.blob();
     if (processedBlobUrl) URL.revokeObjectURL(processedBlobUrl);
     processedBlobUrl = URL.createObjectURL(blob);

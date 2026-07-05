@@ -1,3 +1,9 @@
+## PF-0023 - Processing History Panel
+
+- Added a local Palette Lab processing history panel.
+- Shows timestamp, filename, source/output size, color counts, changed percent, and processing time for recent preview runs.
+- No Asset Browser changes.
+
 
 ## PF-0022 - Image Metadata Inspector
 - Added image metadata panel to Palette Lab.

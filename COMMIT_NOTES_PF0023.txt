@@ -1,0 +1,7 @@
+PF-0023 add processing history panel
+
+- Added local session Processing History panel to Palette Lab
+- Captures timestamp, filename, source/output sizes, color counts, changed percent, and processing time
+- Keeps the latest 8 process entries in memory only
+- Updated cache/version markers to PF-0023
+- No Asset Browser changes
