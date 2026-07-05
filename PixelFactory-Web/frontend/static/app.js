@@ -187,6 +187,9 @@ const pixelSnapLivePreview = document.getElementById("pixelSnapLivePreview");
 const orphanCleanupEnabled = document.getElementById("orphanCleanupEnabled");
 const orphanCleanupStrength = document.getElementById("orphanCleanupStrength");
 const orphanCleanupStrengthValue = document.getElementById("orphanCleanupStrengthValue");
+const paletteNormalizeEnabled = document.getElementById("paletteNormalizeEnabled");
+const paletteNormalizeTolerance = document.getElementById("paletteNormalizeTolerance");
+const paletteNormalizeToleranceValue = document.getElementById("paletteNormalizeToleranceValue");
 const pixelSnapDetectedGrid = document.getElementById("pixelSnapDetectedGrid");
 const pixelSnapConfidence = document.getElementById("pixelSnapConfidence");
 const pixelSnapPaletteEstimate = document.getElementById("pixelSnapPaletteEstimate");
@@ -235,6 +238,10 @@ function getPaletteTargetValue() {
 
 function isColorCleanupActive() {
   return paletteEnabled?.checked !== false && getPaletteTargetValue() > 0;
+}
+
+function isPaletteNormalizeActive() {
+  return paletteNormalizeEnabled?.checked === true;
 }
 
 function paletteTargetLabel(value = getPaletteTargetValue()) {
@@ -533,9 +540,13 @@ function updateOperationStackLabels() {
   const pixelSize = pixelSnapGridSize?.value || document.getElementById("pixelSize")?.value || "0";
   const snapStrength = Number(pixelSnapStrength?.value || 1);
   const paletteOn = isColorCleanupActive();
+  const normalizeOn = isPaletteNormalizeActive();
   const resizeOn = resizeEnabled?.checked !== false;
   const snapOn = pixelSnapEnabled?.checked !== false;
-  if (opPaletteCount) opPaletteCount.textContent = paletteOn ? paletteTargetLabel() : "Original colors";
+  if (opPaletteCount) {
+    const tolerance = Number(paletteNormalizeTolerance?.value || 8);
+    opPaletteCount.textContent = paletteOn ? paletteTargetLabel() : (normalizeOn ? `Normalize · ${tolerance}` : "Original colors");
+  }
   if (opResizeScale) opResizeScale.textContent = resizeOn ? `${document.getElementById("resizeScale")?.value || 2}x` : "Off";
   if (opPixelSize) opPixelSize.textContent = snapOn ? (pixelSize === "0" ? `Auto · ${Math.round(snapStrength * 100)}%` : `${pixelSize}px · ${Math.round(snapStrength * 100)}%`) : "Off";
   const orphanOn = orphanCleanupEnabled?.checked === true;
@@ -543,10 +554,12 @@ function updateOperationStackLabels() {
   const orphanRow = document.querySelector('[data-op="orphan"]');
   const orphanLabel = document.getElementById("opOrphanCleanup");
   if (orphanLabel) orphanLabel.textContent = orphanOn ? `${orphanStrengthPct}%` : "Off";
-  document.querySelector('[data-op="palette"]')?.classList.toggle("active", paletteOn);
+  document.querySelector('[data-op="palette"]')?.classList.toggle("active", paletteOn || normalizeOn);
   document.querySelector('[data-op="resize"]')?.classList.toggle("active", resizeOn);
   orphanRow?.classList.toggle("active", orphanOn);
   document.querySelector('[data-pipeline-chip="orphan"]')?.classList.toggle("active", orphanOn);
+  document.querySelector('[data-pipeline-chip="palette"]')?.classList.toggle("active", paletteOn || normalizeOn);
+  if (paletteNormalizeToleranceValue) paletteNormalizeToleranceValue.textContent = String(Number(paletteNormalizeTolerance?.value || 8));
   if (opPixelSnapRow) opPixelSnapRow.classList.toggle("active", snapOn || operation.startsWith("pixel_snap"));
   if (pixelSnapStrengthValue) pixelSnapStrengthValue.textContent = `${Math.round(snapStrength * 100)}%`;
   if (orphanCleanupStrengthValue) orphanCleanupStrengthValue.textContent = `${orphanStrengthPct}%`;
@@ -1221,7 +1234,7 @@ compareProcessBtn?.addEventListener("click", processPreviewFromCompareViewer);
   control?.addEventListener("change", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncCompareOperationFromToggles(); syncPaletteControlsFromCompare(); scheduleComparePreviewUpdate(); }));
   control?.addEventListener("input", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncCompareOperationFromToggles(); syncPaletteControlsFromCompare(); scheduleComparePreviewUpdate(); }));
 });
-[document.getElementById("resizeScale"), document.getElementById("paletteColors"), pixelSnapGridSize, document.getElementById("operation"), pixelSnapEnabled, paletteEnabled, resizeEnabled, orphanCleanupEnabled, orphanCleanupStrength].forEach((control) => {
+[document.getElementById("resizeScale"), document.getElementById("paletteColors"), pixelSnapGridSize, document.getElementById("operation"), pixelSnapEnabled, paletteEnabled, resizeEnabled, orphanCleanupEnabled, orphanCleanupStrength, paletteNormalizeEnabled, paletteNormalizeTolerance].forEach((control) => {
   control?.addEventListener("change", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncOperationFromToolToggles(); updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); }));
   control?.addEventListener("input", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncOperationFromToolToggles(); updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); }));
 });
@@ -1305,6 +1318,17 @@ orphanCleanupStrength?.addEventListener("input", () => preservePaletteScroll(() 
 }));
 orphanCleanupEnabled?.addEventListener("change", () => preservePaletteScroll(() => {
   updateToolToggleLabels();
+  schedulePalettePreviewUpdate();
+}));
+
+paletteNormalizeTolerance?.addEventListener("input", () => preservePaletteScroll(() => {
+  if (paletteNormalizeToleranceValue) paletteNormalizeToleranceValue.textContent = String(Number(paletteNormalizeTolerance.value || 8));
+  updateOperationStackLabels();
+  schedulePalettePreviewUpdate();
+}));
+paletteNormalizeEnabled?.addEventListener("change", () => preservePaletteScroll(() => {
+  updateToolToggleLabels();
+  updateOperationStackLabels();
   schedulePalettePreviewUpdate();
 }));
 
@@ -1469,6 +1493,8 @@ async function processPalettePreview({ quiet = false } = {}) {
   form.append("preserve_alpha", pixelSnapAlpha?.checked === false ? "false" : "true");
   form.append("orphan_cleanup", orphanCleanupEnabled?.checked === true ? "true" : "false");
   form.append("orphan_strength", orphanCleanupStrength?.value || "0.35");
+  form.append("palette_normalize", paletteNormalizeEnabled?.checked === true ? "true" : "false");
+  form.append("normalize_tolerance", paletteNormalizeTolerance?.value || "8");
   form.append("operation", document.getElementById("operation").value);
 
   try {
@@ -1491,6 +1517,8 @@ async function processPalettePreview({ quiet = false } = {}) {
       outputColors: response.headers.get("X-PF-Output-Colors"),
       changedPixels: response.headers.get("X-PF-Changed-Pixels"),
       changedPercent: response.headers.get("X-PF-Changed-Percent"),
+      paletteNormalize: response.headers.get("X-PF-Palette-Normalize"),
+      normalizeTolerance: response.headers.get("X-PF-Normalize-Tolerance"),
     };
     const blob = await response.blob();
     if (processedBlobUrl) URL.revokeObjectURL(processedBlobUrl);
@@ -1523,9 +1551,10 @@ async function processPalettePreview({ quiet = false } = {}) {
     const pixelSizeLabel = pixelSnapGridSize?.value || document.getElementById("pixelSize")?.value || "0";
     const pixelSizeText = pixelSizeLabel === "0" ? "auto grid" : `${pixelSizeLabel}px grid`;
     const strengthText = document.getElementById("operation")?.value?.startsWith("pixel_snap") ? ` · ${Math.round(Number(pixelSnapStrength?.value || 1) * 100)}% snap` : "";
+    const normalizeText = isPaletteNormalizeActive() ? ` · normalize ${Number(paletteNormalizeTolerance?.value || 8)}` : "";
     updatePaletteLoadedState({ filename: selectedFile?.name || "Processed preview", source: selectedFileSource || "workspace", detail: `Processed preview ready${paletteProcessedResolution !== "—" ? ` · ${paletteProcessedResolution}` : ""}` });
     const changedText = pixelSnapLastResult?.changedPercent ? ` · ${pixelSnapLastResult.changedPercent}% changed` : "";
-    addPaletteHistory(operationLabel, `${colorLabel} · ${scaleLabel}x · ${pixelSizeText}${strengthText}${changedText}`);
+    addPaletteHistory(operationLabel, `${colorLabel} · ${scaleLabel}x · ${pixelSizeText}${strengthText}${normalizeText}${changedText}`);
     setStatus("Palette Lab preview updated.");
   } catch (err) {
     setStatus(`Error: ${err.message}`);
@@ -1606,6 +1635,8 @@ function buildPaletteSaveForm(blob, filename, extra = {}) {
   form.append("resize_scale", document.getElementById("resizeScale")?.value || "1");
   form.append("pixel_size", pixelSnapGridSize?.value || document.getElementById("pixelSize")?.value || "0");
   form.append("pixel_strength", pixelSnapStrength?.value || "1");
+  form.append("palette_normalize", paletteNormalizeEnabled?.checked === true ? "true" : "false");
+  form.append("normalize_tolerance", paletteNormalizeTolerance?.value || "8");
   Object.entries(extra).forEach(([key, value]) => form.append(key, value ?? ""));
   return form;
 }
@@ -3141,7 +3172,7 @@ document.addEventListener("click", (event) => {
 })();
 
 
-// PF-0019.7 Repair Toolbox tabs: one active tool panel, canvas remains primary.
+// PF-0019.8 Repair Toolbox tabs: one active tool panel, canvas remains primary.
 (() => {
   const tabs = Array.from(document.querySelectorAll('[data-repair-tab]'));
   const panes = Array.from(document.querySelectorAll('[data-repair-pane]'));

@@ -40,7 +40,7 @@ asset_service = AssetService(PROJECT_ROOT)
 workspace_service = WorkspaceService(PROJECT_ROOT)
 export_service = ExportService(PROJECT_ROOT, asset_service)
 
-app = FastAPI(title="Pixel Factory by Wulf", version="0.16-pf0018.10-palette-cleanup-diagnostics")
+app = FastAPI(title="Pixel Factory by Wulf", version="0.16-pf0019.8-palette-normalize")
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
 
@@ -197,6 +197,53 @@ def _pixel_snap_rgba(
     return small.resize((w, h), Image.Resampling.NEAREST)
 
 
+
+def _palette_normalize_rgba(img: Image.Image, *, tolerance: int = 8) -> Image.Image:
+    """Merge near-identical colors without forcing a small palette count.
+
+    This is different from quantize/reduce. It keeps the artwork's general
+    palette size and style, but collapses tiny AI color variations into a
+    cleaner, more production-friendly palette. Alpha is preserved.
+    """
+    tolerance = max(1, min(64, int(tolerance or 8)))
+    src = img.convert("RGBA")
+    w, h = src.size
+    pixels = list(src.getdata())
+    # Bucket similar RGB colors. Alpha stays separate so transparency edges are
+    # not accidentally filled or erased by palette normalization.
+    buckets: dict[tuple[int, int, int], list[int]] = {}
+    for idx, (r, g, b, a) in enumerate(pixels):
+        if a <= 0:
+            continue
+        key = (r // tolerance, g // tolerance, b // tolerance)
+        buckets.setdefault(key, []).append(idx)
+
+    if not buckets:
+        return src
+
+    out_pixels = pixels[:]
+    for indexes in buckets.values():
+        if len(indexes) < 2:
+            continue
+        # Use the average color as the clean representative for this small cluster.
+        total_r = total_g = total_b = 0
+        for idx in indexes:
+            r, g, b, _a = pixels[idx]
+            total_r += r
+            total_g += g
+            total_b += b
+        count = len(indexes)
+        nr = int(round(total_r / count))
+        ng = int(round(total_g / count))
+        nb = int(round(total_b / count))
+        for idx in indexes:
+            _r, _g, _b, a = pixels[idx]
+            out_pixels[idx] = (nr, ng, nb, a)
+
+    out = Image.new("RGBA", (w, h))
+    out.putdata(out_pixels)
+    return out
+
 def _orphan_cleanup_rgba(img: Image.Image, *, sensitivity: float = 0.35) -> Image.Image:
     """Remove tiny isolated color artifacts without acting like a blur/filter.
 
@@ -261,6 +308,8 @@ async def process_image(
     preserve_alpha: bool = Form(True),
     orphan_cleanup: bool = Form(False),
     orphan_strength: float = Form(0.35),
+    palette_normalize: bool = Form(False),
+    normalize_tolerance: int = Form(8),
 ) -> Response:
     data = await image.read()
     img = _read_image(data)
@@ -297,6 +346,9 @@ async def process_image(
     if operation.startswith("pixel_snap") and pixel_strength < 0.999:
         img = Image.blend(original, img, pixel_strength)
 
+    if palette_normalize:
+        img = _palette_normalize_rgba(img, tolerance=normalize_tolerance)
+
     if orphan_cleanup:
         img = _orphan_cleanup_rgba(img, sensitivity=orphan_strength)
 
@@ -319,6 +371,8 @@ async def process_image(
         "X-PF-Output-Colors": str(output_color_count),
         "X-PF-Changed-Pixels": str(changed_pixels),
         "X-PF-Changed-Percent": str(changed_percent),
+        "X-PF-Palette-Normalize": "true" if palette_normalize else "false",
+        "X-PF-Normalize-Tolerance": str(max(1, min(64, int(normalize_tolerance or 8)))),
     }
     return _png_response(img, headers=headers)
 

@@ -4390,7 +4390,7 @@ select option:hover {
   .pixel-snap-tool-groups { grid-template-columns: 1fr !important; }
 }
 
-/* PF-0019.7 Palette Lab v2 toolbar + orphan cleanup */
+/* PF-0019.8 Palette Lab v2 toolbar + orphan cleanup */
 #paletteView .pf-page-hero {
   display: none !important;
 }
@@ -4636,8 +4636,19 @@ select option:hover {
 }
 
 
-/* PF-0019.7: keep auto-update with the canvas update control and make Orphan Cleanup compact. */
+/* PF-0019.8: keep auto-update with the canvas update control and make Orphan Cleanup compact. */
 .canvas-auto-update { min-width: 128px; }
 .repair-tool-tab[data-repair-tab="orphans"] { border-color: rgba(64, 143, 255, 0.35); }
 .repair-tool-pane[data-repair-pane="orphans"] .repair-tool-inline { grid-template-columns: minmax(220px, 1fr) minmax(160px, 220px); }
 @media (max-width: 1200px) { .canvas-auto-update { min-width: 110px; } }
+
+/* PF-0019.8 Palette Normalize */
+.palette-normalize-tools label:has(#paletteNormalizeTolerance) {
+  min-width: 240px;
+}
+.palette-normalize-tools #paletteNormalizeTolerance {
+  width: 100%;
+}
+.repair-tool-tab[data-repair-tab="palette"]::after {
+  content: "";
+}

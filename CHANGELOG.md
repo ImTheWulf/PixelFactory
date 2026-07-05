@@ -1,3 +1,12 @@
+## PF-0019.8 - Palette Normalize Repair Stage
+
+- Added native Palette Normalize as the next Repair Pipeline feature.
+- Palette Normalize merges near-identical AI color noise without forcing a tiny palette target.
+- Added Normalize On/Off and tolerance control inside the Palette toolbox tab.
+- Backend now supports `palette_normalize` and `normalize_tolerance` in `/api/process`.
+- History now records normalize tolerance when used.
+- Updated cache/version labels to PF-0019.8.
+
 ## PF-0019.7 - Auto Update Toolbar + Orphan Cleanup Foundation
 
 - Removed the redundant Preview tab from the Repair Toolbox.
