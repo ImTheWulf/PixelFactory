@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0019_2_palette_canvas_polish" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0019_3_canvas_state_polish" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.16 · PF-0019.2</div>
+          <div class="subtitle">by Wulf · Web v0.16 · PF-0019.3</div>
         </div>
       </div>
 
@@ -34,13 +34,22 @@
           <label>Current Asset</label>
           <div id="workspaceStatus" class="workspace-status">No asset loaded</div>
         </div>
-        <div id="workspaceSideMeta" class="workspace-side-meta">
+        <div id="paletteWorkspaceMeta" class="palette-meta-grid palette-sidebar-meta">
           <div><span>Type</span><strong>—</strong></div>
           <div><span>Status</span><strong>Empty</strong></div>
           <div><span>Recipe</span><strong>—</strong></div>
           <div><span>Resolution</span><strong>—</strong></div>
         </div>
-        <p class="panel-hint">Palette Lab is a single-canvas cleanup workspace. Repair settings live in the toolbox; fullscreen is inspection only.</p>
+        <div id="paletteDirtyState" class="palette-dirty-state saved">● Clean</div>
+        <div class="palette-side-actions">
+          <button type="button" data-start-view="assets">Browse Assets</button>
+          <label class="pf-button-like" for="imageInput">Load Image<input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp" /></label>
+          <button type="button" id="discardPalettePreviewBtn" disabled>Discard</button>
+          <button type="button" id="downloadPaletteResultBtn" disabled>Download Result</button>
+          <button type="button" id="savePaletteAssetBtn" disabled class="pf-primary-action">Save</button>
+          <button type="button" id="savePaletteAsAssetBtn" disabled>Save As...</button>
+        </div>
+        <p id="paletteLoadedState" class="panel-hint">Single-canvas cleanup workspace. Tools update the canvas; fullscreen is inspection only.</p>
       </section>
 
       <section id="characterControls" class="panel view-controls hidden">
@@ -227,62 +236,35 @@
         </header>
 
         <section class="palette-workspace-layout">
-          <div class="preview-card palette-active-card">
-            <div class="palette-active-main">
-              <div class="eyebrow">Loaded Canvas</div>
-              <h2>Palette Lab Canvas</h2>
-              <p id="paletteLoadedState">No asset loaded yet. Open an asset from Asset Browser or choose a recent asset.</p>
-              <div id="paletteWorkspaceMeta" class="palette-meta-grid">
-                <div><span>Type</span><strong>—</strong></div>
-                <div><span>Status</span><strong>Empty</strong></div>
-                <div><span>Recipe</span><strong>—</strong></div>
-                <div><span>Resolution</span><strong>—</strong></div>
+          <div class="palette-workflow-inline palette-workflow-compact palette-workflow-strip">
+            <details class="preview-card palette-operation-card palette-workflow-details">
+              <summary>
+                <strong>Pipeline</strong>
+                <span id="pipelineChipSummary" class="palette-pipeline-chips" aria-label="Current processing plan">
+                  <em data-pipeline-chip="pixel">Pixel Snap</em>
+                  <em data-pipeline-chip="palette">Palette</em>
+                  <em data-pipeline-chip="resize">Resize</em>
+                  <em data-pipeline-chip="alpha">Alpha</em>
+                </span>
+              </summary>
+              <div id="paletteOperationStack" class="palette-operation-stack">
+                <div class="palette-operation-row" data-op="palette"><strong>Palette Normalize</strong><span id="opPaletteCount">Original colors</span></div>
+                <div class="palette-operation-row" data-op="resize"><strong>Nearest-neighbor resize</strong><span id="opResizeScale">2x</span></div>
+                <div class="palette-operation-row" id="opPixelSnapRow" data-op="pixel-snap"><strong>Pixel Snap</strong><span id="opPixelSize">Auto</span></div>
+                <div class="palette-operation-row muted" data-op="chroma"><strong>Transparency Cleanup</strong><em>coming</em></div>
+                <div class="palette-operation-row muted" data-op="edge"><strong>Edge Cleanup</strong><em>coming</em></div>
+                <div class="palette-operation-row muted" data-op="orphan"><strong>Orphan Cleanup</strong><em>coming</em></div>
               </div>
-            </div>
-            <div class="palette-active-side">
-              <div id="paletteDirtyState" class="palette-dirty-state saved">● Clean</div>
-              <div class="palette-active-actions">
-                <button type="button" data-start-view="assets">Browse Assets</button>
-                <label class="pf-button-like" for="imageInput">Load Image<input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp" /></label>
-              </div>
-              <div class="palette-active-actions palette-output-actions">
-                <button type="button" id="discardPalettePreviewBtn" disabled>Discard</button>
-                <button type="button" id="downloadPaletteResultBtn" disabled>Download Result</button>
-                <button type="button" id="savePaletteAssetBtn" disabled class="pf-primary-action">Save</button>
-                <button type="button" id="savePaletteAsAssetBtn" disabled>Save As...</button>
-              </div>
-            </div>
-            <div class="palette-workflow-inline palette-workflow-compact">
-              <details class="preview-card palette-operation-card palette-workflow-details">
-                <summary>
-                  <strong>Pipeline</strong>
-                  <span id="pipelineChipSummary" class="palette-pipeline-chips" aria-label="Current processing plan">
-                    <em data-pipeline-chip="pixel">Pixel Snap</em>
-                    <em data-pipeline-chip="palette">Palette</em>
-                    <em data-pipeline-chip="resize">Resize</em>
-                    <em data-pipeline-chip="alpha">Alpha</em>
-                  </span>
-                </summary>
-                <div id="paletteOperationStack" class="palette-operation-stack">
-                  <div class="palette-operation-row" data-op="palette"><strong>Palette Normalize</strong><span id="opPaletteCount">Original colors</span></div>
-                  <div class="palette-operation-row" data-op="resize"><strong>Nearest-neighbor resize</strong><span id="opResizeScale">2x</span></div>
-                  <div class="palette-operation-row" id="opPixelSnapRow" data-op="pixel-snap"><strong>Pixel Snap</strong><span id="opPixelSize">Auto</span></div>
-                  <div class="palette-operation-row muted" data-op="chroma"><strong>Transparency Cleanup</strong><em>coming</em></div>
-                  <div class="palette-operation-row muted" data-op="edge"><strong>Edge Cleanup</strong><em>coming</em></div>
-                  <div class="palette-operation-row muted" data-op="orphan"><strong>Orphan Cleanup</strong><em>coming</em></div>
-                </div>
-              </details>
-              <details class="preview-card palette-history-card palette-workflow-details">
-                <summary>
-                  <strong>History</strong>
-                  <span class="palette-panel-hint">Undo-style timeline coming</span>
-                </summary>
-                <ol id="paletteHistory" class="palette-history-list">
-                  <li>No asset loaded.</li>
-                </ol>
-              </details>
-            </div>
-
+            </details>
+            <details class="preview-card palette-history-card palette-workflow-details">
+              <summary>
+                <strong>History</strong>
+                <span class="palette-panel-hint">Undo-style timeline coming</span>
+              </summary>
+              <ol id="paletteHistory" class="palette-history-list">
+                <li>No asset loaded.</li>
+              </ol>
+            </details>
           </div>
 
           <section class="palette-preview-grid legacy-preview-grid" aria-hidden="true">
@@ -320,7 +302,7 @@
                 <button id="mainCanvasFitBtn" type="button">Fit</button>
                 <button id="mainCanvasActualBtn" type="button">1:1</button>
                 <button id="mainCanvasGridToggle" type="button" class="pf-state-toggle is-off">Grid Off</button>
-                <button id="mainCanvasDifferenceBtn" type="button" class="pf-state-toggle is-off">Difference Off</button>
+                <button id="mainCanvasDifferenceBtn" type="button">Difference</button>
                 <button id="openCompareViewerBtn" type="button">Inspect</button>
                 <button type="button" id="applyPalettePreviewBtn" disabled>Apply Preview</button>
                 <button id="processBtn" type="button" class="pf-primary-action">Update Preview</button>
@@ -553,7 +535,7 @@
           <button id="compareZoomOutBtn" type="button">−</button>
           <button id="compareFitBtn" type="button">Fit</button>
           <button id="compareActualBtn" type="button">1:1</button>
-          <button id="compareDifferenceBtn" type="button" class="pf-state-toggle is-off">Difference Off</button>
+          <button id="compareDifferenceBtn" type="button">Difference</button>
           <button id="compareGridToggle" type="button" class="pf-state-toggle is-off">Grid Off</button>
           <button id="compareZoomInBtn" type="button">+</button>
           <button id="compareDownloadBtn" type="button">Download</button>
@@ -614,6 +596,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0018_10_native_pixel_snap_detection"></script>
+  <script src="/static/app.js?v=pf0019_3_canvas_state_polish"></script>
 </body>
 </html>
