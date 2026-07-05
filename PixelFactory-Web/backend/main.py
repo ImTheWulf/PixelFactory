@@ -197,6 +197,58 @@ def _pixel_snap_rgba(
     return small.resize((w, h), Image.Resampling.NEAREST)
 
 
+def _orphan_cleanup_rgba(img: Image.Image, *, sensitivity: float = 0.35) -> Image.Image:
+    """Remove tiny isolated color artifacts without acting like a blur/filter.
+
+    Conservative by design: only replaces a pixel when its 8-neighbor area strongly
+    agrees on a different replacement color. This is intended as the first native
+    Repair Pipeline stage after Pixel Snap, not a general denoise filter.
+    """
+    sensitivity = max(0.0, min(1.0, float(sensitivity or 0.0)))
+    if sensitivity <= 0:
+        return img.copy()
+    src = img.convert("RGBA")
+    w, h = src.size
+    if w < 3 or h < 3:
+        return src
+    pix = src.load()
+    out = src.copy()
+    outpix = out.load()
+    # Higher sensitivity means fewer agreeing neighbors required.
+    required = 6 if sensitivity < 0.34 else 5 if sensitivity < 0.67 else 4
+    alpha_threshold = 12
+    changed = 0
+    max_changes = max(1, int(w * h * 0.08))
+    for y in range(1, h - 1):
+        for x in range(1, w - 1):
+            center = pix[x, y]
+            if center[3] <= alpha_threshold:
+                continue
+            counts = {}
+            opaque_neighbors = 0
+            same_neighbors = 0
+            for yy in (y - 1, y, y + 1):
+                for xx in (x - 1, x, x + 1):
+                    if xx == x and yy == y:
+                        continue
+                    col = pix[xx, yy]
+                    if col[3] <= alpha_threshold:
+                        continue
+                    opaque_neighbors += 1
+                    if col == center:
+                        same_neighbors += 1
+                    counts[col] = counts.get(col, 0) + 1
+            if opaque_neighbors < required or same_neighbors > 1 or not counts:
+                continue
+            replacement, amount = max(counts.items(), key=lambda item: item[1])
+            if replacement != center and amount >= required:
+                outpix[x, y] = replacement
+                changed += 1
+                if changed >= max_changes:
+                    return out
+    return out
+
+
 @app.post("/api/process")
 async def process_image(
     image: UploadFile = File(...),
@@ -207,6 +259,8 @@ async def process_image(
     pixel_strength: float = Form(1.0),
     snap_palette: bool = Form(True),
     preserve_alpha: bool = Form(True),
+    orphan_cleanup: bool = Form(False),
+    orphan_strength: float = Form(0.35),
 ) -> Response:
     data = await image.read()
     img = _read_image(data)
@@ -242,6 +296,9 @@ async def process_image(
 
     if operation.startswith("pixel_snap") and pixel_strength < 0.999:
         img = Image.blend(original, img, pixel_strength)
+
+    if orphan_cleanup:
+        img = _orphan_cleanup_rgba(img, sensitivity=orphan_strength)
 
     if preserve_alpha and img.mode == "RGBA":
         img.putalpha(original.getchannel("A"))

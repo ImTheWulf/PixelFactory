@@ -184,6 +184,9 @@ const pixelSnapPalette = document.getElementById("pixelSnapPalette");
 const pixelSnapAlpha = document.getElementById("pixelSnapAlpha");
 const pixelSnapShowGrid = document.getElementById("pixelSnapShowGrid");
 const pixelSnapLivePreview = document.getElementById("pixelSnapLivePreview");
+const orphanCleanupEnabled = document.getElementById("orphanCleanupEnabled");
+const orphanCleanupStrength = document.getElementById("orphanCleanupStrength");
+const orphanCleanupStrengthValue = document.getElementById("orphanCleanupStrengthValue");
 const pixelSnapDetectedGrid = document.getElementById("pixelSnapDetectedGrid");
 const pixelSnapConfidence = document.getElementById("pixelSnapConfidence");
 const pixelSnapPaletteEstimate = document.getElementById("pixelSnapPaletteEstimate");
@@ -535,10 +538,18 @@ function updateOperationStackLabels() {
   if (opPaletteCount) opPaletteCount.textContent = paletteOn ? paletteTargetLabel() : "Original colors";
   if (opResizeScale) opResizeScale.textContent = resizeOn ? `${document.getElementById("resizeScale")?.value || 2}x` : "Off";
   if (opPixelSize) opPixelSize.textContent = snapOn ? (pixelSize === "0" ? `Auto · ${Math.round(snapStrength * 100)}%` : `${pixelSize}px · ${Math.round(snapStrength * 100)}%`) : "Off";
+  const orphanOn = orphanCleanupEnabled?.checked === true;
+  const orphanStrengthPct = Math.round(Number(orphanCleanupStrength?.value || 0) * 100);
+  const orphanRow = document.querySelector('[data-op="orphan"]');
+  const orphanLabel = document.getElementById("opOrphanCleanup");
+  if (orphanLabel) orphanLabel.textContent = orphanOn ? `${orphanStrengthPct}%` : "Off";
   document.querySelector('[data-op="palette"]')?.classList.toggle("active", paletteOn);
   document.querySelector('[data-op="resize"]')?.classList.toggle("active", resizeOn);
+  orphanRow?.classList.toggle("active", orphanOn);
+  document.querySelector('[data-pipeline-chip="orphan"]')?.classList.toggle("active", orphanOn);
   if (opPixelSnapRow) opPixelSnapRow.classList.toggle("active", snapOn || operation.startsWith("pixel_snap"));
   if (pixelSnapStrengthValue) pixelSnapStrengthValue.textContent = `${Math.round(snapStrength * 100)}%`;
+  if (orphanCleanupStrengthValue) orphanCleanupStrengthValue.textContent = `${orphanStrengthPct}%`;
   if (pixelSnapModeBadge) pixelSnapModeBadge.textContent = snapOn ? (pixelSize === "0" ? "Auto grid" : `${pixelSize}px grid`) : "Pixel Snap off";
   updateToolToggleLabels();
 }
@@ -1210,7 +1221,7 @@ compareProcessBtn?.addEventListener("click", processPreviewFromCompareViewer);
   control?.addEventListener("change", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncCompareOperationFromToggles(); syncPaletteControlsFromCompare(); scheduleComparePreviewUpdate(); }));
   control?.addEventListener("input", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncCompareOperationFromToggles(); syncPaletteControlsFromCompare(); scheduleComparePreviewUpdate(); }));
 });
-[document.getElementById("resizeScale"), document.getElementById("paletteColors"), pixelSnapGridSize, document.getElementById("operation"), pixelSnapEnabled, paletteEnabled, resizeEnabled].forEach((control) => {
+[document.getElementById("resizeScale"), document.getElementById("paletteColors"), pixelSnapGridSize, document.getElementById("operation"), pixelSnapEnabled, paletteEnabled, resizeEnabled, orphanCleanupEnabled, orphanCleanupStrength].forEach((control) => {
   control?.addEventListener("change", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncOperationFromToolToggles(); updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); }));
   control?.addEventListener("input", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncOperationFromToolToggles(); updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); }));
 });
@@ -1287,6 +1298,16 @@ pixelSnapAlpha?.addEventListener("change", () => preservePaletteScroll(() => {
   schedulePalettePreviewUpdate();
 }));
 pixelSnapShowGrid?.addEventListener("change", () => preservePaletteScroll(() => { updateCompareGridToggleLabel(); updatePixelSnapGridOverlays(); }));
+
+orphanCleanupStrength?.addEventListener("input", () => preservePaletteScroll(() => {
+  if (orphanCleanupStrengthValue) orphanCleanupStrengthValue.textContent = `${Math.round(Number(orphanCleanupStrength.value || 0) * 100)}%`;
+  schedulePalettePreviewUpdate();
+}));
+orphanCleanupEnabled?.addEventListener("change", () => preservePaletteScroll(() => {
+  updateToolToggleLabels();
+  schedulePalettePreviewUpdate();
+}));
+
 pixelSnapLivePreview?.addEventListener("change", () => preservePaletteScroll(() => {
   updatePixelSnapAnalysis();
   if (isPixelSnapLivePreviewEnabled()) {
@@ -1446,6 +1467,8 @@ async function processPalettePreview({ quiet = false } = {}) {
   form.append("pixel_strength", pixelSnapStrength?.value || "1");
   form.append("snap_palette", isColorCleanupActive() ? "true" : "false");
   form.append("preserve_alpha", pixelSnapAlpha?.checked === false ? "false" : "true");
+  form.append("orphan_cleanup", orphanCleanupEnabled?.checked === true ? "true" : "false");
+  form.append("orphan_strength", orphanCleanupStrength?.value || "0.35");
   form.append("operation", document.getElementById("operation").value);
 
   try {
@@ -3118,7 +3141,7 @@ document.addEventListener("click", (event) => {
 })();
 
 
-// PF-0019.6 Repair Toolbox tabs: one active tool panel, canvas remains primary.
+// PF-0019.7 Repair Toolbox tabs: one active tool panel, canvas remains primary.
 (() => {
   const tabs = Array.from(document.querySelectorAll('[data-repair-tab]'));
   const panes = Array.from(document.querySelectorAll('[data-repair-pane]'));

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0019_6_palette_lab_v2_refactor" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0019_7_auto_update_orphan_cleanup" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.16 · PF-0019.6</div>
+          <div class="subtitle">by Wulf · Web v0.16 · PF-0019.7</div>
         </div>
       </div>
 
@@ -245,6 +245,7 @@
                   <em data-pipeline-chip="palette">Palette</em>
                   <em data-pipeline-chip="resize">Resize</em>
                   <em data-pipeline-chip="alpha">Alpha</em>
+                  <em data-pipeline-chip="orphan">Orphans</em>
                 </span>
               </summary>
               <div id="paletteOperationStack" class="palette-operation-stack">
@@ -253,7 +254,7 @@
                 <div class="palette-operation-row" id="opPixelSnapRow" data-op="pixel-snap"><strong>Pixel Snap</strong><span id="opPixelSize">Auto</span></div>
                 <div class="palette-operation-row muted" data-op="chroma"><strong>Transparency Cleanup</strong><em>coming</em></div>
                 <div class="palette-operation-row muted" data-op="edge"><strong>Edge Cleanup</strong><em>coming</em></div>
-                <div class="palette-operation-row muted" data-op="orphan"><strong>Orphan Cleanup</strong><em>coming</em></div>
+                <div class="palette-operation-row" data-op="orphan"><strong>Orphan Cleanup</strong><span id="opOrphanCleanup">Off</span></div>
               </div>
             </details>
             <details class="preview-card palette-history-card palette-workflow-details">
@@ -297,7 +298,7 @@
               <button type="button" class="repair-tool-tab active" data-repair-tab="snap">Pixel Snap</button>
               <button type="button" class="repair-tool-tab" data-repair-tab="palette">Palette</button>
               <button type="button" class="repair-tool-tab" data-repair-tab="resize">Resize</button>
-              <button type="button" class="repair-tool-tab" data-repair-tab="preview">Preview</button>
+              <button type="button" class="repair-tool-tab" data-repair-tab="orphans">Orphan Cleanup</button>
               <button type="button" class="repair-tool-tab disabled" disabled>Repair Brush</button>
               <button type="button" class="repair-tool-tab disabled" disabled>Chroma Key</button>
               <button type="button" class="repair-tool-tab disabled" disabled>Edge Cleanup</button>
@@ -331,12 +332,13 @@
                   </div>
                 </fieldset>
 
-                <fieldset class="pixel-tool-group repair-tool-pane" data-repair-pane="preview">
-                  <legend>Preview</legend>
-                  <div class="repair-tool-inline repair-preview-inline">
-                    <label class="pf-toggle-button-control"><input id="pixelSnapLivePreview" type="checkbox" checked /><span data-on="Auto-update On" data-off="Auto-update Off">Auto-update On</span></label>
-                    <p id="pixelSnapHint" class="palette-panel-hint">Auto works for most generated tiles and sprites. Manual grid size helps when you know the intended pixel block size.</p>
+                <fieldset class="pixel-tool-group repair-tool-pane" data-repair-pane="orphans">
+                  <legend>Orphan Cleanup</legend>
+                  <div class="repair-tool-inline">
+                    <label><span>Sensitivity</span><input id="orphanCleanupStrength" type="range" min="0" max="1" step="0.05" value="0.35" /><em id="orphanCleanupStrengthValue">35%</em></label>
+                    <label class="pf-toggle-button-control"><input id="orphanCleanupEnabled" type="checkbox" /><span data-on="Orphan Cleanup On" data-off="Orphan Cleanup Off">Orphan Cleanup Off</span></label>
                   </div>
+                  <p class="pixel-tool-note">Removes tiny isolated color/noise pixels after snapping. Keep low for detailed sprites.</p>
                 </fieldset>
               </div>
 
@@ -368,6 +370,7 @@
                 <button id="mainCanvasDifferenceBtn" type="button" class="pf-state-toggle is-off">Difference Off</button>
                 <button id="openCompareViewerBtn" type="button">Inspect</button>
                 <button id="processBtn" type="button" class="pf-primary-action">Update</button>
+                <label class="pf-toggle-button-control canvas-toggle-control canvas-auto-update"><input id="pixelSnapLivePreview" type="checkbox" checked /><span data-on="Auto-update On" data-off="Auto-update Off">Auto-update On</span></label>
                 <button type="button" id="applyPalettePreviewBtn" disabled class="hidden" aria-hidden="true" tabindex="-1">Apply Preview</button>
                 <button id="downloadBtn" type="button" disabled class="hidden" aria-hidden="true" tabindex="-1">Download PNG</button>
                 <input id="pixelSnapShowGrid" type="checkbox" class="hidden" />
@@ -608,6 +611,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0019_6_palette_lab_v2_refactor"></script>
+  <script src="/static/app.js?v=pf0019_7_auto_update_orphan_cleanup"></script>
 </body>
 </html>

@@ -1,3 +1,12 @@
+## PF-0019.7 - Auto Update Toolbar + Orphan Cleanup Foundation
+
+- Removed the redundant Preview tab from the Repair Toolbox.
+- Moved Auto-update into the Canvas toolbar beside Update.
+- Added native Orphan Cleanup as the next Repair Pipeline feature.
+- Added conservative backend orphan-pixel cleanup with sensitivity control.
+- Kept Orphan Cleanup off by default so artists can opt into it per asset.
+- Updated cache/version labels to PF-0019.7.
+
 
 ## PF-0019.6 - Palette Lab v2 UI refactor
 - Rebuilt Repair Toolbox as a compact tabbed tool-options panel.
