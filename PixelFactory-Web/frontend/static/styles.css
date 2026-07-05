@@ -4918,3 +4918,68 @@ select option:hover {
 @media (max-width: 1000px) {
   .processing-history-row { grid-template-columns: 1fr; }
 }
+
+
+/* PF-0024 palette statistics panel */
+.palette-statistics-panel {
+  margin-top: 10px;
+  border: 1px solid rgba(216, 180, 254, 0.24);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.60);
+  overflow: hidden;
+}
+.palette-statistics-panel summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  color: #e5edf8;
+}
+.palette-statistics-panel summary span {
+  color: #c4b5fd;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.palette-statistics-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(210px, 1fr));
+  gap: 6px;
+  padding: 0 10px 10px;
+}
+.palette-statistics-row {
+  display: grid;
+  grid-template-columns: minmax(95px, 0.8fr) minmax(110px, 0.85fr) minmax(120px, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(2, 6, 23, 0.32);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+}
+.palette-statistics-row strong {
+  color: #f8fafc;
+  font-size: 0.84rem;
+}
+.palette-statistics-row span {
+  color: #ddd6fe;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.palette-statistics-row em {
+  color: #94a3b8;
+  font-style: normal;
+  font-size: 0.79rem;
+}
+.palette-copy-hex {
+  margin-left: 6px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  line-height: 1.2;
+}
+@media (max-width: 1200px) {
+  .palette-statistics-list { grid-template-columns: 1fr; }
+  .palette-statistics-row { grid-template-columns: 1fr; }
+}

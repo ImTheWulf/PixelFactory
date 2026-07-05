@@ -1,0 +1,6 @@
+PF-0024 add palette statistics
+
+- Added Palette Statistics panel in Palette Lab
+- Shows image size, unique color count, transparency, semi-alpha, bpp, and utilization
+- Shows most-used and least-used colors with copy HEX buttons
+- Refreshes stats on image load and processed preview updates

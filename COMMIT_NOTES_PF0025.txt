@@ -1,0 +1,7 @@
+PF-0025 sync version display and cache markers
+
+- Updated sidebar version label to Web v0.19 / PF-0025
+- Updated frontend cache-busting query strings
+- Added changelog entry for PF-0025
+- No Asset Browser changes
+- No processing pipeline changes

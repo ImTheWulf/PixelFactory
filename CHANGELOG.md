@@ -1,3 +1,13 @@
+
+## PF-0025 - Version Display Sync
+
+Changed:
+- Updated sidebar app label from PF-0022 to PF-0025.
+- Updated static cache-busting query strings for app.js and styles.css.
+
+Fixed:
+- Prevented the UI from showing an older patch number after PF-0024 was installed.
+
 ## PF-0023 - Processing History Panel
 
 - Added a local Palette Lab processing history panel.
@@ -537,3 +547,13 @@ Quick favorite toggle and seed UI cleanup.
 - Tightened Palette tab layout so Normalize toggle sits beside its tolerance slider.
 - Further compacted Repair Toolbox active panels so Canvas keeps priority.
 - Updated version/cache to PF-0019.9.
+
+## PF-0024 - Palette Statistics
+
+Added:
+- Added Palette Statistics panel to Palette Lab.
+- Shows image size, unique colors, transparency, semi-alpha, estimated bits-per-pixel, palette utilization, most-used color, and least-used color.
+- Added Copy HEX buttons for most-used and least-used palette colors.
+
+Changed:
+- Palette statistics refresh when a source image loads or a processed preview updates.

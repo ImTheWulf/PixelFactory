@@ -205,6 +205,8 @@ const imageMetadataSummary = document.getElementById("imageMetadataSummary");
 const imageMetadataList = document.getElementById("imageMetadataList");
 const processingHistorySummary = document.getElementById("processingHistorySummary");
 const processingHistoryList = document.getElementById("processingHistoryList");
+const paletteStatisticsSummary = document.getElementById("paletteStatisticsSummary");
+const paletteStatisticsList = document.getElementById("paletteStatisticsList");
 const pixelSnapModeBadge = document.getElementById("pixelSnapModeBadge");
 const pixelSnapEnabled = document.getElementById("pixelSnapEnabled");
 const paletteEnabled = document.getElementById("paletteEnabled");
@@ -222,6 +224,7 @@ let workspace = { has_image: false };
 let paletteDirty = false;
 let paletteHistoryEntries = [];
 let processingHistoryEntries = [];
+let paletteStatisticsRequestId = 0;
 let paletteCurrentMeta = { type: "—", status: "No canvas loaded", recipe: "—", resolution: "—" };
 let paletteCompareZoom = 1;
 let paletteCompareMode = "fit";
@@ -664,6 +667,137 @@ function renderImageMetadata() {
     imageMetadataSummary.textContent = `Source ${sourceWidth}×${sourceHeight}${out}`;
   }
 }
+
+
+function rgbaToHex(r, g, b, a = 255) {
+  const hex = [r, g, b].map((value) => Math.max(0, Math.min(255, Number(value) || 0)).toString(16).padStart(2, "0")).join("").toUpperCase();
+  return a < 255 ? `#${hex}${Math.max(0, Math.min(255, Number(a) || 0)).toString(16).padStart(2, "0").toUpperCase()}` : `#${hex}`;
+}
+
+async function analyzePaletteBlob(blob) {
+  if (!blob) return null;
+  const bitmap = await createImageBitmap(blob);
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    ctx.drawImage(bitmap, 0, 0);
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    const counts = new Map();
+    let transparent = 0;
+    let semiTransparent = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      const a = data[i + 3];
+      if (a === 0) transparent += 1;
+      else if (a < 255) semiTransparent += 1;
+      const key = `${r},${g},${b},${a}`;
+      counts.set(key, (counts.get(key) || 0) + 1);
+    }
+    const totalPixels = Math.max(1, canvas.width * canvas.height);
+    let most = null;
+    let least = null;
+    for (const [key, count] of counts.entries()) {
+      const [r, g, b, a] = key.split(",").map(Number);
+      const entry = { key, count, hex: rgbaToHex(r, g, b, a), alpha: a };
+      if (!most || count > most.count) most = entry;
+      if (a > 0 && (!least || count < least.count)) least = entry;
+    }
+    const uniqueColors = counts.size;
+    const bits = uniqueColors <= 1 ? 1 : Math.ceil(Math.log2(uniqueColors));
+    return {
+      width: canvas.width,
+      height: canvas.height,
+      totalPixels,
+      uniqueColors,
+      transparent,
+      semiTransparent,
+      transparentPercent: ((transparent / totalPixels) * 100).toFixed(1),
+      semiTransparentPercent: ((semiTransparent / totalPixels) * 100).toFixed(1),
+      bits,
+      most,
+      least,
+    };
+  } finally {
+    bitmap.close?.();
+  }
+}
+
+function paletteColorRow(label, stat, totalPixels) {
+  if (!stat) return [label, "—", "No color data"];
+  const pct = ((stat.count / Math.max(1, totalPixels)) * 100).toFixed(1);
+  const copyButton = `<button type="button" class="palette-copy-hex" data-copy-hex="${escapeHtml(stat.hex)}">Copy</button>`;
+  return [label, `${stat.hex} ${copyButton}`, `${stat.count.toLocaleString()} px · ${pct}%`];
+}
+
+async function renderPaletteStatistics() {
+  if (!paletteStatisticsList) return;
+  const requestId = ++paletteStatisticsRequestId;
+  const sourceBlob = selectedFile || null;
+  let outputBlob = null;
+  if (processedBlobUrl) {
+    try {
+      const response = await fetch(processedBlobUrl);
+      outputBlob = await response.blob();
+    } catch (_) {
+      outputBlob = null;
+    }
+  }
+  const blob = outputBlob || sourceBlob;
+  if (!blob) {
+    if (paletteStatisticsSummary) paletteStatisticsSummary.textContent = "Waiting for image";
+    paletteStatisticsList.innerHTML = '<div class="cleanup-diagnostic-empty">Load an image to inspect palette usage, dominant colors, transparency, and estimated bit depth.</div>';
+    return;
+  }
+
+  try {
+    const stats = await analyzePaletteBlob(blob);
+    if (requestId !== paletteStatisticsRequestId || !stats) return;
+    const target = Number(getPaletteTargetValue?.() || 0);
+    const utilizationBase = target > 0 ? target : 256;
+    const utilization = Math.min(100, (stats.uniqueColors / utilizationBase) * 100).toFixed(1);
+    const rows = [
+      ["Image Size", `${stats.width} × ${stats.height}`, `${stats.totalPixels.toLocaleString()} total pixels`],
+      ["Unique Colors", stats.uniqueColors.toLocaleString(), target > 0 ? `${target} target colors selected` : "current visible palette"],
+      ["Transparency", `${stats.transparentPercent}%`, `${stats.transparent.toLocaleString()} fully transparent px`],
+      ["Semi-Alpha", `${stats.semiTransparentPercent}%`, `${stats.semiTransparent.toLocaleString()} partially transparent px`],
+      ["Bits / Pixel", `${stats.bits} bpp`, `minimum for ${stats.uniqueColors.toLocaleString()} colors`],
+      ["Utilization", `${utilization}%`, target > 0 ? `of ${target}-color target` : "of 256-color sprite palette"],
+      paletteColorRow("Most Used", stats.most, stats.totalPixels),
+      paletteColorRow("Least Used", stats.least, stats.totalPixels),
+    ];
+    paletteStatisticsList.innerHTML = rows.map(([name, value, detail]) => `
+      <div class="palette-statistics-row">
+        <strong>${escapeHtml(name)}</strong>
+        <span>${value}</span>
+        <em>${escapeHtml(detail)}</em>
+      </div>`).join("");
+    if (paletteStatisticsSummary) {
+      const mode = outputBlob ? "Processed" : "Source";
+      paletteStatisticsSummary.textContent = `${mode} · ${stats.uniqueColors.toLocaleString()} colors · ${stats.bits} bpp`;
+    }
+  } catch (err) {
+    if (requestId !== paletteStatisticsRequestId) return;
+    if (paletteStatisticsSummary) paletteStatisticsSummary.textContent = "Palette scan failed";
+    paletteStatisticsList.innerHTML = `<div class="cleanup-diagnostic-empty">Palette statistics failed: ${escapeHtml(err.message || "Unknown error")}</div>`;
+  }
+}
+
+document.addEventListener("click", async (event) => {
+  const button = event.target?.closest?.("[data-copy-hex]");
+  if (!button) return;
+  const hex = button.dataset.copyHex || "";
+  try {
+    await navigator.clipboard.writeText(hex);
+    button.textContent = "Copied";
+    window.setTimeout(() => { button.textContent = "Copy"; }, 900);
+  } catch (_) {
+    setStatus(`HEX ${hex}`);
+  }
+});
 
 function updateOperationStackLabels() {
   syncOperationFromToolToggles();
@@ -1151,6 +1285,7 @@ async function promotePaletteBlobToCanvas(blob, filename = "palette_canvas.png",
   originalPreview.onload = () => {
     updatePaletteMeta({ resolution: `${originalPreview.naturalWidth} × ${originalPreview.naturalHeight}` });
     updatePixelSnapAnalysis();
+    renderPaletteStatistics();
     showPaletteCompare({ resetSlider: true });
     requestInitialPalettePreview();
   };
@@ -1213,6 +1348,7 @@ function clearPaletteProcessedPreview({ addHistory = false, keepDirty = false, k
   closePaletteCompareViewer();
   if (!keepDirty) setPaletteDirty(false);
   updatePixelSnapGridOverlays();
+  renderPaletteStatistics();
   if (!keepCanvasState) updatePaletteLoadedState({ filename: selectedFile?.name || "Current Canvas", source: selectedFileSource || "workspace", detail: selectedFile ? "Loaded into Palette Lab" : "No asset loaded" });
   if (addHistory) addPaletteHistory("Discarded preview", "Returned to original source image");
 }
@@ -1562,6 +1698,7 @@ async function loadImageIntoPaletteFromUrl(url, filename = "workspace.png", sour
   originalPreview.onload = () => {
     updatePaletteMeta({ resolution: `${originalPreview.naturalWidth} × ${originalPreview.naturalHeight}` });
     updatePixelSnapAnalysis();
+    renderPaletteStatistics();
     showPaletteCompare({ resetSlider: true });
     requestInitialPalettePreview();
   };
@@ -1613,10 +1750,12 @@ imageInput?.addEventListener("change", () => {
   originalPreview.onload = () => {
     updatePaletteMeta({ resolution: `${originalPreview.naturalWidth} × ${originalPreview.naturalHeight}` });
     updatePixelSnapAnalysis();
+    renderPaletteStatistics();
     showPaletteCompare({ resetSlider: true });
   };
   applyPreviewMode();
   updatePixelSnapAnalysis();
+  renderPaletteStatistics();
   setStatus(`Loaded ${file.name}`);
 });
 
@@ -1697,6 +1836,7 @@ async function processPalettePreview({ quiet = false } = {}) {
     const blob = await response.blob();
     if (processedBlobUrl) URL.revokeObjectURL(processedBlobUrl);
     processedBlobUrl = URL.createObjectURL(blob);
+    renderPaletteStatistics();
     processedPreview.src = processedBlobUrl;
     processedPreview.classList.add("pf-viewable-image");
     processedPreview.dataset.viewerTitle = "Processed preview";
