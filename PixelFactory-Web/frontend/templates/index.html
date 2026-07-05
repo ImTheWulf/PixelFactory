@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0019_4_layout_canvas_stability" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0019_5_toolbox_canvas_finish" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.16 · PF-0019.4</div>
+          <div class="subtitle">by Wulf · Web v0.16 · PF-0019.5</div>
         </div>
       </div>
 
@@ -284,47 +284,6 @@
             </div>
           </section>
 
-          <section id="paletteComparePanel" class="preview-card palette-compare-card palette-primary-compare palette-editor-canvas">
-            <div class="section-title-row palette-canvas-toolbar">
-              <div class="palette-canvas-title-block">
-                <h2>Canvas</h2>
-                <span class="palette-panel-hint">Primary cleanup workspace · drag slider to compare current result with source</span>
-                <div class="canvas-diagnostics-strip" aria-label="Palette Lab diagnostics">
-                  <span><em>Grid</em><strong id="pixelSnapDetectedGrid">—</strong></span>
-                  <span><em>Confidence</em><strong id="pixelSnapConfidence">—</strong></span>
-                  <span><em>Palette</em><strong id="pixelSnapPaletteEstimate">—</strong></span>
-                  <span><em>Colors</em><strong id="pixelSnapColorDelta">—</strong></span>
-                  <span><em>Changed</em><strong id="pixelSnapChangeAmount">—</strong></span>
-                  <span><em>Resize</em><strong id="pixelSnapResizeReadout">—</strong></span>
-                </div>
-              </div>
-              <div class="palette-compare-actions palette-canvas-actions">
-                <button id="mainCanvasFitBtn" type="button">Fit</button>
-                <button id="mainCanvasActualBtn" type="button">1:1</button>
-                <button id="mainCanvasGridToggle" type="button" class="pf-state-toggle is-off">Grid Off</button>
-                <button id="mainCanvasDifferenceBtn" type="button">Difference</button>
-                <button id="openCompareViewerBtn" type="button">Inspect</button>
-                <button type="button" id="applyPalettePreviewBtn" disabled>Apply Preview</button>
-                <button id="processBtn" type="button" class="pf-primary-action">Update Preview</button>
-                <button id="downloadBtn" type="button" disabled>Download PNG</button>
-              </div>
-            </div>
-            <div class="palette-compare-shell">
-              <div id="mainPaletteCanvasStage" class="palette-compare-stage palette-main-canvas-stage" title="Wheel zoom · Shift/Space drag pan · double-click inspect">
-                <img id="compareOriginalPreview" alt="Compare original" />
-                <div id="compareProcessedClip" class="palette-compare-processed"><img id="compareProcessedPreview" alt="Compare processed" /></div>
-                <canvas id="mainDifferenceCanvas" class="palette-main-difference" aria-label="Main difference preview"></canvas>
-                <div id="compareDivider" class="palette-compare-divider"></div>
-              </div>
-              <input id="compareSlider" type="range" min="0" max="100" value="50" />
-            </div>
-          </section>
-
-
-          <input id="previewMode" type="hidden" value="fit" />
-          <input id="operation" type="hidden" value="pixel_snap" />
-          <input id="pixelSize" type="hidden" value="0" />
-
           <section class="preview-card palette-tool-dock pixel-snap-panel">
             <div class="section-title-row">
               <div>
@@ -380,6 +339,50 @@
               <button type="button" class="palette-tool-card" disabled><strong>Edge Cleanup</strong><span>Future transparent-edge polish.</span></button>
             </div>
           </section>
+
+          <section id="paletteComparePanel" class="preview-card palette-compare-card palette-primary-compare palette-editor-canvas">
+            <div class="section-title-row palette-canvas-toolbar">
+              <div class="palette-canvas-title-block">
+                <h2>Canvas</h2>
+                <span class="palette-panel-hint">Primary cleanup workspace · drag slider to compare current result with source</span>
+                <div class="canvas-diagnostics-strip" aria-label="Palette Lab diagnostics">
+                  <span><em>Grid</em><strong id="pixelSnapDetectedGrid">—</strong></span>
+                  <span><em>Confidence</em><strong id="pixelSnapConfidence">—</strong></span>
+                  <span><em>Palette</em><strong id="pixelSnapPaletteEstimate">—</strong></span>
+                  <span><em>Colors</em><strong id="pixelSnapColorDelta">—</strong></span>
+                  <span><em>Changed</em><strong id="pixelSnapChangeAmount">—</strong></span>
+                  <span><em>Resize</em><strong id="pixelSnapResizeReadout">—</strong></span>
+                </div>
+              </div>
+              <div class="palette-compare-actions palette-canvas-actions">
+                <button id="mainCanvasFitBtn" type="button" class="pf-view-toggle">Fit</button>
+                <button id="mainCanvasActualBtn" type="button" class="pf-view-toggle">1:1</button>
+                <button id="mainCanvasGridToggle" type="button" class="pf-state-toggle is-off">Grid Off</button>
+                <button id="mainCanvasDifferenceBtn" type="button">Difference</button>
+                <button id="openCompareViewerBtn" type="button">Inspect</button>
+                <button type="button" id="applyPalettePreviewBtn" disabled>Apply Preview</button>
+                <button id="processBtn" type="button" class="pf-primary-action">Update Preview</button>
+                <button id="downloadBtn" type="button" disabled>Download PNG</button>
+              </div>
+            </div>
+            <div class="palette-compare-shell">
+              <div id="mainPaletteCanvasStage" class="palette-compare-stage palette-main-canvas-stage" title="Wheel zoom · Shift/Space drag pan · double-click inspect">
+                <img id="compareOriginalPreview" alt="Compare original" />
+                <div id="compareProcessedClip" class="palette-compare-processed"><img id="compareProcessedPreview" alt="Compare processed" /></div>
+                <canvas id="mainDifferenceCanvas" class="palette-main-difference" aria-label="Main difference preview"></canvas>
+                <div id="compareDivider" class="palette-compare-divider"></div>
+              </div>
+              <input id="compareSlider" type="range" min="0" max="100" value="50" />
+            </div>
+          </section>
+
+
+
+          <input id="previewMode" type="hidden" value="fit" />
+          <input id="operation" type="hidden" value="pixel_snap" />
+          <input id="pixelSize" type="hidden" value="0" />
+
+
         </section>
         <footer id="paletteStatusFooter" class="palette-status-footer">Palette Lab ready.</footer>
       </section>
@@ -597,6 +600,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0019_4_layout_canvas_stability"></script>
+  <script src="/static/app.js?v=pf0019_5_toolbox_canvas_finish"></script>
 </body>
 </html>

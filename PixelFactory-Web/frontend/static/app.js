@@ -695,12 +695,12 @@ function setMainCanvasViewMode(mode = "compare") {
 
 function applyMainCanvasActualSize() {
   if (!mainPaletteCanvasStage) return;
-  const ow = compareOriginalPreview?.naturalWidth || originalPreview?.naturalWidth || 0;
-  const oh = compareOriginalPreview?.naturalHeight || originalPreview?.naturalHeight || 0;
-  const pw = compareProcessedPreview?.naturalWidth || processedPreview?.naturalWidth || ow;
-  const ph = compareProcessedPreview?.naturalHeight || processedPreview?.naturalHeight || oh;
-  const targetW = Math.max(1, ow, pw);
-  const targetH = Math.max(1, oh, ph);
+  // 1:1 means inspect the source canvas at true source-pixel size.
+  // The processed side is mapped into the same visual bounds so before/after stays aligned.
+  const ow = compareOriginalPreview?.naturalWidth || originalPreview?.naturalWidth || compareProcessedPreview?.naturalWidth || processedPreview?.naturalWidth || 0;
+  const oh = compareOriginalPreview?.naturalHeight || originalPreview?.naturalHeight || compareProcessedPreview?.naturalHeight || processedPreview?.naturalHeight || 0;
+  const targetW = Math.max(1, ow);
+  const targetH = Math.max(1, oh);
   mainPaletteCanvasStage.style.setProperty("--main-canvas-actual-width", `${targetW}px`);
   mainPaletteCanvasStage.style.setProperty("--main-canvas-actual-height", `${targetH}px`);
 }
@@ -718,8 +718,15 @@ function setMainCanvasPreviewMode(mode = "fit") {
   paletteMainCanvasMode = mode === "actual" ? "actual" : "fit";
   applyMainCanvasActualSize();
   mainPaletteCanvasStage?.classList.toggle("actual", paletteMainCanvasMode === "actual");
+  [mainCanvasFitBtn, mainCanvasActualBtn].forEach((btn) => {
+    btn?.classList.remove("active", "is-on", "is-off");
+  });
   mainCanvasFitBtn?.classList.toggle("active", paletteMainCanvasMode === "fit");
+  mainCanvasFitBtn?.classList.toggle("is-on", paletteMainCanvasMode === "fit");
+  mainCanvasFitBtn?.classList.toggle("is-off", paletteMainCanvasMode !== "fit");
   mainCanvasActualBtn?.classList.toggle("active", paletteMainCanvasMode === "actual");
+  mainCanvasActualBtn?.classList.toggle("is-on", paletteMainCanvasMode === "actual");
+  mainCanvasActualBtn?.classList.toggle("is-off", paletteMainCanvasMode !== "actual");
   showPaletteCompare({ resetSlider: false });
   centerMainCanvasStage();
 }

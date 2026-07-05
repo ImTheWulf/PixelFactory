@@ -483,3 +483,10 @@ Quick favorite toggle and seed UI cleanup.
 - Auto-updates the processed preview after loading an asset when auto-update is enabled.
 - Fixed main canvas 1:1 mode to keep original and processed sides aligned.
 - Added clearer Difference On/Off canvas state.
+
+## PF-0019.5 - Palette Lab toolbox/canvas finish
+- Moved Repair Toolbox above the Canvas so core controls are always available without scrolling.
+- Compacted Repair Toolbox layout for cleaner Photoshop-style workspace flow.
+- Added active visual states for Fit and 1:1 canvas controls.
+- Improved main Canvas 1:1 sizing/alignment for before/after comparison.
+- Tightened Pipeline/History footer spacing and bottom status footer behavior.
