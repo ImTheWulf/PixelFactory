@@ -1,0 +1,9 @@
+PF-0022 add image metadata inspector
+
+- Added Image Metadata panel to Palette Lab
+- Reports source/output dimensions
+- Reports detected grid and sprite resolution estimate
+- Reports palette source/output color counts
+- Reports source/output transparency percentages
+- Added safe processing headers for metadata readout
+- Updated version/cache markers to PF-0022

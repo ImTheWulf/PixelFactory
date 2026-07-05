@@ -41,7 +41,7 @@ asset_service = AssetService(PROJECT_ROOT)
 workspace_service = WorkspaceService(PROJECT_ROOT)
 export_service = ExportService(PROJECT_ROOT, asset_service)
 
-app = FastAPI(title="Pixel Factory by Wulf", version="0.17-pf0021-cleanup-diagnostics")
+app = FastAPI(title="Pixel Factory by Wulf", version="0.18-pf0022-image-metadata-inspector")
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
 
@@ -146,6 +146,18 @@ def _rgba_color_count(img: Image.Image, limit: int = 100000) -> int:
     except Exception:
         return 0
 
+
+
+
+def _transparent_pixel_percent(img: Image.Image) -> float:
+    """Return transparent pixel percentage for UI metadata."""
+    try:
+        rgba = img.convert("RGBA")
+        total = max(1, rgba.size[0] * rgba.size[1])
+        transparent = sum(1 for _r, _g, _b, a in rgba.getdata() if a < 255)
+        return round((transparent / total) * 100.0, 2)
+    except Exception:
+        return 0.0
 
 def _changed_pixel_stats(before: Image.Image, after: Image.Image) -> tuple[int, float]:
     """Return changed pixel count and percentage between two same-size previews."""
@@ -410,7 +422,9 @@ async def process_image(
     pixel_strength = max(0.0, min(1.0, float(pixel_strength or 1.0)))
 
     original = img.copy()
+    source_width, source_height = original.size
     source_color_count = _rgba_color_count(original)
+    source_transparent_percent = _transparent_pixel_percent(original)
     detected_grid, grid_confidence = _detect_pixel_size(original, pixel_size if pixel_size > 0 else 0)
 
     step_stats: dict[str, int] = {}
@@ -462,8 +476,13 @@ async def process_image(
         img = img.resize((w * resize_scale, h * resize_scale), Image.Resampling.NEAREST)
         step_stats["resize"] = (img.size[0] * img.size[1]) - (before_step.size[0] * before_step.size[1])
 
+    output_width, output_height = img.size
     output_color_count = _rgba_color_count(img)
+    output_transparent_percent = _transparent_pixel_percent(img)
     changed_pixels, changed_percent = _changed_pixel_stats(original, img)
+    sprite_grid = max(1, int(detected_grid or 1))
+    sprite_width = max(1, int(round(source_width / sprite_grid)))
+    sprite_height = max(1, int(round(source_height / sprite_grid)))
 
     headers = {
         "X-PF-Detected-Grid": str(detected_grid),
@@ -486,6 +505,14 @@ async def process_image(
         "X-PF-Step-Edge-Cleanup": str(step_stats.get("edge_cleanup", 0)),
         "X-PF-Step-Alpha-Preserve": str(step_stats.get("alpha_preserve", 0)),
         "X-PF-Step-Resize-Pixels": str(step_stats.get("resize", 0)),
+        "X-PF-Source-Width": str(source_width),
+        "X-PF-Source-Height": str(source_height),
+        "X-PF-Output-Width": str(output_width),
+        "X-PF-Output-Height": str(output_height),
+        "X-PF-Source-Transparent-Percent": str(source_transparent_percent),
+        "X-PF-Output-Transparent-Percent": str(output_transparent_percent),
+        "X-PF-Estimated-Sprite-Width": str(sprite_width),
+        "X-PF-Estimated-Sprite-Height": str(sprite_height),
     }
     return _png_response(img, headers=headers)
 

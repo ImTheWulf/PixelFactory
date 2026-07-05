@@ -1,3 +1,9 @@
+
+## PF-0022 - Image Metadata Inspector
+- Added image metadata panel to Palette Lab.
+- Reports source/output size, detected grid, sprite estimate, palette color counts, and transparency percentage.
+- Added safe processing headers for metadata without changing cleanup behavior.
+
 ## PF-0019.8 - Palette Normalize Repair Stage
 
 - Added native Palette Normalize as the next Repair Pipeline feature.

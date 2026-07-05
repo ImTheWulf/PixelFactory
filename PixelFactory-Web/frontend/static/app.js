@@ -201,6 +201,8 @@ const pixelSnapChangeAmount = document.getElementById("pixelSnapChangeAmount");
 const pixelSnapResizeReadout = document.getElementById("pixelSnapResizeReadout");
 const cleanupDiagnosticsSummary = document.getElementById("cleanupDiagnosticsSummary");
 const cleanupDiagnosticsList = document.getElementById("cleanupDiagnosticsList");
+const imageMetadataSummary = document.getElementById("imageMetadataSummary");
+const imageMetadataList = document.getElementById("imageMetadataList");
 const pixelSnapModeBadge = document.getElementById("pixelSnapModeBadge");
 const pixelSnapEnabled = document.getElementById("pixelSnapEnabled");
 const paletteEnabled = document.getElementById("paletteEnabled");
@@ -484,6 +486,7 @@ function updatePixelSnapAnalysis() {
 function clearPixelSnapProcessedReadout() {
   pixelSnapLastResult = null;
   updatePixelSnapAnalysis();
+  renderImageMetadata();
 }
 
 function updatePixelSnapGridOverlays() {
@@ -573,6 +576,47 @@ function renderCleanupDiagnostics() {
   if (cleanupDiagnosticsSummary) {
     const changed = result.changedPercent ? `${result.changedPercent}% changed` : "0% changed";
     cleanupDiagnosticsSummary.textContent = `${changed} · ${result.processingMs} ms`;
+  }
+}
+
+
+function renderImageMetadata() {
+  if (!imageMetadataList) return;
+  const result = pixelSnapLastResult || {};
+  const sourceWidth = Number(result.sourceWidth || originalPreview?.naturalWidth || 0);
+  const sourceHeight = Number(result.sourceHeight || originalPreview?.naturalHeight || 0);
+  const outputWidth = Number(result.outputWidth || processedPreview?.naturalWidth || 0);
+  const outputHeight = Number(result.outputHeight || processedPreview?.naturalHeight || 0);
+  if (!sourceWidth || !sourceHeight) {
+    if (imageMetadataSummary) imageMetadataSummary.textContent = "Waiting for image";
+    imageMetadataList.innerHTML = '<div class="cleanup-diagnostic-empty">Load or process an image to inspect size, palette, alpha, and estimated sprite resolution.</div>';
+    return;
+  }
+
+  const grid = Number(result.grid || getCurrentPixelSnapSize() || 1);
+  const estimatedSpriteWidth = Number(result.estimatedSpriteWidth || Math.max(1, Math.round(sourceWidth / Math.max(1, grid))));
+  const estimatedSpriteHeight = Number(result.estimatedSpriteHeight || Math.max(1, Math.round(sourceHeight / Math.max(1, grid))));
+  const sourceColors = Number(result.sourceColors || 0);
+  const outputColors = Number(result.outputColors || 0);
+  const sourceAlpha = result.sourceTransparentPercent ?? "—";
+  const outputAlpha = result.outputTransparentPercent ?? "—";
+  const rows = [
+    ["Source Size", `${sourceWidth} × ${sourceHeight}`, selectedFile?.name || "Loaded image"],
+    ["Output Size", outputWidth && outputHeight ? `${outputWidth} × ${outputHeight}` : "—", outputWidth && outputHeight ? "Processed preview" : "Process to inspect output"],
+    ["Detected Grid", grid ? `${grid}px` : "—", result.confidence ? `${result.confidence}% confidence` : "estimated"],
+    ["Sprite Estimate", `${estimatedSpriteWidth} × ${estimatedSpriteHeight}`, "source size ÷ detected grid"],
+    ["Palette", sourceColors && outputColors ? `${sourceColors} → ${outputColors}` : (sourceColors ? `${sourceColors} colors` : "—"), result.paletteTarget && Number(result.paletteTarget) > 0 ? `${result.paletteTarget} target colors` : "original target"],
+    ["Transparency", outputAlpha !== "—" ? `${sourceAlpha}% → ${outputAlpha}%` : `${sourceAlpha}%`, "partial/transparent pixels"],
+  ];
+  imageMetadataList.innerHTML = rows.map(([name, value, detail]) => `
+    <div class="image-metadata-row">
+      <strong>${escapeHtml(name)}</strong>
+      <span>${escapeHtml(value)}</span>
+      <em>${escapeHtml(detail)}</em>
+    </div>`).join("");
+  if (imageMetadataSummary) {
+    const out = outputWidth && outputHeight ? ` · Output ${outputWidth}×${outputHeight}` : "";
+    imageMetadataSummary.textContent = `Source ${sourceWidth}×${sourceHeight}${out}`;
   }
 }
 
@@ -1592,8 +1636,17 @@ async function processPalettePreview({ quiet = false } = {}) {
       stepEdgeCleanup: response.headers.get("X-PF-Step-Edge-Cleanup"),
       stepAlphaPreserve: response.headers.get("X-PF-Step-Alpha-Preserve"),
       stepResizePixels: response.headers.get("X-PF-Step-Resize-Pixels"),
+      sourceWidth: response.headers.get("X-PF-Source-Width"),
+      sourceHeight: response.headers.get("X-PF-Source-Height"),
+      outputWidth: response.headers.get("X-PF-Output-Width"),
+      outputHeight: response.headers.get("X-PF-Output-Height"),
+      sourceTransparentPercent: response.headers.get("X-PF-Source-Transparent-Percent"),
+      outputTransparentPercent: response.headers.get("X-PF-Output-Transparent-Percent"),
+      estimatedSpriteWidth: response.headers.get("X-PF-Estimated-Sprite-Width"),
+      estimatedSpriteHeight: response.headers.get("X-PF-Estimated-Sprite-Height"),
     };
     renderCleanupDiagnostics();
+    renderImageMetadata();
     const blob = await response.blob();
     if (processedBlobUrl) URL.revokeObjectURL(processedBlobUrl);
     processedBlobUrl = URL.createObjectURL(blob);
@@ -1603,6 +1656,7 @@ async function processPalettePreview({ quiet = false } = {}) {
     processedPreview.onload = () => {
       paletteProcessedResolution = `${processedPreview.naturalWidth} × ${processedPreview.naturalHeight}`;
       updatePixelSnapAnalysis();
+      renderImageMetadata();
       if (paletteCompareMeta && paletteCompareModal && !paletteCompareModal.classList.contains("hidden")) {
         buildCompareDifferenceCanvas();
         applyPaletteCompareMode();
