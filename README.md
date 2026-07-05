@@ -1,4 +1,8 @@
-### PF-0019.0
+### PF-0019.1
+
+Palette Lab canvas controls cleanup: one canvas toolbar owns preview/apply/download actions, Repair Toolbox only owns tool settings, and diagnostics are compact canvas chips.
+
+### PF-0019.1
 - Palette Lab single-canvas workflow consolidation.
 - Fullscreen compare is now inspection-focused instead of a duplicate editor.
 - Repair controls remain in the main Palette Lab workspace.

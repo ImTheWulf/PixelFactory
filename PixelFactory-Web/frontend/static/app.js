@@ -3031,3 +3031,25 @@ document.addEventListener("click", (event) => {
   await loadAssets().catch(() => {});
   await checkComfy({ quiet: true });
 })();
+
+// PF-0019.1: Palette Lab control clicks must never yank the page scroll position.
+(function stabilizePaletteLabControlScroll() {
+  const paletteView = document.getElementById("paletteView");
+  if (!paletteView) return;
+  const restore = () => {
+    const x = window.scrollX || 0;
+    const y = window.scrollY || 0;
+    requestAnimationFrame(() => window.scrollTo(x, y));
+    window.setTimeout(() => window.scrollTo(x, y), 40);
+    window.setTimeout(() => window.scrollTo(x, y), 140);
+  };
+  ["pointerdown", "mousedown", "click", "change", "input"].forEach((eventName) => {
+    paletteView.addEventListener(eventName, (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest(".pixel-snap-panel, .palette-canvas-actions, .palette-active-actions")) {
+        restore();
+      }
+    }, true);
+  });
+})();

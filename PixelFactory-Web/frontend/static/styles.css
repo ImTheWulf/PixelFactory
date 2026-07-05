@@ -3915,3 +3915,103 @@ select option:hover {
     min-height: 420px !important;
   }
 }
+
+/* PF-0019.1 Palette Lab canvas controls cleanup */
+.palette-active-card {
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 330px) !important;
+}
+.palette-output-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+.palette-canvas-title-block {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+.canvas-diagnostics-strip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.canvas-diagnostics-strip span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  padding: 3px 8px;
+  border: 1px solid rgba(96, 165, 250, .22);
+  border-radius: 999px;
+  background: rgba(3, 7, 12, .48);
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.canvas-diagnostics-strip em {
+  font-style: normal;
+  color: #7f93af;
+  font-weight: 800;
+}
+.canvas-diagnostics-strip strong {
+  color: #dbeafe;
+  font-weight: 900;
+}
+.palette-canvas-actions {
+  align-items: center;
+}
+.palette-canvas-actions #applyPalettePreviewBtn {
+  border-color: rgba(34, 197, 94, .42);
+  color: #bbf7d0;
+}
+.palette-canvas-actions #applyPalettePreviewBtn:disabled {
+  border-color: var(--line);
+  color: var(--muted);
+}
+.pixel-snap-layout {
+  grid-template-columns: 1fr !important;
+}
+.pixel-snap-actions.palette-tool-help {
+  display: block;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.pixel-snap-actions.palette-tool-help #pixelSnapHint {
+  margin: 8px 2px 0;
+  max-width: none;
+}
+.pixel-snap-actions #pixelSnapToolBtn.hidden {
+  display: none !important;
+}
+.pixel-snap-panel .pixel-snap-tool-groups {
+  grid-template-columns: repeat(3, minmax(260px, 1fr));
+}
+.pixel-snap-panel .pixel-tool-group {
+  min-height: 168px;
+}
+.pixel-snap-panel .pixel-tool-group:has(#pixelSnapLivePreview) {
+  min-height: auto;
+}
+.palette-workflow-inline {
+  margin-top: 12px;
+}
+.palette-workflow-inline .palette-workflow-details:not([open]) {
+  background: rgba(3, 7, 12, .34);
+}
+#paletteView .pf-toggle-button-control,
+#paletteView .pf-toggle-button-control * {
+  scroll-margin: 0 !important;
+}
+@media (max-width: 1480px) {
+  .pixel-snap-panel .pixel-snap-tool-groups {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 1300px) {
+  .palette-active-card,
+  .palette-canvas-toolbar {
+    grid-template-columns: 1fr !important;
+  }
+}

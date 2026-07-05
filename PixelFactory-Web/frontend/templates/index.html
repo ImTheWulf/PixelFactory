@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.16 · PF-0019.0</div>
+          <div class="subtitle">by Wulf · Web v0.16 · PF-0019.1</div>
         </div>
       </div>
 
@@ -240,12 +240,9 @@
                 <label class="pf-button-like" for="imageInput">Load Image<input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp" /></label>
                 <button type="button" data-start-view="tile" class="pf-primary-action">New Tile</button>
               </div>
-              <div class="palette-active-actions">
-                <button type="button" id="applyPalettePreviewBtn" disabled class="pf-primary-action">Apply Preview</button>
+              <div class="palette-active-actions palette-output-actions">
                 <button type="button" id="discardPalettePreviewBtn" disabled>Discard</button>
                 <button type="button" id="downloadPaletteResultBtn" disabled>Download Result</button>
-              </div>
-              <div class="palette-active-actions">
                 <button type="button" id="savePaletteAssetBtn" disabled class="pf-primary-action">Save</button>
                 <button type="button" id="savePaletteAsAssetBtn" disabled>Save As...</button>
               </div>
@@ -302,9 +299,17 @@
 
           <section id="paletteComparePanel" class="preview-card palette-compare-card palette-primary-compare palette-editor-canvas">
             <div class="section-title-row palette-canvas-toolbar">
-              <div>
+              <div class="palette-canvas-title-block">
                 <h2>Canvas</h2>
                 <span class="palette-panel-hint">Primary cleanup workspace · drag slider to compare current result with source</span>
+                <div class="canvas-diagnostics-strip" aria-label="Palette Lab diagnostics">
+                  <span><em>Grid</em><strong id="pixelSnapDetectedGrid">—</strong></span>
+                  <span><em>Confidence</em><strong id="pixelSnapConfidence">—</strong></span>
+                  <span><em>Palette</em><strong id="pixelSnapPaletteEstimate">—</strong></span>
+                  <span><em>Colors</em><strong id="pixelSnapColorDelta">—</strong></span>
+                  <span><em>Changed</em><strong id="pixelSnapChangeAmount">—</strong></span>
+                  <span><em>Resize</em><strong id="pixelSnapResizeReadout">—</strong></span>
+                </div>
               </div>
               <div class="palette-compare-actions palette-canvas-actions">
                 <button id="mainCanvasFitBtn" type="button">Fit</button>
@@ -312,6 +317,7 @@
                 <button id="mainCanvasGridToggle" type="button" class="pf-state-toggle is-off">Grid Off</button>
                 <button id="mainCanvasDifferenceBtn" type="button">Difference</button>
                 <button id="openCompareViewerBtn" type="button">Inspect</button>
+                <button type="button" id="applyPalettePreviewBtn" disabled>Apply Preview</button>
                 <button id="processBtn" type="button" class="pf-primary-action">Update Preview</button>
                 <button id="downloadBtn" type="button" disabled>Download PNG</button>
               </div>
@@ -375,16 +381,8 @@
                 </fieldset>
               </div>
 
-              <div class="pixel-snap-actions">
-                <div class="pixel-snap-readout">
-                  <div><span>Detected Grid</span><strong id="pixelSnapDetectedGrid">—</strong></div>
-                  <div><span>Confidence</span><strong id="pixelSnapConfidence">—</strong></div>
-                  <div><span>Palette Target</span><strong id="pixelSnapPaletteEstimate">—</strong></div>
-                  <div><span>Colors</span><strong id="pixelSnapColorDelta">—</strong></div>
-                  <div><span>Pixels Changed</span><strong id="pixelSnapChangeAmount">—</strong></div>
-                  <div><span>Resize</span><strong id="pixelSnapResizeReadout">—</strong></div>
-                </div>
-                <button type="button" id="pixelSnapToolBtn" class="pf-primary-action">Force Update</button>
+              <div class="pixel-snap-actions palette-tool-help">
+                <button type="button" id="pixelSnapToolBtn" class="hidden" aria-hidden="true" tabindex="-1">Force Update</button>
                 <p id="pixelSnapHint" class="palette-panel-hint">Use Auto for most AI-generated tiles and sprites. Manual grid size is useful when you know the intended pixel block size.</p>
               </div>
             </div>

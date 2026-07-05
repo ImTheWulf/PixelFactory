@@ -445,3 +445,7 @@ Palette Lab Pixel Snap remains native to Pixel Factory. The Sprite Fusion Pixel 
 ## PF-0018.10 Palette Cleanup Diagnostics
 
 Palette Lab Pixel Snap is native. The current direction is to make every cleanup operation explain itself. After processing, the backend returns detected grid, confidence, palette target, resize scale, source/output colors, and changed-pixel percentage. This supports the Pixel Snapper-inspired goal of making AI pixel-art cleanup visible, testable, and understandable inside Pixel Factory without external services.
+
+## PF-0019.1 Palette Lab Canvas Controls Cleanup
+
+Palette Lab continues the single-canvas direction. Preview/apply/download controls are consolidated in the canvas toolbar. Repair Toolbox no longer exposes a second Force Update action and is reserved for tool settings. Diagnostics now live as compact chips in the Canvas header. Palette Lab control toggles preserve scroll position to prevent the page from jumping while tuning settings.

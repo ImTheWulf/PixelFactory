@@ -1,3 +1,11 @@
+## PF-0019.1 - Palette Lab canvas controls cleanup
+
+- Moved Palette Lab diagnostics into the main Canvas header as compact chips.
+- Moved Apply Preview into the Canvas toolbar beside Update Preview.
+- Removed the visible duplicate Force Update action from Repair Toolbox.
+- Kept Repair Toolbox focused on tool controls only.
+- Added scroll-position protection so Palette Lab toggles do not jump the page to the bottom.
+
 ## PF-0019.0 - Palette Lab single-canvas consolidation
 
 - Consolidated Palette Lab around one primary Canvas instead of duplicate Original/Processed/Compare work areas.
