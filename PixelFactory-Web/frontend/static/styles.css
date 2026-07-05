@@ -4741,3 +4741,64 @@ select option:hover {
     grid-template-columns: repeat(2, minmax(180px, 1fr)) !important;
   }
 }
+
+/* PF-0021 cleanup diagnostics panel */
+.cleanup-diagnostics-panel {
+  margin-top: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.72);
+  overflow: hidden;
+}
+.cleanup-diagnostics-panel summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  color: #e5edf8;
+}
+.cleanup-diagnostics-panel summary span {
+  color: #9fb0c9;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.cleanup-diagnostics-list {
+  display: grid;
+  gap: 6px;
+  padding: 0 10px 10px;
+}
+.cleanup-diagnostic-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) auto minmax(150px, 1.2fr);
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(2, 6, 23, 0.38);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+}
+.cleanup-diagnostic-row strong {
+  color: #f8fafc;
+  font-size: 0.85rem;
+}
+.cleanup-diagnostic-row span {
+  color: #93c5fd;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.cleanup-diagnostic-row em,
+.cleanup-diagnostic-empty {
+  color: #94a3b8;
+  font-style: normal;
+  font-size: 0.8rem;
+}
+.cleanup-diagnostic-empty {
+  padding: 10px 12px;
+}
+@media (max-width: 900px) {
+  .cleanup-diagnostic-row {
+    grid-template-columns: 1fr;
+  }
+}

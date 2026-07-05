@@ -199,6 +199,8 @@ const pixelSnapPaletteEstimate = document.getElementById("pixelSnapPaletteEstima
 const pixelSnapColorDelta = document.getElementById("pixelSnapColorDelta");
 const pixelSnapChangeAmount = document.getElementById("pixelSnapChangeAmount");
 const pixelSnapResizeReadout = document.getElementById("pixelSnapResizeReadout");
+const cleanupDiagnosticsSummary = document.getElementById("cleanupDiagnosticsSummary");
+const cleanupDiagnosticsList = document.getElementById("cleanupDiagnosticsList");
 const pixelSnapModeBadge = document.getElementById("pixelSnapModeBadge");
 const pixelSnapEnabled = document.getElementById("pixelSnapEnabled");
 const paletteEnabled = document.getElementById("paletteEnabled");
@@ -535,6 +537,43 @@ function renderPaletteHistory() {
   paletteHistory.innerHTML = paletteHistoryEntries
     .map((entry) => `<li><strong>${escapeHtml(entry.label)}</strong><span>${escapeHtml(entry.detail || entry.stamp)}</span></li>`)
     .join("");
+}
+
+function renderCleanupDiagnostics() {
+  if (!cleanupDiagnosticsList) return;
+  const result = pixelSnapLastResult || {};
+  if (!result.processingMs) {
+    if (cleanupDiagnosticsSummary) cleanupDiagnosticsSummary.textContent = "Waiting for first update";
+    cleanupDiagnosticsList.innerHTML = '<div class="cleanup-diagnostic-empty">Process an image to see exact cleanup results.</div>';
+    return;
+  }
+
+  const num = (value) => {
+    const parsed = Number(value || 0);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+  const fmt = (value) => num(value).toLocaleString();
+  const enabledText = (on) => on ? "enabled" : "off";
+  const resizePixels = num(result.stepResizePixels);
+  const rows = [
+    ["Pixel Snap", fmt(result.stepPixelSnap), `grid ${result.grid || "—"} · ${result.confidence || "—"}% confidence`],
+    ["Palette Quantize", fmt(result.stepPaletteQuantize), result.paletteTarget && Number(result.paletteTarget) > 0 ? `${result.paletteTarget} target colors` : "original color count"],
+    ["Palette Normalize", fmt(result.stepPaletteNormalize), `${enabledText(result.paletteNormalize === "true")} · tolerance ${result.normalizeTolerance || "—"}`],
+    ["Orphan Cleanup", fmt(result.stepOrphanCleanup), enabledText(orphanCleanupEnabled?.checked === true)],
+    ["Edge Cleanup", fmt(result.stepEdgeCleanup), `${enabledText(result.edgeCleanup === "true")} · strength ${result.edgeStrength || 0}%`],
+    ["Alpha Preserve", fmt(result.stepAlphaPreserve), pixelSnapAlpha?.checked === false ? "off" : "source alpha restored"],
+    ["Resize", resizePixels > 0 ? `+${fmt(resizePixels)}` : "0", `${result.resizeScale || 1}x nearest-neighbor`],
+  ];
+  cleanupDiagnosticsList.innerHTML = rows.map(([name, changed, detail]) => `
+    <div class="cleanup-diagnostic-row">
+      <strong>${escapeHtml(name)}</strong>
+      <span>${escapeHtml(changed)} px</span>
+      <em>${escapeHtml(detail)}</em>
+    </div>`).join("");
+  if (cleanupDiagnosticsSummary) {
+    const changed = result.changedPercent ? `${result.changedPercent}% changed` : "0% changed";
+    cleanupDiagnosticsSummary.textContent = `${changed} · ${result.processingMs} ms`;
+  }
 }
 
 function updateOperationStackLabels() {
@@ -1545,7 +1584,16 @@ async function processPalettePreview({ quiet = false } = {}) {
       normalizeTolerance: response.headers.get("X-PF-Normalize-Tolerance"),
       edgeCleanup: response.headers.get("X-PF-Edge-Cleanup"),
       edgeStrength: response.headers.get("X-PF-Edge-Strength"),
+      processingMs: response.headers.get("X-PF-Processing-MS"),
+      stepPixelSnap: response.headers.get("X-PF-Step-Pixel-Snap"),
+      stepPaletteQuantize: response.headers.get("X-PF-Step-Palette-Quantize"),
+      stepPaletteNormalize: response.headers.get("X-PF-Step-Palette-Normalize"),
+      stepOrphanCleanup: response.headers.get("X-PF-Step-Orphan-Cleanup"),
+      stepEdgeCleanup: response.headers.get("X-PF-Step-Edge-Cleanup"),
+      stepAlphaPreserve: response.headers.get("X-PF-Step-Alpha-Preserve"),
+      stepResizePixels: response.headers.get("X-PF-Step-Resize-Pixels"),
     };
+    renderCleanupDiagnostics();
     const blob = await response.blob();
     if (processedBlobUrl) URL.revokeObjectURL(processedBlobUrl);
     processedBlobUrl = URL.createObjectURL(blob);

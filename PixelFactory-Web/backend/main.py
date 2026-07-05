@@ -8,6 +8,7 @@ import random
 import shutil
 import uuid
 from datetime import datetime
+from time import perf_counter
 from pathlib import Path
 from typing import Literal
 
@@ -40,7 +41,7 @@ asset_service = AssetService(PROJECT_ROOT)
 workspace_service = WorkspaceService(PROJECT_ROOT)
 export_service = ExportService(PROJECT_ROOT, asset_service)
 
-app = FastAPI(title="Pixel Factory by Wulf", version="0.16-pf0019.9-edge-cleanup")
+app = FastAPI(title="Pixel Factory by Wulf", version="0.17-pf0021-cleanup-diagnostics")
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
 
@@ -386,6 +387,7 @@ async def process_image(
     edge_cleanup: bool = Form(False),
     edge_strength: float = Form(0.30),
 ) -> Response:
+    started_at = perf_counter()
     data = await image.read()
     img = _read_image(data)
 
@@ -411,31 +413,54 @@ async def process_image(
     source_color_count = _rgba_color_count(original)
     detected_grid, grid_confidence = _detect_pixel_size(original, pixel_size if pixel_size > 0 else 0)
 
-    if operation == "pixel_snap":
-        img = _pixel_snap_rgba(img, pixel_size=pixel_size, palette_colors=palette_colors, quantize=bool(snap_palette) and palette_colors > 0)
-    elif operation == "pixel_snap_only":
-        img = _pixel_snap_rgba(img, pixel_size=pixel_size, palette_colors=palette_colors, quantize=False)
-    elif operation in {"palette", "resize_palette"}:
-        img = _quantize_rgba(img, palette_colors)
+    step_stats: dict[str, int] = {}
 
-    if operation.startswith("pixel_snap") and pixel_strength < 0.999:
-        img = Image.blend(original, img, pixel_strength)
+    def record_step(name: str, before_step: Image.Image, after_step: Image.Image) -> None:
+        changed, _percent = _changed_pixel_stats(before_step, after_step)
+        step_stats[name] = changed
+
+    if operation == "pixel_snap":
+        before_step = img.copy()
+        img = _pixel_snap_rgba(img, pixel_size=pixel_size, palette_colors=palette_colors, quantize=bool(snap_palette) and palette_colors > 0)
+        if pixel_strength < 0.999:
+            img = Image.blend(original, img, pixel_strength)
+        record_step("pixel_snap", before_step, img)
+    elif operation == "pixel_snap_only":
+        before_step = img.copy()
+        img = _pixel_snap_rgba(img, pixel_size=pixel_size, palette_colors=palette_colors, quantize=False)
+        if pixel_strength < 0.999:
+            img = Image.blend(original, img, pixel_strength)
+        record_step("pixel_snap", before_step, img)
+    elif operation in {"palette", "resize_palette"}:
+        before_step = img.copy()
+        img = _quantize_rgba(img, palette_colors)
+        record_step("palette_quantize", before_step, img)
 
     if palette_normalize:
+        before_step = img.copy()
         img = _palette_normalize_rgba(img, tolerance=normalize_tolerance)
+        record_step("palette_normalize", before_step, img)
 
     if orphan_cleanup:
+        before_step = img.copy()
         img = _orphan_cleanup_rgba(img, sensitivity=orphan_strength)
+        record_step("orphan_cleanup", before_step, img)
 
     if edge_cleanup:
+        before_step = img.copy()
         img = _edge_cleanup_rgba(img, strength=edge_strength)
+        record_step("edge_cleanup", before_step, img)
 
     if preserve_alpha and img.mode == "RGBA":
+        before_step = img.copy()
         img.putalpha(original.getchannel("A"))
+        record_step("alpha_preserve", before_step, img)
 
     if operation in {"resize", "resize_palette", "pixel_snap"} and resize_scale > 1:
+        before_step = img.copy()
         w, h = img.size
         img = img.resize((w * resize_scale, h * resize_scale), Image.Resampling.NEAREST)
+        step_stats["resize"] = (img.size[0] * img.size[1]) - (before_step.size[0] * before_step.size[1])
 
     output_color_count = _rgba_color_count(img)
     changed_pixels, changed_percent = _changed_pixel_stats(original, img)
@@ -453,6 +478,14 @@ async def process_image(
         "X-PF-Normalize-Tolerance": str(max(1, min(64, int(normalize_tolerance or 8)))),
         "X-PF-Edge-Cleanup": "true" if edge_cleanup else "false",
         "X-PF-Edge-Strength": str(max(0, min(100, int(round(float(edge_strength or 0) * 100))))),
+        "X-PF-Processing-MS": str(max(0, int(round((perf_counter() - started_at) * 1000)))),
+        "X-PF-Step-Pixel-Snap": str(step_stats.get("pixel_snap", 0)),
+        "X-PF-Step-Palette-Quantize": str(step_stats.get("palette_quantize", 0)),
+        "X-PF-Step-Palette-Normalize": str(step_stats.get("palette_normalize", 0)),
+        "X-PF-Step-Orphan-Cleanup": str(step_stats.get("orphan_cleanup", 0)),
+        "X-PF-Step-Edge-Cleanup": str(step_stats.get("edge_cleanup", 0)),
+        "X-PF-Step-Alpha-Preserve": str(step_stats.get("alpha_preserve", 0)),
+        "X-PF-Step-Resize-Pixels": str(step_stats.get("resize", 0)),
     }
     return _png_response(img, headers=headers)
 

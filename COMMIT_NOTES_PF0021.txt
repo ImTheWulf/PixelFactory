@@ -1,0 +1,8 @@
+PF-0021 add cleanup diagnostics panel
+
+- Added a non-destructive Cleanup Diagnostics panel in Palette Lab
+- Added backend processing-time and per-step cleanup result headers
+- Reports Pixel Snap, Palette Quantize, Palette Normalize, Orphan Cleanup, Edge Cleanup, Alpha Preserve, and Resize effects
+- Shows total changed percentage and processing time after each Update
+- Updated frontend cache/version marker to PF-0021
+- No Asset Browser changes
