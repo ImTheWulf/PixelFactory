@@ -41,7 +41,7 @@ asset_service = AssetService(PROJECT_ROOT)
 workspace_service = WorkspaceService(PROJECT_ROOT)
 export_service = ExportService(PROJECT_ROOT, asset_service)
 
-app = FastAPI(title="Pixel Factory by Wulf", version="0.18-pf0022-image-metadata-inspector")
+app = FastAPI(title="Pixel Factory by Wulf", version="0.19-pf0027-smart-downscale")
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
 
@@ -182,6 +182,33 @@ def _quantize_rgba(img: Image.Image, colors: int) -> Image.Image:
     quantized = rgb.quantize(colors=colors, method=Image.Quantize.MEDIANCUT)
     out = quantized.convert("RGBA")
     out.putalpha(alpha)
+    return out
+
+
+def _smart_downscale_rgba(
+    img: Image.Image,
+    *,
+    pixel_size: int = 0,
+    palette_colors: int = 0,
+    quantize: bool = False,
+) -> Image.Image:
+    """Normalize oversized pixel-art sources down to the detected sprite grid.
+
+    PF-0027 keeps this opt-in and conservative: the detected grid becomes the
+    divisor, BOX sampling chooses a stable representative color per cell, and
+    optional palette quantize can be applied to the normalized sprite. The normal
+    resize control can then upscale the clean sprite back out with NEAREST.
+    """
+    w, h = img.size
+    px, _confidence = _detect_pixel_size(img, int(pixel_size or 0))
+    px = max(1, min(px, max(1, min(w, h) // 2)))
+    if px <= 1:
+        return img.copy()
+    down_w = max(1, round(w / px))
+    down_h = max(1, round(h / px))
+    out = img.resize((down_w, down_h), Image.Resampling.BOX)
+    if quantize and int(palette_colors or 0) > 0:
+        out = _quantize_rgba(out, palette_colors)
     return out
 
 
@@ -398,6 +425,7 @@ async def process_image(
     normalize_tolerance: int = Form(8),
     edge_cleanup: bool = Form(False),
     edge_strength: float = Form(0.30),
+    smart_downscale: bool = Form(False),
 ) -> Response:
     started_at = perf_counter()
     data = await image.read()
@@ -432,6 +460,16 @@ async def process_image(
     def record_step(name: str, before_step: Image.Image, after_step: Image.Image) -> None:
         changed, _percent = _changed_pixel_stats(before_step, after_step)
         step_stats[name] = changed
+
+    if smart_downscale and detected_grid > 1:
+        before_step = img.copy()
+        img = _smart_downscale_rgba(
+            img,
+            pixel_size=detected_grid,
+            palette_colors=palette_colors,
+            quantize=bool(snap_palette) and palette_colors > 0,
+        )
+        record_step("smart_downscale", before_step, img)
 
     if operation == "pixel_snap":
         before_step = img.copy()
@@ -498,6 +536,8 @@ async def process_image(
         "X-PF-Edge-Cleanup": "true" if edge_cleanup else "false",
         "X-PF-Edge-Strength": str(max(0, min(100, int(round(float(edge_strength or 0) * 100))))),
         "X-PF-Processing-MS": str(max(0, int(round((perf_counter() - started_at) * 1000)))),
+        "X-PF-Smart-Downscale": "true" if smart_downscale else "false",
+        "X-PF-Step-Smart-Downscale": str(step_stats.get("smart_downscale", 0)),
         "X-PF-Step-Pixel-Snap": str(step_stats.get("pixel_snap", 0)),
         "X-PF-Step-Palette-Quantize": str(step_stats.get("palette_quantize", 0)),
         "X-PF-Step-Palette-Normalize": str(step_stats.get("palette_normalize", 0)),

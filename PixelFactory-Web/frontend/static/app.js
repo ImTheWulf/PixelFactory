@@ -213,6 +213,7 @@ const pixelSnapModeBadge = document.getElementById("pixelSnapModeBadge");
 const pixelSnapEnabled = document.getElementById("pixelSnapEnabled");
 const paletteEnabled = document.getElementById("paletteEnabled");
 const resizeEnabled = document.getElementById("resizeEnabled");
+const smartDownscaleEnabled = document.getElementById("smartDownscaleEnabled");
 const comparePixelSnapEnabled = document.getElementById("comparePixelSnapEnabled");
 const comparePaletteEnabled = document.getElementById("comparePaletteEnabled");
 const compareResizeEnabled = document.getElementById("compareResizeEnabled");
@@ -567,6 +568,7 @@ function renderCleanupDiagnostics() {
   const enabledText = (on) => on ? "enabled" : "off";
   const resizePixels = num(result.stepResizePixels);
   const rows = [
+    ["Smart Downscale", fmt(result.stepSmartDownscale), result.smartDownscale === "true" ? `source ÷ ${result.grid || "—"} grid` : "off"],
     ["Pixel Snap", fmt(result.stepPixelSnap), `grid ${result.grid || "—"} · ${result.confidence || "—"}% confidence`],
     ["Palette Quantize", fmt(result.stepPaletteQuantize), result.paletteTarget && Number(result.paletteTarget) > 0 ? `${result.paletteTarget} target colors` : "original color count"],
     ["Palette Normalize", fmt(result.stepPaletteNormalize), `${enabledText(result.paletteNormalize === "true")} · tolerance ${result.normalizeTolerance || "—"}`],
@@ -613,6 +615,7 @@ function renderPixelReport() {
   const outputSize = outputWidth && outputHeight ? `${outputWidth} × ${outputHeight}` : "—";
   const spriteSize = spriteWidth && spriteHeight ? `${spriteWidth} × ${spriteHeight}` : "—";
   const pipeline = [
+    ["Smart Downscale", result.smartDownscale === "true", `${fmt(result.stepSmartDownscale)} px`],
     ["Pixel Snap", pixelSnapEnabled?.checked !== false, `${fmt(result.stepPixelSnap)} px`],
     ["Palette Quantize", isColorCleanupActive(), result.paletteTarget && Number(result.paletteTarget) > 0 ? `${result.paletteTarget} colors` : "original"],
     ["Palette Normalize", result.paletteNormalize === "true", `${fmt(result.stepPaletteNormalize)} px`],
@@ -891,6 +894,9 @@ function updateOperationStackLabels() {
     const tolerance = Number(paletteNormalizeTolerance?.value || 8);
     opPaletteCount.textContent = paletteOn ? paletteTargetLabel() : (normalizeOn ? `Normalize · ${tolerance}` : "Original colors");
   }
+  const smartOn = smartDownscaleEnabled?.checked === true;
+  const smartLabel = document.getElementById("opSmartDownscale");
+  if (smartLabel) smartLabel.textContent = smartOn ? "Auto grid" : "Off";
   if (opResizeScale) opResizeScale.textContent = resizeOn ? `${document.getElementById("resizeScale")?.value || 2}x` : "Off";
   if (opPixelSize) opPixelSize.textContent = snapOn ? (pixelSize === "0" ? `Auto · ${Math.round(snapStrength * 100)}%` : `${pixelSize}px · ${Math.round(snapStrength * 100)}%`) : "Off";
   const orphanOn = orphanCleanupEnabled?.checked === true;
@@ -904,11 +910,13 @@ function updateOperationStackLabels() {
   const edgeLabel = document.getElementById("opEdgeCleanup");
   if (edgeLabel) edgeLabel.textContent = edgeOn ? `${edgeStrengthPct}%` : "Off";
   document.querySelector('[data-op="palette"]')?.classList.toggle("active", paletteOn || normalizeOn);
+  document.querySelector('[data-op="smart"]')?.classList.toggle("active", smartOn);
   document.querySelector('[data-op="resize"]')?.classList.toggle("active", resizeOn);
   orphanRow?.classList.toggle("active", orphanOn);
   edgeRow?.classList.toggle("active", edgeOn);
   document.querySelector('[data-pipeline-chip="orphan"]')?.classList.toggle("active", orphanOn);
   document.querySelector('[data-pipeline-chip="edge"]')?.classList.toggle("active", edgeOn);
+  document.querySelector('[data-pipeline-chip="smart"]')?.classList.toggle("active", smartOn);
   document.querySelector('[data-pipeline-chip="palette"]')?.classList.toggle("active", paletteOn || normalizeOn);
   if (paletteNormalizeToleranceValue) paletteNormalizeToleranceValue.textContent = String(Number(paletteNormalizeTolerance?.value || 8));
   if (opPixelSnapRow) opPixelSnapRow.classList.toggle("active", snapOn || operation.startsWith("pixel_snap"));
@@ -1588,7 +1596,7 @@ compareProcessBtn?.addEventListener("click", processPreviewFromCompareViewer);
   control?.addEventListener("change", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncCompareOperationFromToggles(); syncPaletteControlsFromCompare(); scheduleComparePreviewUpdate(); }));
   control?.addEventListener("input", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncCompareOperationFromToggles(); syncPaletteControlsFromCompare(); scheduleComparePreviewUpdate(); }));
 });
-[document.getElementById("resizeScale"), document.getElementById("paletteColors"), pixelSnapGridSize, document.getElementById("operation"), pixelSnapEnabled, paletteEnabled, resizeEnabled, orphanCleanupEnabled, orphanCleanupStrength, paletteNormalizeEnabled, paletteNormalizeTolerance, edgeCleanupEnabled, edgeCleanupStrength].forEach((control) => {
+[document.getElementById("resizeScale"), document.getElementById("paletteColors"), pixelSnapGridSize, document.getElementById("operation"), pixelSnapEnabled, paletteEnabled, resizeEnabled, smartDownscaleEnabled, orphanCleanupEnabled, orphanCleanupStrength, paletteNormalizeEnabled, paletteNormalizeTolerance, edgeCleanupEnabled, edgeCleanupStrength].forEach((control) => {
   control?.addEventListener("change", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncOperationFromToolToggles(); updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); }));
   control?.addEventListener("input", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncOperationFromToolToggles(); updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); }));
 });
@@ -1866,6 +1874,7 @@ async function processPalettePreview({ quiet = false } = {}) {
   form.append("normalize_tolerance", paletteNormalizeTolerance?.value || "8");
   form.append("edge_cleanup", edgeCleanupEnabled?.checked === true ? "true" : "false");
   form.append("edge_strength", edgeCleanupStrength?.value || "0.30");
+  form.append("smart_downscale", smartDownscaleEnabled?.checked === true ? "true" : "false");
   form.append("operation", document.getElementById("operation").value);
 
   try {
@@ -1893,6 +1902,8 @@ async function processPalettePreview({ quiet = false } = {}) {
       edgeCleanup: response.headers.get("X-PF-Edge-Cleanup"),
       edgeStrength: response.headers.get("X-PF-Edge-Strength"),
       processingMs: response.headers.get("X-PF-Processing-MS"),
+      smartDownscale: response.headers.get("X-PF-Smart-Downscale"),
+      stepSmartDownscale: response.headers.get("X-PF-Step-Smart-Downscale"),
       stepPixelSnap: response.headers.get("X-PF-Step-Pixel-Snap"),
       stepPaletteQuantize: response.headers.get("X-PF-Step-Palette-Quantize"),
       stepPaletteNormalize: response.headers.get("X-PF-Step-Palette-Normalize"),
@@ -1947,10 +1958,11 @@ async function processPalettePreview({ quiet = false } = {}) {
     const pixelSizeText = pixelSizeLabel === "0" ? "auto grid" : `${pixelSizeLabel}px grid`;
     const strengthText = document.getElementById("operation")?.value?.startsWith("pixel_snap") ? ` · ${Math.round(Number(pixelSnapStrength?.value || 1) * 100)}% snap` : "";
     const normalizeText = isPaletteNormalizeActive() ? ` · normalize ${Number(paletteNormalizeTolerance?.value || 8)}` : "";
+    const smartText = smartDownscaleEnabled?.checked === true ? " · smart downscale" : "";
     const edgeText = edgeCleanupEnabled?.checked === true ? ` · edge ${Math.round(Number(edgeCleanupStrength?.value || 0) * 100)}%` : "";
     updatePaletteLoadedState({ filename: selectedFile?.name || "Processed preview", source: selectedFileSource || "workspace", detail: `Processed preview ready${paletteProcessedResolution !== "—" ? ` · ${paletteProcessedResolution}` : ""}` });
     const changedText = pixelSnapLastResult?.changedPercent ? ` · ${pixelSnapLastResult.changedPercent}% changed` : "";
-    addPaletteHistory(operationLabel, `${colorLabel} · ${scaleLabel}x · ${pixelSizeText}${strengthText}${normalizeText}${edgeText}${changedText}`);
+    addPaletteHistory(operationLabel, `${colorLabel} · ${scaleLabel}x · ${pixelSizeText}${strengthText}${normalizeText}${smartText}${edgeText}${changedText}`);
     setStatus("Palette Lab preview updated.");
   } catch (err) {
     setStatus(`Error: ${err.message}`);
@@ -2035,6 +2047,7 @@ function buildPaletteSaveForm(blob, filename, extra = {}) {
   form.append("normalize_tolerance", paletteNormalizeTolerance?.value || "8");
   form.append("edge_cleanup", edgeCleanupEnabled?.checked === true ? "true" : "false");
   form.append("edge_strength", edgeCleanupStrength?.value || "0.30");
+  form.append("smart_downscale", smartDownscaleEnabled?.checked === true ? "true" : "false");
   Object.entries(extra).forEach(([key, value]) => form.append(key, value ?? ""));
   return form;
 }

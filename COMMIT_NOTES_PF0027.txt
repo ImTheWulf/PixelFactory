@@ -1,0 +1,8 @@
+PF-0027 add smart downscale v1
+
+- Added optional Smart Downscale toggle to Palette Lab Resize tools
+- Added backend smart downscale pass based on detected grid size
+- Added Smart Downscale headers for diagnostics/reporting
+- Updated Cleanup Diagnostics and Pixel Report to show Smart Downscale results
+- Updated version/cache markers to PF-0027
+- No Asset Browser changes

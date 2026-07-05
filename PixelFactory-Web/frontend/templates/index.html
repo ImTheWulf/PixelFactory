@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0026_pixel_report" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0027_smart_downscale" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.19 · PF-0026</div>
+          <div class="subtitle">by Wulf · Web v0.20 · PF-0027</div>
         </div>
       </div>
 
@@ -243,6 +243,7 @@
                 <span id="pipelineChipSummary" class="palette-pipeline-chips" aria-label="Current processing plan">
                   <em data-pipeline-chip="pixel">Pixel Snap</em>
                   <em data-pipeline-chip="palette">Palette</em>
+                  <em data-pipeline-chip="smart">Smart Downscale</em>
                   <em data-pipeline-chip="resize">Resize</em>
                   <em data-pipeline-chip="alpha">Alpha</em>
                   <em data-pipeline-chip="edge">Edge</em>
@@ -251,6 +252,7 @@
               </summary>
               <div id="paletteOperationStack" class="palette-operation-stack">
                 <div class="palette-operation-row" data-op="palette"><strong>Palette Normalize</strong><span id="opPaletteCount">Original colors</span></div>
+                <div class="palette-operation-row" data-op="smart"><strong>Smart Downscale</strong><span id="opSmartDownscale">Off</span></div>
                 <div class="palette-operation-row" data-op="resize"><strong>Nearest-neighbor resize</strong><span id="opResizeScale">2x</span></div>
                 <div class="palette-operation-row" id="opPixelSnapRow" data-op="pixel-snap"><strong>Pixel Snap</strong><span id="opPixelSize">Auto</span></div>
                 <div class="palette-operation-row muted" data-op="chroma"><strong>Transparency Cleanup</strong><em>coming</em></div>
@@ -331,6 +333,7 @@
                   <legend>Resize</legend>
                   <div class="repair-tool-inline">
                     <label><span>Resize Scale</span><select id="resizeScale"><option value="1">1x</option><option value="2" selected>2x</option><option value="3">3x</option><option value="4">4x</option><option value="8">8x</option></select></label>
+                    <label class="pf-toggle-button-control"><input id="smartDownscaleEnabled" type="checkbox" /><span data-on="Smart Downscale On" data-off="Smart Downscale Off">Smart Downscale Off</span></label>
                     <label class="pf-toggle-button-control"><input id="resizeEnabled" type="checkbox" checked /><span data-on="Resize On" data-off="Resize Off">Resize On</span></label>
                   </div>
                 </fieldset>
@@ -653,6 +656,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0026_pixel_report"></script>
+  <script src="/static/app.js?v=pf0027_smart_downscale"></script>
 </body>
 </html>
