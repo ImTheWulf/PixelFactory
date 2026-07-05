@@ -4920,6 +4920,99 @@ select option:hover {
 }
 
 
+/* PF-0026 unified pixel report */
+.pixel-report-panel {
+  margin-top: 10px;
+  border: 1px solid rgba(56, 189, 248, 0.26);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.76), rgba(2, 6, 23, 0.52));
+  overflow: hidden;
+}
+.pixel-report-panel summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  color: #e5edf8;
+}
+.pixel-report-panel summary span {
+  color: #bae6fd;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+.pixel-report-list {
+  display: grid;
+  gap: 10px;
+  padding: 0 10px 10px;
+}
+.pixel-report-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(150px, 1fr));
+  gap: 8px;
+}
+.pixel-report-section {
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 12px;
+  padding: 9px 10px;
+  background: rgba(2, 6, 23, 0.34);
+}
+.pixel-report-section h3 {
+  margin: 0 0 7px;
+  color: #e0f2fe;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.pixel-report-section div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 3px 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.08);
+}
+.pixel-report-section span {
+  color: #94a3b8;
+  font-size: 0.78rem;
+}
+.pixel-report-section strong {
+  color: #f8fafc;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.pixel-report-pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pixel-report-pipeline span {
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 999px;
+  padding: 6px 9px;
+  background: rgba(2, 6, 23, 0.38);
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+.pixel-report-pipeline span.active {
+  border-color: rgba(52, 211, 153, 0.28);
+  color: #bbf7d0;
+}
+.pixel-report-pipeline em {
+  margin-left: 4px;
+  color: #93c5fd;
+  font-style: normal;
+  font-weight: 700;
+}
+@media (max-width: 1500px) {
+  .pixel-report-grid { grid-template-columns: repeat(2, minmax(180px, 1fr)); }
+}
+@media (max-width: 900px) {
+  .pixel-report-grid { grid-template-columns: 1fr; }
+}
+
 /* PF-0024 palette statistics panel */
 .palette-statistics-panel {
   margin-top: 10px;

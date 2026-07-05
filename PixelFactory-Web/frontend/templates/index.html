@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0025_version_sync" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0026_pixel_report" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.19 · PF-0025</div>
+          <div class="subtitle">by Wulf · Web v0.19 · PF-0026</div>
         </div>
       </div>
 
@@ -379,6 +379,12 @@
                     <div class="cleanup-diagnostic-empty">Process an image to see exact cleanup results.</div>
                   </div>
                 </details>
+                <details class="pixel-report-panel" id="pixelReportPanel" open>
+                  <summary><strong>Pixel Report</strong><span id="pixelReportSummary">Waiting for process</span></summary>
+                  <div id="pixelReportList" class="pixel-report-list">
+                    <div class="cleanup-diagnostic-empty">Process an image to generate a unified report.</div>
+                  </div>
+                </details>
                 <details class="image-metadata-panel" id="imageMetadataPanel" open>
                   <summary><strong>Image Metadata</strong><span id="imageMetadataSummary">Waiting for image</span></summary>
                   <div id="imageMetadataList" class="image-metadata-list">
@@ -647,6 +653,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0025_version_sync"></script>
+  <script src="/static/app.js?v=pf0026_pixel_report"></script>
 </body>
 </html>

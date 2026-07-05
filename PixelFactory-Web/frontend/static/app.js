@@ -201,6 +201,8 @@ const pixelSnapChangeAmount = document.getElementById("pixelSnapChangeAmount");
 const pixelSnapResizeReadout = document.getElementById("pixelSnapResizeReadout");
 const cleanupDiagnosticsSummary = document.getElementById("cleanupDiagnosticsSummary");
 const cleanupDiagnosticsList = document.getElementById("cleanupDiagnosticsList");
+const pixelReportSummary = document.getElementById("pixelReportSummary");
+const pixelReportList = document.getElementById("pixelReportList");
 const imageMetadataSummary = document.getElementById("imageMetadataSummary");
 const imageMetadataList = document.getElementById("imageMetadataList");
 const processingHistorySummary = document.getElementById("processingHistorySummary");
@@ -582,6 +584,83 @@ function renderCleanupDiagnostics() {
   if (cleanupDiagnosticsSummary) {
     const changed = result.changedPercent ? `${result.changedPercent}% changed` : "0% changed";
     cleanupDiagnosticsSummary.textContent = `${changed} · ${result.processingMs} ms`;
+  }
+}
+
+function renderPixelReport() {
+  if (!pixelReportList) return;
+  const result = pixelSnapLastResult || {};
+  if (!result.processingMs) {
+    if (pixelReportSummary) pixelReportSummary.textContent = "Waiting for process";
+    pixelReportList.innerHTML = '<div class="cleanup-diagnostic-empty">Process an image to generate a unified report.</div>';
+    return;
+  }
+
+  const num = (value) => {
+    const parsed = Number(value || 0);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+  const fmt = (value) => num(value).toLocaleString();
+  const pct = (value) => value || "0";
+  const sourceWidth = num(result.sourceWidth || originalPreview?.naturalWidth || 0);
+  const sourceHeight = num(result.sourceHeight || originalPreview?.naturalHeight || 0);
+  const outputWidth = num(result.outputWidth || processedPreview?.naturalWidth || 0);
+  const outputHeight = num(result.outputHeight || processedPreview?.naturalHeight || 0);
+  const grid = num(result.grid || getCurrentPixelSnapSize() || 1);
+  const spriteWidth = num(result.estimatedSpriteWidth || (sourceWidth && grid ? Math.max(1, Math.round(sourceWidth / grid)) : 0));
+  const spriteHeight = num(result.estimatedSpriteHeight || (sourceHeight && grid ? Math.max(1, Math.round(sourceHeight / grid)) : 0));
+  const sourceSize = sourceWidth && sourceHeight ? `${sourceWidth} × ${sourceHeight}` : "—";
+  const outputSize = outputWidth && outputHeight ? `${outputWidth} × ${outputHeight}` : "—";
+  const spriteSize = spriteWidth && spriteHeight ? `${spriteWidth} × ${spriteHeight}` : "—";
+  const pipeline = [
+    ["Pixel Snap", pixelSnapEnabled?.checked !== false, `${fmt(result.stepPixelSnap)} px`],
+    ["Palette Quantize", isColorCleanupActive(), result.paletteTarget && Number(result.paletteTarget) > 0 ? `${result.paletteTarget} colors` : "original"],
+    ["Palette Normalize", result.paletteNormalize === "true", `${fmt(result.stepPaletteNormalize)} px`],
+    ["Orphan Cleanup", orphanCleanupEnabled?.checked === true, `${fmt(result.stepOrphanCleanup)} px`],
+    ["Edge Cleanup", result.edgeCleanup === "true", `${fmt(result.stepEdgeCleanup)} px`],
+    ["Alpha Preserve", pixelSnapAlpha?.checked !== false, `${fmt(result.stepAlphaPreserve)} px`],
+    ["Resize", resizeEnabled?.checked !== false, `${result.resizeScale || 1}x`],
+  ];
+
+  const sections = [
+    ["Image", [
+      ["Source", sourceSize],
+      ["Output", outputSize],
+      ["Sprite Estimate", spriteSize],
+    ]],
+    ["Detection", [
+      ["Grid", grid ? `${grid}px` : "—"],
+      ["Confidence", result.confidence ? `${result.confidence}%` : "—"],
+    ]],
+    ["Palette", [
+      ["Original", result.sourceColors ? fmt(result.sourceColors) : "—"],
+      ["Final", result.outputColors ? fmt(result.outputColors) : "—"],
+      ["Target", result.paletteTarget && Number(result.paletteTarget) > 0 ? result.paletteTarget : "Original colors"],
+    ]],
+    ["Cleanup", [
+      ["Pixels Changed", result.changedPixels ? `${fmt(result.changedPixels)} px` : "—"],
+      ["Changed", `${pct(result.changedPercent)}%`],
+      ["Transparency", result.outputTransparentPercent ? `${result.sourceTransparentPercent || "0"}% → ${result.outputTransparentPercent}%` : `${result.sourceTransparentPercent || "0"}%`],
+    ]],
+    ["Performance", [
+      ["Processing Time", `${result.processingMs} ms`],
+    ]],
+  ];
+
+  pixelReportList.innerHTML = `
+    <div class="pixel-report-grid">
+      ${sections.map(([title, rows]) => `
+        <div class="pixel-report-section">
+          <h3>${escapeHtml(title)}</h3>
+          ${rows.map(([label, value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("")}
+        </div>`).join("")}
+    </div>
+    <div class="pixel-report-pipeline">
+      ${pipeline.map(([name, on, detail]) => `<span class="${on ? "active" : "inactive"}">${on ? "✓" : "○"} ${escapeHtml(name)} <em>${escapeHtml(detail)}</em></span>`).join("")}
+    </div>`;
+
+  if (pixelReportSummary) {
+    pixelReportSummary.textContent = `${sourceSize} → ${outputSize} · ${pct(result.changedPercent)}% changed · ${result.processingMs} ms`;
   }
 }
 
@@ -1831,6 +1910,7 @@ async function processPalettePreview({ quiet = false } = {}) {
       estimatedSpriteHeight: response.headers.get("X-PF-Estimated-Sprite-Height"),
     };
     renderCleanupDiagnostics();
+    renderPixelReport();
     renderImageMetadata();
     addProcessingHistoryEntry();
     const blob = await response.blob();

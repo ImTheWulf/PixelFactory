@@ -1,0 +1,16 @@
+PF-0026 add unified pixel report
+
+Added:
+- Unified Pixel Report panel in Palette Lab.
+- Source/output/sprite size summary.
+- Grid confidence and palette summary.
+- Cleanup changed pixels/transparency summary.
+- Pipeline receipt showing active/inactive processing stages.
+
+Changed:
+- Version/cache markers updated to PF-0026.
+
+Safety:
+- UI/reporting only.
+- No Asset Browser changes.
+- No processing algorithm changes.

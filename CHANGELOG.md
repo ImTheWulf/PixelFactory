@@ -1,4 +1,18 @@
 
+## PF-0026 - Unified Pixel Report
+
+Added:
+- Unified Pixel Report panel for Palette Lab processing results.
+- Source/output/sprite size, detection, palette, cleanup, transparency, and performance sections.
+- Pipeline receipt chips for Pixel Snap, Palette Quantize, Palette Normalize, Orphan Cleanup, Edge Cleanup, Alpha Preserve, and Resize.
+
+Changed:
+- Updated version/cache markers to PF-0026.
+
+Safety:
+- UI/reporting only. No processing or Asset Browser changes.
+
+
 ## PF-0025 - Version Display Sync
 
 Changed:
