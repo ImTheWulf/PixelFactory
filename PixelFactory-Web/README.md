@@ -49,3 +49,6 @@ The UI should not hardcode generation logic. It should load recipes and send rec
 ## PF-0012.2
 
 Quick favorite toggle and seed UI cleanup.
+
+### PF-0019.9
+Adds native Edge Cleanup repair stage inspired by AI pixel-art cleanup research. This is not an external server or borrowed UI; it is implemented inside Pixel Factory's Palette Lab repair pipeline.

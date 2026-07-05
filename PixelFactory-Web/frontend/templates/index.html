@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0019_8_palette_normalize" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0019_9_edge_cleanup" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.16 · PF-0019.8</div>
+          <div class="subtitle">by Wulf · Web v0.16 · PF-0019.9</div>
         </div>
       </div>
 
@@ -245,6 +245,7 @@
                   <em data-pipeline-chip="palette">Palette</em>
                   <em data-pipeline-chip="resize">Resize</em>
                   <em data-pipeline-chip="alpha">Alpha</em>
+                  <em data-pipeline-chip="edge">Edge</em>
                   <em data-pipeline-chip="orphan">Orphans</em>
                 </span>
               </summary>
@@ -253,7 +254,7 @@
                 <div class="palette-operation-row" data-op="resize"><strong>Nearest-neighbor resize</strong><span id="opResizeScale">2x</span></div>
                 <div class="palette-operation-row" id="opPixelSnapRow" data-op="pixel-snap"><strong>Pixel Snap</strong><span id="opPixelSize">Auto</span></div>
                 <div class="palette-operation-row muted" data-op="chroma"><strong>Transparency Cleanup</strong><em>coming</em></div>
-                <div class="palette-operation-row muted" data-op="edge"><strong>Edge Cleanup</strong><em>coming</em></div>
+                <div class="palette-operation-row" data-op="edge"><strong>Edge Cleanup</strong><span id="opEdgeCleanup">Off</span></div>
                 <div class="palette-operation-row" data-op="orphan"><strong>Orphan Cleanup</strong><span id="opOrphanCleanup">Off</span></div>
               </div>
             </details>
@@ -301,7 +302,7 @@
               <button type="button" class="repair-tool-tab" data-repair-tab="orphans">Orphan Cleanup</button>
               <button type="button" class="repair-tool-tab disabled" disabled>Repair Brush</button>
               <button type="button" class="repair-tool-tab disabled" disabled>Chroma Key</button>
-              <button type="button" class="repair-tool-tab disabled" disabled>Edge Cleanup</button>
+              <button type="button" class="repair-tool-tab" data-repair-tab="edge">Edge Cleanup</button>
             </div>
 
             <div class="pixel-snap-layout repair-tool-active-panel">
@@ -336,11 +337,20 @@
 
                 <fieldset class="pixel-tool-group repair-tool-pane" data-repair-pane="orphans">
                   <legend>Orphan Cleanup</legend>
-                  <div class="repair-tool-inline">
+                  <div class="repair-tool-inline repair-two-control-row">
                     <label><span>Sensitivity</span><input id="orphanCleanupStrength" type="range" min="0" max="1" step="0.05" value="0.35" /><em id="orphanCleanupStrengthValue">35%</em></label>
                     <label class="pf-toggle-button-control"><input id="orphanCleanupEnabled" type="checkbox" /><span data-on="Orphan Cleanup On" data-off="Orphan Cleanup Off">Orphan Cleanup Off</span></label>
                   </div>
                   <p class="pixel-tool-note">Removes tiny isolated color/noise pixels after snapping. Keep low for detailed sprites.</p>
+                </fieldset>
+
+                <fieldset class="pixel-tool-group repair-tool-pane" data-repair-pane="edge">
+                  <legend>Edge Cleanup</legend>
+                  <div class="repair-tool-inline repair-two-control-row">
+                    <label><span>Edge Strength</span><input id="edgeCleanupStrength" type="range" min="0" max="1" step="0.05" value="0.30" /><em id="edgeCleanupStrengthValue">30%</em></label>
+                    <label class="pf-toggle-button-control"><input id="edgeCleanupEnabled" type="checkbox" /><span data-on="Edge Cleanup On" data-off="Edge Cleanup Off">Edge Cleanup Off</span></label>
+                  </div>
+                  <p class="pixel-tool-note">Unfake-inspired jaggy cleanup: smooths isolated stair-step edge artifacts after snap/normalize without blurring the whole image.</p>
                 </fieldset>
               </div>
 
@@ -613,6 +623,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0019_8_palette_normalize"></script>
+  <script src="/static/app.js?v=pf0019_9_edge_cleanup"></script>
 </body>
 </html>

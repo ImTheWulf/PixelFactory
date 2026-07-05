@@ -40,7 +40,7 @@ asset_service = AssetService(PROJECT_ROOT)
 workspace_service = WorkspaceService(PROJECT_ROOT)
 export_service = ExportService(PROJECT_ROOT, asset_service)
 
-app = FastAPI(title="Pixel Factory by Wulf", version="0.16-pf0019.8-palette-normalize")
+app = FastAPI(title="Pixel Factory by Wulf", version="0.16-pf0019.9-edge-cleanup")
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
 
@@ -296,6 +296,79 @@ def _orphan_cleanup_rgba(img: Image.Image, *, sensitivity: float = 0.35) -> Imag
     return out
 
 
+def _edge_cleanup_rgba(img: Image.Image, *, strength: float = 0.30) -> Image.Image:
+    """Clean small jaggy/stair-step edge artifacts without blurring the asset.
+
+    Inspired by unfake.js' artifact cleanup direction, but implemented natively
+    for Pixel Factory. This is intentionally conservative: it only replaces a
+    pixel when the local 8-neighbor area strongly agrees on a different color.
+    It works best after Pixel Snap / Palette Normalize because nearby pixels are
+    already clustered into cleaner colors.
+    """
+    strength = max(0.0, min(1.0, float(strength or 0.0)))
+    if strength <= 0:
+        return img.copy()
+    src = img.convert("RGBA")
+    w, h = src.size
+    if w < 3 or h < 3:
+        return src
+
+    pix = src.load()
+    out = src.copy()
+    outpix = out.load()
+    alpha_threshold = 16
+    # Conservative threshold at low strengths, stronger cleanup at higher values.
+    required = 6 if strength < 0.34 else 5 if strength < 0.67 else 4
+    max_changes = max(1, int(w * h * (0.025 + strength * 0.075)))
+    changed = 0
+
+    def close_rgb(a: tuple[int, int, int, int], b: tuple[int, int, int, int], tol: int = 10) -> bool:
+        if a[3] <= alpha_threshold or b[3] <= alpha_threshold:
+            return a[3] <= alpha_threshold and b[3] <= alpha_threshold
+        return abs(a[0] - b[0]) <= tol and abs(a[1] - b[1]) <= tol and abs(a[2] - b[2]) <= tol
+
+    for y in range(1, h - 1):
+        for x in range(1, w - 1):
+            center = pix[x, y]
+            if center[3] <= alpha_threshold:
+                continue
+
+            neighbors = [
+                pix[x - 1, y - 1], pix[x, y - 1], pix[x + 1, y - 1],
+                pix[x - 1, y],                 pix[x + 1, y],
+                pix[x - 1, y + 1], pix[x, y + 1], pix[x + 1, y + 1],
+            ]
+            same = sum(1 for col in neighbors if close_rgb(col, center, tol=8))
+            if same >= 3:
+                continue
+
+            # Cluster neighbors into tolerance buckets so normalized-but-not-exact
+            # colors can still vote together.
+            buckets: dict[tuple[int, int, int], list[tuple[int, int, int, int]]] = {}
+            for col in neighbors:
+                if col[3] <= alpha_threshold:
+                    continue
+                key = (col[0] // 12, col[1] // 12, col[2] // 12)
+                buckets.setdefault(key, []).append(col)
+            if not buckets:
+                continue
+            _key, votes = max(buckets.items(), key=lambda item: len(item[1]))
+            if len(votes) < required:
+                continue
+
+            # Avoid wiping intentional bright details: only repair if candidate is
+            # visually close enough to the local area, not a totally unrelated color.
+            avg = tuple(int(round(sum(c[i] for c in votes) / len(votes))) for i in range(4))
+            contrast = abs(center[0] - avg[0]) + abs(center[1] - avg[1]) + abs(center[2] - avg[2])
+            if contrast > 150 and strength < 0.70:
+                continue
+            outpix[x, y] = avg
+            changed += 1
+            if changed >= max_changes:
+                return out
+    return out
+
+
 @app.post("/api/process")
 async def process_image(
     image: UploadFile = File(...),
@@ -310,6 +383,8 @@ async def process_image(
     orphan_strength: float = Form(0.35),
     palette_normalize: bool = Form(False),
     normalize_tolerance: int = Form(8),
+    edge_cleanup: bool = Form(False),
+    edge_strength: float = Form(0.30),
 ) -> Response:
     data = await image.read()
     img = _read_image(data)
@@ -352,6 +427,9 @@ async def process_image(
     if orphan_cleanup:
         img = _orphan_cleanup_rgba(img, sensitivity=orphan_strength)
 
+    if edge_cleanup:
+        img = _edge_cleanup_rgba(img, strength=edge_strength)
+
     if preserve_alpha and img.mode == "RGBA":
         img.putalpha(original.getchannel("A"))
 
@@ -373,6 +451,8 @@ async def process_image(
         "X-PF-Changed-Percent": str(changed_percent),
         "X-PF-Palette-Normalize": "true" if palette_normalize else "false",
         "X-PF-Normalize-Tolerance": str(max(1, min(64, int(normalize_tolerance or 8)))),
+        "X-PF-Edge-Cleanup": "true" if edge_cleanup else "false",
+        "X-PF-Edge-Strength": str(max(0, min(100, int(round(float(edge_strength or 0) * 100))))),
     }
     return _png_response(img, headers=headers)
 

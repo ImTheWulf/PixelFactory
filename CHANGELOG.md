@@ -517,3 +517,11 @@ Quick favorite toggle and seed UI cleanup.
 - Added active visual states for Fit and 1:1 canvas controls.
 - Improved main Canvas 1:1 sizing/alignment for before/after comparison.
 - Tightened Pipeline/History footer spacing and bottom status footer behavior.
+
+## PF-0019.9 - Edge Cleanup Repair Stage
+- Added native Edge Cleanup as the next Repair Toolbox feature.
+- Added Edge Cleanup tab with On/Off and Edge Strength controls.
+- Backend now performs conservative jaggy/stair-step cleanup after Pixel Snap/Palette Normalize.
+- Tightened Palette tab layout so Normalize toggle sits beside its tolerance slider.
+- Further compacted Repair Toolbox active panels so Canvas keeps priority.
+- Updated version/cache to PF-0019.9.
