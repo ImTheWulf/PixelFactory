@@ -738,3 +738,23 @@ Safety:
 - Morphology, Jaggy, and Orphan Cleanup stay manual by default to avoid over-cleaning detailed sprites.
 - No backend processing changes.
 - No Asset Browser changes.
+
+PF-0042
+-------
+Added:
+- Safe Auto Pipeline behavior so recommendations do not surprise-change output size.
+- Export Size Notice under Output Scale / Target Resolution.
+- Export warning inside Image Analysis when Target Resolution will shrink or upscale the asset.
+- Suggested / Manual recommendation lane for Smart Downscale, Morphology, Jaggy, and other detail-sensitive stages.
+
+Changed:
+- Renamed Readiness Score to Analysis Confidence to avoid implying visual quality judgment.
+- Apply Recommended Pipeline is now Apply Safe Pipeline.
+- Auto Pipeline no longer toggles Smart Downscale automatically.
+- Auto Pipeline never changes Output Scale or Target Resolution.
+- Updated version/cache markers to PF-0042.
+
+Safety:
+- No backend processing algorithm changes.
+- No Asset Browser changes.
+- Manual controls remain fully available.

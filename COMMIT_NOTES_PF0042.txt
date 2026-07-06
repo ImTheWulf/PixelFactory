@@ -1,0 +1,12 @@
+PF-0042 refine auto pipeline safety and export guidance
+
+- Rename Readiness Score to Analysis Confidence
+- Change Apply Recommended Pipeline to Apply Safe Pipeline
+- Keep Smart Downscale manual so auto recommendations do not resize unexpectedly
+- Keep Output Scale and Target Resolution fully manual
+- Add export-size warning when Target Resolution shrinks/upscales the asset
+- Add Suggested / Manual lane for Smart Downscale, Morphology, Jaggy, and optional cleanup stages
+- Add live Export Size Notice under resize controls
+- Update version/cache markers to PF-0042
+- No backend processing algorithm changes
+- No Asset Browser changes

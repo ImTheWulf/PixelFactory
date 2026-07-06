@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0041_auto_pipeline" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0042_auto_pipeline_safety" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.33 · PF-0041</div>
+          <div class="subtitle">by Wulf · Web v0.34 · PF-0042</div>
         </div>
       </div>
 
@@ -388,6 +388,7 @@
                     <label class="pf-toggle-button-control"><input id="resizeEnabled" type="checkbox" checked /><span data-on="Resize On" data-off="Resize Off">Resize On</span></label>
                   </div>
                   <p class="pixel-tool-note">Output Scale multiplies the processed image. Target Resolution exports an exact square size, useful for 16×16, 32×32, 64×64 game assets. Smart Downscale runs before this final export size.</p>
+                  <p id="exportSizeNotice" class="export-size-notice" data-tone="neutral">Output Scale preserves the processed image shape. Target Resolution changes the actual exported PNG size.</p>
                 </fieldset>
 
                 <fieldset class="pixel-tool-group repair-tool-pane" data-repair-pane="orphans">
@@ -464,8 +465,8 @@
                     <details class="image-analysis-panel" id="imageAnalysisPanel" open>
                       <summary><strong>Image Analysis</strong><span id="imageAnalysisSummary">Waiting for process</span></summary>
                       <div class="image-analysis-actions">
-                        <button type="button" id="applyRecommendedPipelineBtn" class="secondary-action" disabled>Apply Recommended Pipeline</button>
-                        <span id="applyRecommendedPipelineHint">Process an image first.</span>
+                        <button type="button" id="applyRecommendedPipelineBtn" class="secondary-action" disabled>Apply Safe Pipeline</button>
+                        <span id="applyRecommendedPipelineHint">Process an image first. Size controls stay manual.</span>
                       </div>
                       <div id="imageAnalysisList" class="image-analysis-list">
                         <div class="cleanup-diagnostic-empty">Process an image to get pipeline recommendations.</div>
@@ -753,6 +754,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0041_auto_pipeline"></script>
+  <script src="/static/app.js?v=pf0042_auto_pipeline_safety"></script>
 </body>
 </html>

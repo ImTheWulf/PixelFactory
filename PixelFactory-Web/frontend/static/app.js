@@ -227,6 +227,7 @@ const pixelSnapEnabled = document.getElementById("pixelSnapEnabled");
 const paletteEnabled = document.getElementById("paletteEnabled");
 const resizeEnabled = document.getElementById("resizeEnabled");
 const exportTargetSize = document.getElementById("exportTargetSize");
+const exportSizeNotice = document.getElementById("exportSizeNotice");
 const smartDownscaleEnabled = document.getElementById("smartDownscaleEnabled");
 const pipelineManagerSummary = document.getElementById("pipelineManagerSummary");
 const pipelineStageToggles = Array.from(document.querySelectorAll("[data-pipeline-toggle]"));
@@ -606,6 +607,8 @@ function buildImageAnalysis(result = pixelSnapLastResult || {}) {
   const outputWidth = num(result.outputWidth);
   const outputHeight = num(result.outputHeight);
   const changedPercent = num(result.changedPercent);
+  const resizeScaleValue = Number(result.resizeScale || document.getElementById("resizeScale")?.value || 1) || 1;
+  const exportTargetValue = result.exportTargetSize && result.exportTargetSize !== "scale" ? Number(result.exportTargetSize) : 0;
   const finalColors = outputColors || sourceColors;
   const square = sourceWidth > 0 && sourceWidth === sourceHeight;
   const largeSource = Math.max(sourceWidth, sourceHeight) >= 512;
@@ -614,12 +617,16 @@ function buildImageAnalysis(result = pixelSnapLastResult || {}) {
   const highPalette = sourceColors > 256;
   const cleanPalette = finalColors > 0 && finalColors <= 256;
   const transparent = sourceAlpha > 0;
-  const targetExport = result.exportTargetSize && result.exportTargetSize !== "scale" ? `${result.exportTargetSize}×${result.exportTargetSize}` : `Output scale ${result.resizeScale || 1}x`;
-  const qualityScore = Math.max(0, Math.min(100, Math.round(
-    (likelyPixelArt ? 30 : 10) +
-    (confidence ? Math.min(30, confidence * 0.30) : 0) +
-    (cleanPalette ? 20 : highPalette ? 8 : 14) +
-    (changedPercent > 0 && changedPercent < 90 ? 10 : changedPercent >= 90 ? 6 : 4) +
+  const exactTargetMode = exportTargetValue > 0;
+  const targetExport = exactTargetMode ? `${exportTargetValue}×${exportTargetValue}` : `Output scale ${resizeScaleValue}x`;
+  const outputShrunk = sourceWidth && outputWidth && outputWidth < sourceWidth;
+  const exactTargetShrinks = exactTargetMode && sourceWidth && exportTargetValue < Math.max(sourceWidth, sourceHeight);
+  const exactTargetUpscales = exactTargetMode && sourceWidth && exportTargetValue > Math.max(sourceWidth, sourceHeight);
+  const confidenceScore = Math.max(0, Math.min(100, Math.round(
+    (likelyPixelArt ? 32 : 12) +
+    (confidence ? Math.min(32, confidence * 0.32) : 0) +
+    (cleanPalette ? 18 : highPalette ? 10 : 14) +
+    (changedPercent > 0 && changedPercent < 85 ? 8 : changedPercent >= 85 ? 5 : 4) +
     (square ? 5 : 2) +
     (transparent ? 3 : 1)
   )));
@@ -629,15 +636,19 @@ function buildImageAnalysis(result = pixelSnapLastResult || {}) {
     { label: likelyUpscaled ? "Likely upscaled source" : "Source scale looks moderate", detail: sourceWidth && sourceHeight ? `${sourceWidth}×${sourceHeight}` : "No source size yet", good: likelyUpscaled },
     { label: highPalette ? "High/noisy palette" : "Palette already controlled", detail: sourceColors ? `${sourceColors.toLocaleString()} source colors` : "No palette count yet", good: highPalette },
     { label: transparent ? "Transparency present" : "No transparency detected", detail: `${sourceAlpha || 0}% transparent pixels`, good: transparent },
-    { label: "Export plan", detail: targetExport, good: true },
+    { label: exactTargetMode ? "Exact target export" : "Output-scale export", detail: targetExport, good: !exactTargetShrinks },
   ];
 
   const recommendations = [];
+  const suggestions = [];
   const skips = [];
+  const warnings = [];
   const addRec = (name, detail) => recommendations.push({ name, detail });
+  const addSuggest = (name, detail) => suggestions.push({ name, detail });
   const addSkip = (name, detail) => skips.push({ name, detail });
+  const addWarn = (label, detail) => warnings.push({ label, detail });
 
-  if (grid >= 2 && confidence >= 65) addRec("Smart Downscale", `Detected ${grid}px grid; normalize before cleanup.`);
+  if (grid >= 2 && confidence >= 65) addSuggest("Smart Downscale", `Detected ${grid}px grid; useful for normalization, but kept manual so export size never changes unexpectedly.`);
   else addSkip("Smart Downscale", "Grid confidence is low or already 1×.");
 
   if (grid >= 2) addRec("Pixel Snap", "Lock pixels to the detected grid.");
@@ -652,12 +663,33 @@ function buildImageAnalysis(result = pixelSnapLastResult || {}) {
   if (likelyUpscaled || highPalette) addRec("Edge Cleanup", "Useful for upscaled or noisy AI pixel edges.");
   else addSkip("Edge Cleanup", "No obvious edge repair signal from metadata.");
 
-  if (sourceColors > 1000 && confidence >= 60) addSkip("Morphology / Jaggy", "Optional manual pass; use low strength and compare if specks or stair steps are visible.");
+  if (sourceColors > 1000 && confidence >= 60) addSuggest("Morphology / Jaggy", "Manual pass; use low strength and compare if specks or stair steps are visible.");
   else addSkip("Morphology / Jaggy", "Only needed when specks, pinholes, or stair steps are visible.");
 
-  return { detected, recommendations, skips, qualityScore, likelyPixelArt, likelyUpscaled, highPalette, transparent };
-}
+  if (exactTargetShrinks) {
+    addWarn("Target Resolution will shrink the asset", `${sourceWidth}×${sourceHeight} is exporting as ${exportTargetValue}×${exportTargetValue}. Use Output Scale if you want to preserve processed size.`);
+  } else if (exactTargetUpscales) {
+    addWarn("Target Resolution will upscale the asset", `${sourceWidth}×${sourceHeight} is exporting as ${exportTargetValue}×${exportTargetValue}. Nearest-neighbor keeps pixels crisp.`);
+  }
+  if (outputShrunk && !exactTargetShrinks) {
+    addWarn("Working size changed", `${sourceWidth}×${sourceHeight} processed to ${outputWidth}×${outputHeight}. This may be from Smart Downscale or Output Scale settings.`);
+  }
 
+  return {
+    detected,
+    recommendations,
+    suggestions,
+    skips,
+    warnings,
+    confidenceScore,
+    likelyPixelArt,
+    likelyUpscaled,
+    highPalette,
+    transparent,
+    exactTargetMode,
+    exactTargetShrinks,
+  };
+}
 function buildAutoPipelinePlan(result = pixelSnapLastResult || {}) {
   const num = (value) => {
     const parsed = Number(value || 0);
@@ -676,7 +708,8 @@ function buildAutoPipelinePlan(result = pixelSnapLastResult || {}) {
   const transparent = sourceAlpha > 0;
 
   return {
-    smart: clearGrid,
+    smart: false,
+    smartSuggested: clearGrid,
     snap: grid >= 2,
     palette: true,
     normalize: highPalette,
@@ -685,17 +718,18 @@ function buildAutoPipelinePlan(result = pixelSnapLastResult || {}) {
     edge: likelyUpscaled || highPalette,
     morphology: false,
     jaggy: false,
-    resize: true,
+    resize: false,
+    preserveExportControls: true,
     notes: [
-      clearGrid ? `Smart Downscale: detected ${grid}px grid at ${confidence || 0}% confidence.` : "Smart Downscale: skipped until grid confidence is stronger.",
+      clearGrid ? `Smart Downscale: suggested for ${grid}px grid at ${confidence || 0}% confidence, but left manual so size does not change unexpectedly.` : "Smart Downscale: skipped until grid confidence is stronger.",
       highPalette ? `Palette Normalize: ${sourceColors.toLocaleString()} source colors suggests AI color noise.` : "Palette Normalize: skipped because palette count looks controlled.",
       transparent ? "Alpha Cleanup: enabled because transparent pixels were detected." : "Alpha Cleanup: skipped because no transparent fringe was detected.",
       (likelyUpscaled || highPalette) ? "Edge Cleanup: enabled as a conservative upscaled/noisy-edge repair." : "Edge Cleanup: skipped until visible edge artifacts are detected.",
-      "Morphology, Jaggy, and Orphan Cleanup stay manual by default to avoid over-cleaning detailed art.",
+      "Target Resolution and Output Scale are never changed by Auto Pipeline.",
+      "Morphology, Jaggy, Smart Downscale, and Orphan Cleanup stay manual by default to avoid over-cleaning or resizing detailed art.",
     ],
   };
 }
-
 function setCheckboxValue(control, checked) {
   if (!control) return;
   control.checked = Boolean(checked);
@@ -709,16 +743,14 @@ function applyRecommendedPipeline() {
   }
   const plan = buildAutoPipelinePlan(result);
 
-  setCheckboxValue(smartDownscaleEnabled, plan.smart);
+  // Smart Downscale is intentionally manual because it can change the working resolution.
+  // Auto Pipeline never changes Output Scale or Target Resolution.
   setCheckboxValue(pixelSnapEnabled, plan.snap);
   setCheckboxValue(paletteEnabled, plan.palette);
   setCheckboxValue(paletteNormalizeEnabled, plan.normalize);
   setCheckboxValue(alphaCleanupEnabled, plan.alpha);
-  setCheckboxValue(orphanCleanupEnabled, plan.orphan);
+  // Orphan, Morphology, Jaggy, Smart Downscale, and export sizing stay manual.
   setCheckboxValue(edgeCleanupEnabled, plan.edge);
-  setCheckboxValue(morphologyCleanupEnabled, plan.morphology);
-  setCheckboxValue(jaggyCleanupEnabled, plan.jaggy);
-  setCheckboxValue(resizeEnabled, plan.resize);
 
   if (pixelSnapGridSize) pixelSnapGridSize.value = "0";
   if (paletteNormalizeTolerance && plan.normalize && Number(paletteNormalizeTolerance.value || 0) < 8) paletteNormalizeTolerance.value = "8";
@@ -731,7 +763,7 @@ function applyRecommendedPipeline() {
   renderImageAnalysis();
   renderCleanupDiagnostics();
   renderPixelReport();
-  setStatus("Recommended pipeline applied. Manual controls are still available.");
+  setStatus("Safe recommendations applied. Smart Downscale and export size stayed manual.");
   schedulePalettePreviewUpdate();
 }
 
@@ -747,9 +779,9 @@ function renderImageAnalysis() {
   }
   const analysis = buildImageAnalysis(result);
   const autoPlan = buildAutoPipelinePlan(result);
-  const plannedStages = [autoPlan.smart, autoPlan.snap, autoPlan.palette, autoPlan.normalize, autoPlan.alpha, autoPlan.edge, autoPlan.resize].filter(Boolean).length;
+  const plannedStages = [autoPlan.snap, autoPlan.palette, autoPlan.normalize, autoPlan.alpha, autoPlan.edge].filter(Boolean).length;
   if (applyRecommendedPipelineBtn) applyRecommendedPipelineBtn.disabled = false;
-  if (applyRecommendedPipelineHint) applyRecommendedPipelineHint.textContent = `${plannedStages} safe stages recommended · manual stages stay under your control`;
+  if (applyRecommendedPipelineHint) applyRecommendedPipelineHint.textContent = `${plannedStages} safe stages · size controls stay manual`;
   const badges = [];
   if (analysis.likelyPixelArt) badges.push("Pixel art");
   if (analysis.likelyUpscaled) badges.push("Upscaled source");
@@ -759,30 +791,32 @@ function renderImageAnalysis() {
 
   imageAnalysisList.innerHTML = `
     <div class="image-analysis-score-card">
-      <div><span>Readiness Score</span><strong>${analysis.qualityScore}%</strong></div>
+      <div><span>Analysis Confidence</span><strong>${analysis.confidenceScore}%</strong></div>
       <p>${escapeHtml(badges.join(" · "))}</p>
     </div>
     <div class="auto-pipeline-preview">
-      <strong>Auto Pipeline Preview</strong>
+      <strong>Safe Auto Pipeline Preview</strong>
       <span>${escapeHtml(autoPlan.notes.join(" "))}</span>
     </div>
+    ${analysis.warnings.length ? `<div class="export-safety-warning"><strong>Export Size Notice</strong>${analysis.warnings.map((item) => `<span>⚠ ${escapeHtml(item.label)} — ${escapeHtml(item.detail)}</span>`).join("")}</div>` : ""}
     <div class="image-analysis-columns">
       <div class="image-analysis-section">
         <h3>Detected</h3>
         ${analysis.detected.map((item) => `<div class="analysis-row ${item.good ? "good" : "neutral"}"><strong>${item.good ? "✓" : "○"} ${escapeHtml(item.label)}</strong><span>${escapeHtml(item.detail)}</span></div>`).join("")}
       </div>
       <div class="image-analysis-section">
-        <h3>Recommended</h3>
+        <h3>Safe Recommendations</h3>
         ${analysis.recommendations.map((item) => `<div class="analysis-row good"><strong>✓ ${escapeHtml(item.name)}</strong><span>${escapeHtml(item.detail)}</span></div>`).join("") || '<div class="analysis-row neutral"><strong>○ Manual review</strong><span>No automatic recommendation yet.</span></div>'}
       </div>
       <div class="image-analysis-section">
-        <h3>Skip / Optional</h3>
+        <h3>Suggested / Manual</h3>
+        ${analysis.suggestions.map((item) => `<div class="analysis-row suggested"><strong>◇ ${escapeHtml(item.name)}</strong><span>${escapeHtml(item.detail)}</span></div>`).join("")}
         ${analysis.skips.map((item) => `<div class="analysis-row muted"><strong>○ ${escapeHtml(item.name)}</strong><span>${escapeHtml(item.detail)}</span></div>`).join("")}
       </div>
     </div>`;
 
   if (imageAnalysisSummary) {
-    imageAnalysisSummary.textContent = `${analysis.qualityScore}% readiness · ${analysis.recommendations.length} recommendations`;
+    imageAnalysisSummary.textContent = `${analysis.confidenceScore}% confidence · ${analysis.recommendations.length} safe recommendations`;
   }
 }
 
@@ -1184,6 +1218,39 @@ document.addEventListener("click", async (event) => {
   }
 });
 
+function getCurrentSourceSizeForNotice() {
+  const result = pixelSnapLastResult || {};
+  const sourceWidth = Number(result.sourceWidth || originalPreview?.naturalWidth || 0) || 0;
+  const sourceHeight = Number(result.sourceHeight || originalPreview?.naturalHeight || 0) || 0;
+  return { sourceWidth, sourceHeight };
+}
+
+function updateExportSizeNotice() {
+  if (!exportSizeNotice) return;
+  const target = exportTargetSize?.value || "scale";
+  const scale = document.getElementById("resizeScale")?.value || "1";
+  const smartOn = smartDownscaleEnabled?.checked === true;
+  const { sourceWidth, sourceHeight } = getCurrentSourceSizeForNotice();
+  const sourceLabel = sourceWidth && sourceHeight ? `${sourceWidth}×${sourceHeight}` : "the processed image";
+  let message = `Output Scale ${scale}x preserves the processed image shape and multiplies it with nearest-neighbor pixels.`;
+  let tone = "neutral";
+  if (target !== "scale") {
+    const targetNumber = Number(target || 0);
+    const maxSource = Math.max(sourceWidth, sourceHeight);
+    message = `Target Resolution exports an exact ${target}×${target} PNG. This changes the final asset size instead of just zooming the preview.`;
+    if (maxSource && targetNumber < maxSource) {
+      tone = "warning";
+      message += ` Current source is ${sourceLabel}, so this will downscale the exported file.`;
+    } else if (maxSource && targetNumber > maxSource) {
+      tone = "info";
+      message += ` Current source is ${sourceLabel}, so this will upscale using nearest-neighbor.`;
+    }
+  }
+  if (smartOn) message += " Smart Downscale is also on and may reduce the working source before export.";
+  exportSizeNotice.textContent = message;
+  exportSizeNotice.dataset.tone = tone;
+}
+
 function updateOperationStackLabels() {
   syncOperationFromToolToggles();
   const operation = document.getElementById("operation")?.value || "resize_palette";
@@ -1248,6 +1315,7 @@ function updateOperationStackLabels() {
   if (jaggyCleanupStrengthValue) jaggyCleanupStrengthValue.textContent = `${jaggyStrengthPct}%`;
   if (alphaCleanupThresholdValue) alphaCleanupThresholdValue.textContent = String(alphaThresholdNumber);
   if (pixelSnapModeBadge) pixelSnapModeBadge.textContent = snapOn ? (pixelSize === "0" ? "Auto grid" : `${pixelSize}px grid`) : "Pixel Snap off";
+  updateExportSizeNotice();
   updateToolToggleLabels();
 }
 
