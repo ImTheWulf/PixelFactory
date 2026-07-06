@@ -707,3 +707,18 @@ Changed:
 Safety:
 - No backend processing changes.
 - No Asset Browser changes.
+
+
+PF-0040
+-------
+Added:
+- Image Analysis panel inside Analysis & Reports.
+- Readiness score, detected image traits, recommended cleanup stages, and skip/optional guidance.
+
+Changed:
+- Updated app version/cache markers to PF-0040.
+
+Safety:
+- Read-only recommendation engine only.
+- No backend processing changes.
+- No Asset Browser changes.

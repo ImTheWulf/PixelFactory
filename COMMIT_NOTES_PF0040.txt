@@ -1,0 +1,9 @@
+PF-0040 add image analysis engine
+
+- Added Image Analysis panel to Analysis & Reports
+- Added readiness score and detected traits
+- Added recommended pipeline guidance
+- Added skip/optional stage explanations
+- Updated version/cache markers to PF-0040
+- No backend processing changes
+- No Asset Browser changes

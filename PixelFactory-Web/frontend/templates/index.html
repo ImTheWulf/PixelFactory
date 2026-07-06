@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0039_ui_refactor_prep" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0040_image_analysis" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.31 · PF-0039</div>
+          <div class="subtitle">by Wulf · Web v0.32 · PF-0040</div>
         </div>
       </div>
 
@@ -461,6 +461,12 @@
                     <span>Core results stay open. Extra detail is collapsible to reduce clutter.</span>
                   </div>
                   <div class="analysis-report-grid">
+                    <details class="image-analysis-panel" id="imageAnalysisPanel" open>
+                      <summary><strong>Image Analysis</strong><span id="imageAnalysisSummary">Waiting for process</span></summary>
+                      <div id="imageAnalysisList" class="image-analysis-list">
+                        <div class="cleanup-diagnostic-empty">Process an image to get pipeline recommendations.</div>
+                      </div>
+                    </details>
                     <details class="cleanup-diagnostics-panel" id="cleanupDiagnosticsPanel" open>
                       <summary><strong>Cleanup Diagnostics</strong><span id="cleanupDiagnosticsSummary">Waiting for first update</span></summary>
                       <div id="cleanupDiagnosticsList" class="cleanup-diagnostics-list">
@@ -743,6 +749,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0039_ui_refactor_prep"></script>
+  <script src="/static/app.js?v=pf0040_image_analysis"></script>
 </body>
 </html>

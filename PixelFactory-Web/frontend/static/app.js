@@ -212,6 +212,8 @@ const cleanupDiagnosticsSummary = document.getElementById("cleanupDiagnosticsSum
 const cleanupDiagnosticsList = document.getElementById("cleanupDiagnosticsList");
 const pixelReportSummary = document.getElementById("pixelReportSummary");
 const pixelReportList = document.getElementById("pixelReportList");
+const imageAnalysisSummary = document.getElementById("imageAnalysisSummary");
+const imageAnalysisList = document.getElementById("imageAnalysisList");
 const imageMetadataSummary = document.getElementById("imageMetadataSummary");
 const imageMetadataList = document.getElementById("imageMetadataList");
 const processingHistorySummary = document.getElementById("processingHistorySummary");
@@ -507,6 +509,7 @@ function updatePixelSnapAnalysis() {
 function clearPixelSnapProcessedReadout() {
   pixelSnapLastResult = null;
   updatePixelSnapAnalysis();
+  renderImageAnalysis();
   renderImageMetadata();
 }
 
@@ -583,6 +586,115 @@ function cleanupStageMessage({ name, changed, enabled, inactive = "Off", active 
   if (!enabled) return inactive;
   if (amount <= 0) return detail ? `${active} · ${zero} · ${detail}` : `${active} · ${zero}`;
   return detail ? `${active} · ${detail}` : active;
+}
+
+
+function buildImageAnalysis(result = pixelSnapLastResult || {}) {
+  const num = (value) => {
+    const parsed = Number(value || 0);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+  const grid = num(result.grid);
+  const confidence = num(result.confidence);
+  const sourceColors = num(result.sourceColors);
+  const outputColors = num(result.outputColors);
+  const sourceAlpha = num(result.sourceTransparentPercent);
+  const sourceWidth = num(result.sourceWidth);
+  const sourceHeight = num(result.sourceHeight);
+  const outputWidth = num(result.outputWidth);
+  const outputHeight = num(result.outputHeight);
+  const changedPercent = num(result.changedPercent);
+  const finalColors = outputColors || sourceColors;
+  const square = sourceWidth > 0 && sourceWidth === sourceHeight;
+  const largeSource = Math.max(sourceWidth, sourceHeight) >= 512;
+  const likelyPixelArt = grid >= 2 && confidence >= 70;
+  const likelyUpscaled = likelyPixelArt && largeSource;
+  const highPalette = sourceColors > 256;
+  const cleanPalette = finalColors > 0 && finalColors <= 256;
+  const transparent = sourceAlpha > 0;
+  const targetExport = result.exportTargetSize && result.exportTargetSize !== "scale" ? `${result.exportTargetSize}×${result.exportTargetSize}` : `Output scale ${result.resizeScale || 1}x`;
+  const qualityScore = Math.max(0, Math.min(100, Math.round(
+    (likelyPixelArt ? 30 : 10) +
+    (confidence ? Math.min(30, confidence * 0.30) : 0) +
+    (cleanPalette ? 20 : highPalette ? 8 : 14) +
+    (changedPercent > 0 && changedPercent < 90 ? 10 : changedPercent >= 90 ? 6 : 4) +
+    (square ? 5 : 2) +
+    (transparent ? 3 : 1)
+  )));
+
+  const detected = [
+    { label: likelyPixelArt ? "Pixel-art grid detected" : "Pixel-art grid uncertain", detail: grid ? `${grid}px grid · ${confidence || 0}% confidence` : "No grid locked yet", good: likelyPixelArt },
+    { label: likelyUpscaled ? "Likely upscaled source" : "Source scale looks moderate", detail: sourceWidth && sourceHeight ? `${sourceWidth}×${sourceHeight}` : "No source size yet", good: likelyUpscaled },
+    { label: highPalette ? "High/noisy palette" : "Palette already controlled", detail: sourceColors ? `${sourceColors.toLocaleString()} source colors` : "No palette count yet", good: highPalette },
+    { label: transparent ? "Transparency present" : "No transparency detected", detail: `${sourceAlpha || 0}% transparent pixels`, good: transparent },
+    { label: "Export plan", detail: targetExport, good: true },
+  ];
+
+  const recommendations = [];
+  const skips = [];
+  const addRec = (name, detail) => recommendations.push({ name, detail });
+  const addSkip = (name, detail) => skips.push({ name, detail });
+
+  if (grid >= 2 && confidence >= 65) addRec("Smart Downscale", `Detected ${grid}px grid; normalize before cleanup.`);
+  else addSkip("Smart Downscale", "Grid confidence is low or already 1×.");
+
+  if (grid >= 2) addRec("Pixel Snap", "Lock pixels to the detected grid.");
+  else addSkip("Pixel Snap", "No clear pixel grid detected yet.");
+
+  if (highPalette) addRec("Palette Normalize", "Merge near-duplicate AI colors.");
+  else addSkip("Palette Normalize", "Palette count is already manageable.");
+
+  if (transparent) addRec("Alpha Cleanup", "Inspect transparent edges/fringe before export.");
+  else addSkip("Alpha Cleanup", "Image has no transparent fringe to clean.");
+
+  if (likelyUpscaled || highPalette) addRec("Edge Cleanup", "Useful for upscaled or noisy AI pixel edges.");
+  else addSkip("Edge Cleanup", "No obvious edge repair signal from metadata.");
+
+  if (sourceColors > 1000 && confidence >= 60) addRec("Morphology / Jaggy", "Optional pass; use low strength and compare.");
+  else addSkip("Morphology / Jaggy", "Only needed when specks, pinholes, or stair steps are visible.");
+
+  return { detected, recommendations, skips, qualityScore, likelyPixelArt, likelyUpscaled, highPalette, transparent };
+}
+
+function renderImageAnalysis() {
+  if (!imageAnalysisList) return;
+  const result = pixelSnapLastResult || {};
+  if (!result.processingMs) {
+    if (imageAnalysisSummary) imageAnalysisSummary.textContent = "Waiting for process";
+    imageAnalysisList.innerHTML = '<div class="cleanup-diagnostic-empty">Process an image to get pipeline recommendations.</div>';
+    return;
+  }
+  const analysis = buildImageAnalysis(result);
+  const badges = [];
+  if (analysis.likelyPixelArt) badges.push("Pixel art");
+  if (analysis.likelyUpscaled) badges.push("Upscaled source");
+  if (analysis.highPalette) badges.push("Palette noise");
+  if (analysis.transparent) badges.push("Transparency");
+  if (!badges.length) badges.push("Manual review");
+
+  imageAnalysisList.innerHTML = `
+    <div class="image-analysis-score-card">
+      <div><span>Readiness Score</span><strong>${analysis.qualityScore}%</strong></div>
+      <p>${escapeHtml(badges.join(" · "))}</p>
+    </div>
+    <div class="image-analysis-columns">
+      <div class="image-analysis-section">
+        <h3>Detected</h3>
+        ${analysis.detected.map((item) => `<div class="analysis-row ${item.good ? "good" : "neutral"}"><strong>${item.good ? "✓" : "○"} ${escapeHtml(item.label)}</strong><span>${escapeHtml(item.detail)}</span></div>`).join("")}
+      </div>
+      <div class="image-analysis-section">
+        <h3>Recommended</h3>
+        ${analysis.recommendations.map((item) => `<div class="analysis-row good"><strong>✓ ${escapeHtml(item.name)}</strong><span>${escapeHtml(item.detail)}</span></div>`).join("") || '<div class="analysis-row neutral"><strong>○ Manual review</strong><span>No automatic recommendation yet.</span></div>'}
+      </div>
+      <div class="image-analysis-section">
+        <h3>Skip / Optional</h3>
+        ${analysis.skips.map((item) => `<div class="analysis-row muted"><strong>○ ${escapeHtml(item.name)}</strong><span>${escapeHtml(item.detail)}</span></div>`).join("")}
+      </div>
+    </div>`;
+
+  if (imageAnalysisSummary) {
+    imageAnalysisSummary.textContent = `${analysis.qualityScore}% readiness · ${analysis.recommendations.length} recommendations`;
+  }
 }
 
 function renderCleanupDiagnostics() {
@@ -2149,6 +2261,7 @@ async function processPalettePreview({ quiet = false } = {}) {
       estimatedSpriteWidth: response.headers.get("X-PF-Estimated-Sprite-Width"),
       estimatedSpriteHeight: response.headers.get("X-PF-Estimated-Sprite-Height"),
     };
+    renderImageAnalysis();
     renderCleanupDiagnostics();
     renderPixelReport();
     renderImageMetadata();
