@@ -1,0 +1,7 @@
+PF-0038 clarify export sizing controls
+
+- Renamed Resize Scale to Output Scale
+- Renamed Export Target to Target Resolution
+- Added Resize helper text explaining scale vs exact target exports
+- Updated diagnostics language for target resolution exports
+- Updated version/cache markers to PF-0038

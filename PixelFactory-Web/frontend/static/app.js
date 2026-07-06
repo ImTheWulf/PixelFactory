@@ -667,7 +667,7 @@ function renderCleanupDiagnostics() {
       name: "Resize",
       changed: resizePixels > 0 ? `+${fmt(resizePixels)}` : "0",
       raw: resizePixels,
-      status: resizeEnabled?.checked !== false ? (result.exportTargetSize && result.exportTargetSize !== "scale" ? `target ${result.exportTargetSize}×${result.exportTargetSize} nearest-neighbor` : `${result.resizeScale || 1}x nearest-neighbor`) : "Off",
+      status: resizeEnabled?.checked !== false ? (result.exportTargetSize && result.exportTargetSize !== "scale" ? `target resolution ${result.exportTargetSize}×${result.exportTargetSize} nearest-neighbor` : `${result.resizeScale || 1}x nearest-neighbor`) : "Off",
       kind: resizePixels > 0 ? "changed" : "noop",
     },
   ];
@@ -723,14 +723,14 @@ function renderPixelReport() {
     ["Jaggy Cleanup", result.jaggyCleanup === "true", `${fmt(result.stepJaggyCleanup)} px`],
     ["Alpha Preserve", pixelSnapAlpha?.checked !== false, `${fmt(result.stepAlphaPreserve)} px`],
     ["Alpha Cleanup", result.alphaCleanup === "true", `${fmt(result.stepAlphaCleanup)} px`],
-    ["Resize", resizeEnabled?.checked !== false, result.exportTargetSize && result.exportTargetSize !== "scale" ? `${result.exportTargetSize}×${result.exportTargetSize}` : `${result.resizeScale || 1}x`],
+    ["Resize", resizeEnabled?.checked !== false, result.exportTargetSize && result.exportTargetSize !== "scale" ? `Target ${result.exportTargetSize}×${result.exportTargetSize}` : `Scale ${result.resizeScale || 1}x`],
   ];
 
   const sections = [
     ["Image", [
       ["Source", sourceSize],
       ["Output", outputSize],
-      ["Export Mode", result.exportTargetSize && result.exportTargetSize !== "scale" ? `Target ${result.exportTargetSize}×${result.exportTargetSize}` : `Scale ${result.resizeScale || 1}x`],
+      ["Export Mode", result.exportTargetSize && result.exportTargetSize !== "scale" ? `Target Resolution ${result.exportTargetSize}×${result.exportTargetSize}` : `Output Scale ${result.resizeScale || 1}x`],
       ["Sprite Estimate", spriteSize],
     ]],
     ["Detection", [

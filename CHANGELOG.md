@@ -681,3 +681,14 @@ Added:
 
 Changed:
 - Updated app version/cache markers to PF-0037.
+
+
+PF-0038
+-------
+Added:
+- Clarified Resize tools with Output Scale vs Target Resolution language.
+- Added helper text explaining exact target exports and smart downscale order.
+
+Changed:
+- Updated app version/cache markers to PF-0038.
+- Diagnostics/reporting now uses clearer export-size labels.

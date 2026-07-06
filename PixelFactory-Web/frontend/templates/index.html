@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0033_0036_cleanup_quality" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0038_export_size_clarity" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.29 · PF-0037</div>
+          <div class="subtitle">by Wulf · Web v0.30 · PF-0038</div>
         </div>
       </div>
 
@@ -382,11 +382,12 @@
                 <fieldset class="pixel-tool-group repair-tool-pane" data-repair-pane="resize">
                   <legend>Resize</legend>
                   <div class="repair-tool-inline">
-                    <label><span>Resize Scale</span><select id="resizeScale"><option value="1">1x</option><option value="2" selected>2x</option><option value="3">3x</option><option value="4">4x</option><option value="8">8x</option></select></label>
-                    <label><span>Export Target</span><select id="exportTargetSize"><option value="scale" selected>Use scale</option><option value="16">16 × 16</option><option value="32">32 × 32</option><option value="64">64 × 64</option><option value="128">128 × 128</option><option value="256">256 × 256</option><option value="512">512 × 512</option><option value="1024">1024 × 1024</option><option value="1536">1536 × 1536</option><option value="2048">2048 × 2048</option></select></label>
+                    <label><span>Output Scale</span><select id="resizeScale"><option value="1">1x</option><option value="2" selected>2x</option><option value="3">3x</option><option value="4">4x</option><option value="8">8x</option></select></label>
+                    <label><span>Target Resolution</span><select id="exportTargetSize"><option value="scale" selected>Use output scale</option><option value="16">16 × 16</option><option value="32">32 × 32</option><option value="64">64 × 64</option><option value="128">128 × 128</option><option value="256">256 × 256</option><option value="512">512 × 512</option><option value="1024">1024 × 1024</option><option value="1536">1536 × 1536</option><option value="2048">2048 × 2048</option></select></label>
                     <label class="pf-toggle-button-control"><input id="smartDownscaleEnabled" type="checkbox" /><span data-on="Smart Downscale On" data-off="Smart Downscale Off">Smart Downscale Off</span></label>
                     <label class="pf-toggle-button-control"><input id="resizeEnabled" type="checkbox" checked /><span data-on="Resize On" data-off="Resize Off">Resize On</span></label>
                   </div>
+                  <p class="pixel-tool-note">Output Scale multiplies the processed image. Target Resolution exports an exact square size, useful for 16×16, 32×32, 64×64 game assets. Smart Downscale runs before this final export size.</p>
                 </fieldset>
 
                 <fieldset class="pixel-tool-group repair-tool-pane" data-repair-pane="orphans">
@@ -734,6 +735,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0033_0036_cleanup_quality"></script>
+  <script src="/static/app.js?v=pf0038_export_size_clarity"></script>
 </body>
 </html>
