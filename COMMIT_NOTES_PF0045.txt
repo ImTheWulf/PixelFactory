@@ -1,0 +1,14 @@
+PF-0045 Palette Lab v2 Polish
+
+What changed
+- Removed clutter from Palette Target dropdown.
+- Kept only common preset targets plus slider fine-tuning.
+- Added safe custom display when slider lands on a non-preset value.
+- Tightened Palette Lab v2 layout so Resize is easier to reach again.
+- Updated version/cache markers to PF-0045.
+
+What to test
+1. Open Palette tab and move the Target Count slider to preset and non-preset values.
+2. Confirm the dropdown only shows the common preset list, plus a temporary Custom entry when needed.
+3. Switch to Resize and confirm the controls are accessible again.
+4. Make sure Color Cleanup still applies the selected target correctly.

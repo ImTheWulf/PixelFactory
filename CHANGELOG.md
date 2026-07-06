@@ -1,3 +1,22 @@
+PF-0045
+-------
+Changed:
+- Polished Palette Lab v2 to stay focused on quick targets + fine tuning.
+- Reduced Palette Target presets to the common working set: Original, 8, 16, 24, 32, 48, 64, 128, and 256.
+- Slider can still fine-tune any custom target without cluttering the preset list.
+- Tightened the Palette Lab v2 pane so Resize remains reachable in the compact toolbox.
+- Updated app version/cache markers to PF-0045.
+
+Fixed:
+- Removed the growing list of one-off palette values from the Palette Target dropdown.
+- Kept custom slider values as a single temporary “Custom (n)” entry instead of permanently polluting the menu.
+- Improved compact toolbox layout so resize controls fit better in the canvas-first view.
+
+Safety:
+- Frontend-only polish patch.
+- No backend processing changes.
+- No Asset Browser changes.
+
 
 PF-0032
 -------
@@ -772,3 +791,26 @@ Changed:
 
 Fixed:
 - Reduced repeated helper clutter inside pipeline stage toggles.
+
+PF-0044
+-------
+Added:
+- Palette Lab v2 reduction controls.
+- Target Count slider synced with Palette Target.
+- Quick target chips for Original, 8, 16, 24, 32, 48, 64, 128, and 256 colors.
+- Palette Preview summary showing source colors to processed colors, colors removed, reduction percent, target, and transparency safety.
+- Top Visible Colors swatch strip with click-to-copy HEX support.
+- Preserve Transparency toggle inside the Palette pane, synced with the canvas transparency control.
+
+Changed:
+- Palette Statistics now compares source and processed palette state instead of only showing a single static scan.
+- Updated app version/cache markers to PF-0044.
+
+Fixed:
+- Reduced horizontal overflow in the left Repair Toolbox.
+- Wrapped export warning/help text so it no longer gets cut off in the compact canvas-first layout.
+
+Safety:
+- No new workflow presets.
+- No Asset Browser changes.
+- Backend processing remains compatible with the existing /api/process path.

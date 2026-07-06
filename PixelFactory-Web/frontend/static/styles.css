@@ -5617,3 +5617,236 @@ select option:hover {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* PF-0045 Palette Lab v2 polish */
+.palette-lab-v2-pane .repair-tool-inline {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: end !important;
+}
+
+.palette-target-slider input[type="range"] {
+  width: 100%;
+}
+
+.palette-target-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 8px;
+}
+
+.palette-target-chips button {
+  border: 1px solid rgba(96, 165, 250, 0.35);
+  background: rgba(15, 23, 42, 0.82);
+  color: #bfdbfe;
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.palette-target-chips button.active,
+.palette-target-chips button:hover {
+  border-color: rgba(52, 211, 153, 0.75);
+  color: #bbf7d0;
+  background: rgba(6, 78, 59, 0.42);
+}
+
+.palette-reduction-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.palette-reduction-summary > div,
+.palette-reduction-summary:not(:has(div)) {
+  border: 1px solid rgba(96, 165, 250, 0.20);
+  border-radius: 10px;
+  background: rgba(2, 6, 23, 0.30);
+  padding: 8px 9px;
+  color: #b6c8e3;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.palette-reduction-summary strong,
+.palette-reduction-summary span,
+.palette-reduction-summary em {
+  display: block;
+}
+
+.palette-reduction-summary strong {
+  color: #f8fafc;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  font-size: 10px;
+}
+
+.palette-reduction-summary span {
+  color: #93c5fd;
+  font-weight: 900;
+  margin-top: 3px;
+}
+
+.palette-reduction-summary em {
+  color: #94a3b8;
+  font-style: normal;
+  margin-top: 2px;
+}
+
+.palette-note-visible {
+  display: block !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  line-height: 1.35 !important;
+}
+
+.palette-statistics-list {
+  display: block !important;
+}
+
+.palette-statistics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(210px, 1fr));
+  gap: 6px;
+}
+
+.palette-swatch-panel {
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 12px;
+  background: rgba(2, 6, 23, 0.28);
+}
+
+.palette-swatch-panel > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: #e2e8f0;
+  margin-bottom: 8px;
+}
+
+.palette-swatch-panel em {
+  color: #94a3b8;
+  font-style: normal;
+  font-size: 11px;
+}
+
+.palette-swatch-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+  gap: 6px;
+}
+
+.palette-swatch {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(96, 165, 250, 0.18);
+  border-radius: 9px;
+  background: rgba(15, 23, 42, 0.68);
+  color: #dbeafe;
+  padding: 5px 6px;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.palette-swatch span {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 1px solid rgba(255,255,255,0.28);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.35) inset;
+}
+
+.palette-swatch em {
+  color: #cbd5e1;
+  font-style: normal;
+  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.palette-swatch-empty {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.palette-tool-dock,
+.repair-tool-active-panel,
+.pixel-snap-control-grid,
+.repair-tool-panel-grid {
+  overflow-x: hidden !important;
+}
+
+.palette-tool-dock {
+  scrollbar-gutter: stable;
+}
+
+.pixel-tool-note,
+.export-safety-warning,
+#exportSizeNotice {
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+@media (max-width: 1320px) {
+  .palette-lab-v2-pane .repair-tool-inline,
+  .palette-reduction-summary,
+  .palette-statistics-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* PF-0045 Palette Lab v2 polish additions */
+.palette-lab-v2-pane .repair-tool-inline {
+  gap: 8px !important;
+}
+
+.palette-lab-v2-pane .repair-tool-inline > label {
+  min-width: 0;
+}
+
+.palette-lab-v2-pane select,
+.palette-lab-v2-pane input[type="range"] {
+  width: 100%;
+}
+
+.palette-lab-v2-pane .pf-toggle-button-control span {
+  min-height: 32px !important;
+  font-size: 11px !important;
+}
+
+.palette-target-chips {
+  margin: 8px 0 6px;
+}
+
+.palette-reduction-summary {
+  margin-top: 6px;
+}
+
+.palette-toolbox-v2 .repair-tool-pane legend {
+  margin-bottom: 8px;
+}
+
+.repair-tool-pane[data-repair-pane="resize"] .repair-tool-inline {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.repair-tool-pane[data-repair-pane="resize"] .pf-toggle-button-control {
+  align-self: stretch;
+}
+
+.repair-tool-pane[data-repair-pane="resize"] .pf-toggle-button-control span {
+  height: 100%;
+}
+
+@media (max-width: 1480px) {
+  .repair-tool-pane[data-repair-pane="resize"] .repair-tool-inline {
+    grid-template-columns: 1fr !important;
+  }
+}
