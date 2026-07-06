@@ -1,0 +1,10 @@
+PF-0044 expand Palette Lab reduction controls
+
+- Added Palette Lab v2 target-count slider and quick target chips
+- Added palette reduction preview summary
+- Added source-to-processed palette comparison in Palette Statistics
+- Added top visible color swatches with HEX copy support
+- Added Preserve Transparency control inside Palette pane
+- Fixed left toolbox horizontal overflow and wrapped warning/help text
+- Updated version/cache markers to PF-0044
+- No Asset Browser changes

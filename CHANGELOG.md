@@ -772,3 +772,26 @@ Changed:
 
 Fixed:
 - Reduced repeated helper clutter inside pipeline stage toggles.
+
+PF-0044
+-------
+Added:
+- Palette Lab v2 reduction controls.
+- Target Count slider synced with Palette Target.
+- Quick target chips for Original, 8, 16, 24, 32, 48, 64, 128, and 256 colors.
+- Palette Preview summary showing source colors to processed colors, colors removed, reduction percent, target, and transparency safety.
+- Top Visible Colors swatch strip with click-to-copy HEX support.
+- Preserve Transparency toggle inside the Palette pane, synced with the canvas transparency control.
+
+Changed:
+- Palette Statistics now compares source and processed palette state instead of only showing a single static scan.
+- Updated app version/cache markers to PF-0044.
+
+Fixed:
+- Reduced horizontal overflow in the left Repair Toolbox.
+- Wrapped export warning/help text so it no longer gets cut off in the compact canvas-first layout.
+
+Safety:
+- No new workflow presets.
+- No Asset Browser changes.
+- Backend processing remains compatible with the existing /api/process path.

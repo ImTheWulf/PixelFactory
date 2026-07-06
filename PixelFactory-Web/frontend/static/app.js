@@ -222,6 +222,11 @@ const processingHistorySummary = document.getElementById("processingHistorySumma
 const processingHistoryList = document.getElementById("processingHistoryList");
 const paletteStatisticsSummary = document.getElementById("paletteStatisticsSummary");
 const paletteStatisticsList = document.getElementById("paletteStatisticsList");
+const paletteTargetSlider = document.getElementById("paletteTargetSlider");
+const paletteTargetValue = document.getElementById("paletteTargetValue");
+const palettePreserveTransparency = document.getElementById("palettePreserveTransparency");
+const paletteReductionSummary = document.getElementById("paletteReductionSummary");
+const paletteTargetChips = Array.from(document.querySelectorAll("[data-palette-target]"));
 const pixelSnapModeBadge = document.getElementById("pixelSnapModeBadge");
 const pixelSnapEnabled = document.getElementById("pixelSnapEnabled");
 const paletteEnabled = document.getElementById("paletteEnabled");
@@ -279,6 +284,41 @@ function isPaletteNormalizeActive() {
 
 function paletteTargetLabel(value = getPaletteTargetValue()) {
   return Number(value) > 0 ? `${Number(value)} colors` : "Original colors";
+}
+
+function setPaletteTarget(value, { schedule = true } = {}) {
+  const target = Math.max(0, Math.min(256, Number(value) || 0));
+  const select = document.getElementById("paletteColors");
+  if (select) {
+    const hasExactOption = Array.from(select.options).some((option) => Number(option.value) === target);
+    if (!hasExactOption && target > 0) {
+      const option = document.createElement("option");
+      option.value = String(target);
+      option.textContent = String(target);
+      select.appendChild(option);
+    }
+    select.value = String(target);
+  }
+  if (paletteTargetSlider) paletteTargetSlider.value = String(target);
+  if (paletteTargetValue) paletteTargetValue.textContent = target > 0 ? `${target} colors` : "Original";
+  if (paletteEnabled && target > 0) paletteEnabled.checked = true;
+  paletteTargetChips.forEach((button) => button.classList.toggle("active", Number(button.dataset.paletteTarget || 0) === target));
+  updateToolToggleLabels();
+  updateOperationStackLabels();
+  renderPaletteStatistics();
+  if (schedule) schedulePalettePreviewUpdate();
+}
+
+function syncPaletteTargetControls({ schedule = false } = {}) {
+  setPaletteTarget(getPaletteTargetValue(), { schedule });
+}
+
+function syncPaletteTransparencyControls({ schedule = false } = {}) {
+  if (palettePreserveTransparency && pixelSnapAlpha) {
+    palettePreserveTransparency.checked = pixelSnapAlpha.checked !== false;
+  }
+  updateToolToggleLabels();
+  if (schedule) schedulePalettePreviewUpdate();
 }
 
 function normalizePaletteAssetStatus(status = "") {
@@ -1127,6 +1167,14 @@ async function analyzePaletteBlob(blob) {
     }
     const uniqueColors = counts.size;
     const bits = uniqueColors <= 1 ? 1 : Math.ceil(Math.log2(uniqueColors));
+    const topColors = Array.from(counts.entries())
+      .map(([key, count]) => {
+        const [r, g, b, a] = key.split(",").map(Number);
+        return { key, count, hex: rgbaToHex(r, g, b, a), alpha: a };
+      })
+      .filter((entry) => entry.alpha > 0)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 16);
     return {
       width: canvas.width,
       height: canvas.height,
@@ -1139,6 +1187,7 @@ async function analyzePaletteBlob(blob) {
       bits,
       most,
       least,
+      topColors,
     };
   } finally {
     bitmap.close?.();
@@ -1150,6 +1199,35 @@ function paletteColorRow(label, stat, totalPixels) {
   const pct = ((stat.count / Math.max(1, totalPixels)) * 100).toFixed(1);
   const copyButton = `<button type="button" class="palette-copy-hex" data-copy-hex="${escapeHtml(stat.hex)}">Copy</button>`;
   return [label, `${stat.hex} ${copyButton}`, `${stat.count.toLocaleString()} px · ${pct}%`];
+}
+
+function renderPaletteSwatches(colors = [], totalPixels = 1) {
+  if (!colors.length) return '<div class="palette-swatch-empty">No visible colors to show yet.</div>';
+  return `<div class="palette-swatch-strip">${colors.map((color) => {
+    const pct = ((color.count / Math.max(1, totalPixels)) * 100).toFixed(1);
+    return `<button type="button" class="palette-swatch" data-copy-hex="${escapeHtml(color.hex)}" title="${escapeHtml(color.hex)} · ${color.count.toLocaleString()} px · ${pct}%"><span style="background:${escapeHtml(color.hex)}"></span><em>${escapeHtml(color.hex)}</em></button>`;
+  }).join("")}</div>`;
+}
+
+function renderPaletteReductionSummary(sourceStats, outputStats) {
+  if (!paletteReductionSummary) return;
+  if (!sourceStats) {
+    paletteReductionSummary.textContent = "Load or process an image to preview palette reduction.";
+    return;
+  }
+  const target = getPaletteTargetValue();
+  const finalStats = outputStats || sourceStats;
+  const before = sourceStats.uniqueColors || 0;
+  const after = finalStats.uniqueColors || 0;
+  const reduced = before > 0 ? Math.max(0, before - after) : 0;
+  const reductionPct = before > 0 ? ((reduced / before) * 100).toFixed(1) : "0.0";
+  const targetText = target > 0 ? `${target} colors` : "Original colors";
+  const preserveText = pixelSnapAlpha?.checked !== false ? "Transparency preserved" : "Transparency not preserved";
+  const normalizeText = paletteNormalizeEnabled?.checked === true ? `Normalize tol ${paletteNormalizeTolerance?.value || 8}` : "Normalize off";
+  paletteReductionSummary.innerHTML = `
+    <div><strong>Palette Preview</strong><span>${before.toLocaleString()} → ${after.toLocaleString()} colors</span><em>${targetText}</em></div>
+    <div><strong>Reduction</strong><span>${reduced.toLocaleString()} colors removed</span><em>${reductionPct}% smaller palette</em></div>
+    <div><strong>Safety</strong><span>${escapeHtml(preserveText)}</span><em>${escapeHtml(normalizeText)}</em></div>`;
 }
 
 async function renderPaletteStatistics() {
@@ -1165,16 +1243,20 @@ async function renderPaletteStatistics() {
       outputBlob = null;
     }
   }
-  const blob = outputBlob || sourceBlob;
-  if (!blob) {
+  if (!sourceBlob && !outputBlob) {
     if (paletteStatisticsSummary) paletteStatisticsSummary.textContent = "Waiting for image";
     paletteStatisticsList.innerHTML = '<div class="cleanup-diagnostic-empty">Load an image to inspect palette usage, dominant colors, transparency, and estimated bit depth.</div>';
+    renderPaletteReductionSummary(null, null);
     return;
   }
 
   try {
-    const stats = await analyzePaletteBlob(blob);
-    if (requestId !== paletteStatisticsRequestId || !stats) return;
+    const sourceStats = sourceBlob ? await analyzePaletteBlob(sourceBlob) : null;
+    if (requestId !== paletteStatisticsRequestId) return;
+    const outputStats = outputBlob ? await analyzePaletteBlob(outputBlob) : null;
+    if (requestId !== paletteStatisticsRequestId) return;
+    const stats = outputStats || sourceStats;
+    if (!stats) return;
     const target = Number(getPaletteTargetValue?.() || 0);
     const utilizationBase = target > 0 ? target : 256;
     const utilization = Math.min(100, (stats.uniqueColors / utilizationBase) * 100).toFixed(1);
@@ -1188,12 +1270,20 @@ async function renderPaletteStatistics() {
       paletteColorRow("Most Used", stats.most, stats.totalPixels),
       paletteColorRow("Least Used", stats.least, stats.totalPixels),
     ];
-    paletteStatisticsList.innerHTML = rows.map(([name, value, detail]) => `
-      <div class="palette-statistics-row">
-        <strong>${escapeHtml(name)}</strong>
-        <span>${value}</span>
-        <em>${escapeHtml(detail)}</em>
-      </div>`).join("");
+    paletteStatisticsList.innerHTML = `
+      <div class="palette-statistics-grid">
+        ${rows.map(([name, value, detail]) => `
+          <div class="palette-statistics-row">
+            <strong>${escapeHtml(name)}</strong>
+            <span>${value}</span>
+            <em>${escapeHtml(detail)}</em>
+          </div>`).join("")}
+      </div>
+      <div class="palette-swatch-panel">
+        <div><strong>Top Visible Colors</strong><em>Click a swatch to copy HEX</em></div>
+        ${renderPaletteSwatches(stats.topColors || [], stats.totalPixels)}
+      </div>`;
+    renderPaletteReductionSummary(sourceStats, outputStats);
     if (paletteStatisticsSummary) {
       const mode = outputBlob ? "Processed" : "Source";
       paletteStatisticsSummary.textContent = `${mode} · ${stats.uniqueColors.toLocaleString()} colors · ${stats.bits} bpp`;
@@ -1211,8 +1301,12 @@ document.addEventListener("click", async (event) => {
   const hex = button.dataset.copyHex || "";
   try {
     await navigator.clipboard.writeText(hex);
-    button.textContent = "Copied";
-    window.setTimeout(() => { button.textContent = "Copy"; }, 900);
+    if (button.classList.contains("palette-swatch")) {
+      setStatus(`Copied ${hex}`);
+    } else {
+      button.textContent = "Copied";
+      window.setTimeout(() => { button.textContent = "Copy"; }, 900);
+    }
   } catch (_) {
     setStatus(`HEX ${hex}`);
   }
@@ -2042,7 +2136,7 @@ compareProcessBtn?.addEventListener("click", processPreviewFromCompareViewer);
   control?.addEventListener("change", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncCompareOperationFromToggles(); syncPaletteControlsFromCompare(); scheduleComparePreviewUpdate(); }));
   control?.addEventListener("input", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncCompareOperationFromToggles(); syncPaletteControlsFromCompare(); scheduleComparePreviewUpdate(); }));
 });
-[document.getElementById("resizeScale"), exportTargetSize, document.getElementById("paletteColors"), pixelSnapGridSize, document.getElementById("operation"), pixelSnapEnabled, paletteEnabled, resizeEnabled, smartDownscaleEnabled, orphanCleanupEnabled, orphanCleanupStrength, paletteNormalizeEnabled, paletteNormalizeTolerance, edgeCleanupEnabled, edgeCleanupStrength, morphologyCleanupEnabled, morphologyCleanupStrength, jaggyCleanupEnabled, jaggyCleanupStrength, alphaCleanupEnabled, alphaCleanupThreshold].forEach((control) => {
+[document.getElementById("resizeScale"), exportTargetSize, document.getElementById("paletteColors"), paletteTargetSlider, palettePreserveTransparency, pixelSnapGridSize, document.getElementById("operation"), pixelSnapEnabled, paletteEnabled, resizeEnabled, smartDownscaleEnabled, orphanCleanupEnabled, orphanCleanupStrength, paletteNormalizeEnabled, paletteNormalizeTolerance, edgeCleanupEnabled, edgeCleanupStrength, morphologyCleanupEnabled, morphologyCleanupStrength, jaggyCleanupEnabled, jaggyCleanupStrength, alphaCleanupEnabled, alphaCleanupThreshold].forEach((control) => {
   control?.addEventListener("change", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncOperationFromToolToggles(); updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); }));
   control?.addEventListener("input", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncOperationFromToolToggles(); updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); }));
 });
@@ -2111,9 +2205,23 @@ pipelineStageToggles.forEach((button) => {
   }));
 });
 
+paletteTargetSlider?.addEventListener("input", () => preservePaletteScroll(() => {
+  setPaletteTarget(paletteTargetSlider.value, { schedule: false });
+}));
+paletteTargetSlider?.addEventListener("change", () => preservePaletteScroll(() => {
+  setPaletteTarget(paletteTargetSlider.value, { schedule: true });
+}));
+paletteTargetChips.forEach((button) => {
+  button.addEventListener("click", () => preservePaletteScroll(() => setPaletteTarget(button.dataset.paletteTarget || "0", { schedule: true })));
+});
+palettePreserveTransparency?.addEventListener("change", () => preservePaletteScroll(() => {
+  if (pixelSnapAlpha) pixelSnapAlpha.checked = palettePreserveTransparency.checked;
+  syncPaletteTransparencyControls({ schedule: true });
+}));
+
 discardPalettePreviewBtn?.addEventListener("click", resetPaletteLab);
 downloadPaletteResultBtn?.addEventListener("click", () => downloadBtn?.click());
-document.getElementById("paletteColors")?.addEventListener("change", updateOperationStackLabels);
+document.getElementById("paletteColors")?.addEventListener("change", () => syncPaletteTargetControls({ schedule: false }));
 document.getElementById("resizeScale")?.addEventListener("change", updateOperationStackLabels);
 exportTargetSize?.addEventListener("change", updateOperationStackLabels);
 document.getElementById("pixelSize")?.addEventListener("change", updateOperationStackLabels);
@@ -2140,6 +2248,7 @@ pixelSnapPalette?.addEventListener("change", () => preservePaletteScroll(() => {
 pixelSnapAlpha?.addEventListener("change", () => preservePaletteScroll(() => {
   clearPixelSnapProcessedReadout();
   syncPixelSnapPanelToOperation();
+  syncPaletteTransparencyControls({ schedule: false });
   schedulePalettePreviewUpdate();
 }));
 pixelSnapShowGrid?.addEventListener("change", () => preservePaletteScroll(() => { updateCompareGridToggleLabel(); updatePixelSnapGridOverlays(); }));
@@ -2204,6 +2313,8 @@ pixelSnapToolBtn?.addEventListener("click", () => {
   setStatus("Force updating Pixel Snap preview...");
 });
 document.getElementById("pixelSize")?.addEventListener("change", syncPixelSnapPanelFromOperation);
+syncPaletteTargetControls({ schedule: false });
+syncPaletteTransparencyControls({ schedule: false });
 updateOperationStackLabels();
 syncPixelSnapPanelFromOperation();
 updatePaletteSaveControls();
