@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0042_auto_pipeline_safety" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0043_canvas_first_palette_lab" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.34 · PF-0042</div>
+          <div class="subtitle">by Wulf · Web v0.35 · PF-0043</div>
         </div>
       </div>
 
@@ -456,13 +456,37 @@
                   <span><em>Changed</em><strong id="pixelSnapChangeAmount">—</strong></span>
                   <span><em>Resize</em><strong id="pixelSnapResizeReadout">—</strong></span>
                 </div>
+              </div>
+              <div class="palette-compare-actions palette-canvas-actions">
+                <button id="mainCanvasFitBtn" type="button" class="pf-view-toggle">Fit</button>
+                <button id="mainCanvasActualBtn" type="button" class="pf-view-toggle">1:1</button>
+                <button id="mainCanvasGridToggle" type="button" class="pf-state-toggle is-off">Grid Off</button>
+                <label class="pf-toggle-button-control canvas-toggle-control"><input id="pixelSnapAlpha" type="checkbox" checked /><span data-on="Transparency On" data-off="Transparency Off">Transparency On</span></label>
+                <button id="mainCanvasDifferenceBtn" type="button" class="pf-state-toggle is-off">Difference Off</button>
+                <button id="openCompareViewerBtn" type="button">Inspect</button>
+                <button id="processBtn" type="button" class="pf-primary-action">Update</button>
+                <label class="pf-toggle-button-control canvas-toggle-control canvas-auto-update"><input id="pixelSnapLivePreview" type="checkbox" checked /><span data-on="Auto-update On" data-off="Auto-update Off">Auto-update On</span></label>
+                <button type="button" id="applyPalettePreviewBtn" disabled class="hidden" aria-hidden="true" tabindex="-1">Apply Preview</button>
+                <button id="downloadBtn" type="button" disabled class="hidden" aria-hidden="true" tabindex="-1">Download PNG</button>
+                <input id="pixelSnapShowGrid" type="checkbox" class="hidden" />
+              </div>
+            </div>
+            <div class="palette-compare-shell">
+              <div id="mainPaletteCanvasStage" class="palette-compare-stage palette-main-canvas-stage" title="Wheel zoom · Shift/Space drag pan · double-click inspect">
+                <img id="compareOriginalPreview" alt="Compare original" />
+                <div id="compareProcessedClip" class="palette-compare-processed"><img id="compareProcessedPreview" alt="Compare processed" /></div>
+                <canvas id="mainDifferenceCanvas" class="palette-main-difference" aria-label="Main difference preview"></canvas>
+                <div id="compareDivider" class="palette-compare-divider"></div>
+              </div>
+              <input id="compareSlider" type="range" min="0" max="100" value="50" />
+            </div>
                 <section class="analysis-report-hub" aria-label="Analysis and reports">
                   <div class="analysis-report-head">
                     <strong>Analysis & Reports</strong>
                     <span>Core results stay open. Extra detail is collapsible to reduce clutter.</span>
                   </div>
                   <div class="analysis-report-grid">
-                    <details class="image-analysis-panel" id="imageAnalysisPanel" open>
+                    <details class="image-analysis-panel" id="imageAnalysisPanel">
                       <summary><strong>Image Analysis</strong><span id="imageAnalysisSummary">Waiting for process</span></summary>
                       <div class="image-analysis-actions">
                         <button type="button" id="applyRecommendedPipelineBtn" class="secondary-action" disabled>Apply Safe Pipeline</button>
@@ -472,13 +496,13 @@
                         <div class="cleanup-diagnostic-empty">Process an image to get pipeline recommendations.</div>
                       </div>
                     </details>
-                    <details class="cleanup-diagnostics-panel" id="cleanupDiagnosticsPanel" open>
+                    <details class="cleanup-diagnostics-panel" id="cleanupDiagnosticsPanel">
                       <summary><strong>Cleanup Diagnostics</strong><span id="cleanupDiagnosticsSummary">Waiting for first update</span></summary>
                       <div id="cleanupDiagnosticsList" class="cleanup-diagnostics-list">
                         <div class="cleanup-diagnostic-empty">Process an image to see exact cleanup results.</div>
                       </div>
                     </details>
-                    <details class="pixel-report-panel" id="pixelReportPanel" open>
+                    <details class="pixel-report-panel" id="pixelReportPanel">
                       <summary><strong>Pixel Report</strong><span id="pixelReportSummary">Waiting for process</span></summary>
                       <div id="pixelReportList" class="pixel-report-list">
                         <div class="cleanup-diagnostic-empty">Process an image to generate a unified report.</div>
@@ -504,30 +528,6 @@
                     </details>
                   </div>
                 </section>
-              </div>
-              <div class="palette-compare-actions palette-canvas-actions">
-                <button id="mainCanvasFitBtn" type="button" class="pf-view-toggle">Fit</button>
-                <button id="mainCanvasActualBtn" type="button" class="pf-view-toggle">1:1</button>
-                <button id="mainCanvasGridToggle" type="button" class="pf-state-toggle is-off">Grid Off</button>
-                <label class="pf-toggle-button-control canvas-toggle-control"><input id="pixelSnapAlpha" type="checkbox" checked /><span data-on="Transparency On" data-off="Transparency Off">Transparency On</span></label>
-                <button id="mainCanvasDifferenceBtn" type="button" class="pf-state-toggle is-off">Difference Off</button>
-                <button id="openCompareViewerBtn" type="button">Inspect</button>
-                <button id="processBtn" type="button" class="pf-primary-action">Update</button>
-                <label class="pf-toggle-button-control canvas-toggle-control canvas-auto-update"><input id="pixelSnapLivePreview" type="checkbox" checked /><span data-on="Auto-update On" data-off="Auto-update Off">Auto-update On</span></label>
-                <button type="button" id="applyPalettePreviewBtn" disabled class="hidden" aria-hidden="true" tabindex="-1">Apply Preview</button>
-                <button id="downloadBtn" type="button" disabled class="hidden" aria-hidden="true" tabindex="-1">Download PNG</button>
-                <input id="pixelSnapShowGrid" type="checkbox" class="hidden" />
-              </div>
-            </div>
-            <div class="palette-compare-shell">
-              <div id="mainPaletteCanvasStage" class="palette-compare-stage palette-main-canvas-stage" title="Wheel zoom · Shift/Space drag pan · double-click inspect">
-                <img id="compareOriginalPreview" alt="Compare original" />
-                <div id="compareProcessedClip" class="palette-compare-processed"><img id="compareProcessedPreview" alt="Compare processed" /></div>
-                <canvas id="mainDifferenceCanvas" class="palette-main-difference" aria-label="Main difference preview"></canvas>
-                <div id="compareDivider" class="palette-compare-divider"></div>
-              </div>
-              <input id="compareSlider" type="range" min="0" max="100" value="50" />
-            </div>
           </section>
 
 
@@ -754,6 +754,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0042_auto_pipeline_safety"></script>
+  <script src="/static/app.js?v=pf0043_canvas_first_palette_lab"></script>
 </body>
 </html>

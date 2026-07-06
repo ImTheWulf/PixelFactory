@@ -758,3 +758,17 @@ Safety:
 - No backend processing algorithm changes.
 - No Asset Browser changes.
 - Manual controls remain fully available.
+
+PF-0043
+-------
+Added:
+- Canvas-first Palette Lab layout pass.
+
+Changed:
+- Moved Analysis & Reports below the canvas so controls/reporting no longer push the preview down.
+- Collapsed report panels by default to reduce clutter.
+- Kept Processing Pipeline clearly positioned as advanced manual controls.
+- Updated version/cache markers to PF-0043.
+
+Fixed:
+- Reduced repeated helper clutter inside pipeline stage toggles.

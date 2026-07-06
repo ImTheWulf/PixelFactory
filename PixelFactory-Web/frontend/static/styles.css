@@ -5435,3 +5435,185 @@ select option:hover {
   border-color: rgba(34, 197, 94, 0.28);
   background: rgba(6, 78, 59, 0.16);
 }
+
+/* PF-0043 Canvas-first Palette Lab focus pass
+   Goal: keep the preview visible while controls move into a compact manual sidebar. */
+@media (min-width: 1180px) {
+  #paletteView {
+    padding-top: 8px !important;
+  }
+
+  .palette-workspace-layout {
+    display: grid !important;
+    grid-template-columns: minmax(320px, 390px) minmax(0, 1fr) !important;
+    grid-auto-rows: min-content !important;
+    align-items: start !important;
+    gap: 12px !important;
+    padding: 10px 16px 24px !important;
+  }
+
+  .palette-pipeline-manager {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    order: 1 !important;
+    margin: 0 !important;
+  }
+
+  .palette-tool-dock {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    order: 2 !important;
+    position: sticky !important;
+    top: 10px !important;
+    max-height: calc(100vh - 96px) !important;
+    overflow: auto !important;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
+  .palette-editor-canvas {
+    grid-column: 2 !important;
+    grid-row: 1 / span 4 !important;
+    order: 0 !important;
+    position: sticky !important;
+    top: 10px !important;
+    min-height: calc(100vh - 96px) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    margin: 0 !important;
+  }
+
+  .palette-workspace-layout > .palette-workflow-strip,
+  .palette-preview-grid.legacy-preview-grid {
+    grid-column: 1 !important;
+  }
+}
+
+.palette-canvas-toolbar {
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 10px !important;
+  align-items: start !important;
+}
+
+.palette-canvas-title-block {
+  min-width: 0;
+}
+
+.palette-canvas-title-block > .palette-panel-hint {
+  display: inline-block;
+  margin-top: 2px;
+}
+
+.palette-canvas-actions {
+  justify-content: flex-start !important;
+  align-items: center !important;
+  gap: 7px !important;
+}
+
+.palette-canvas-actions button,
+.palette-canvas-actions .pf-toggle-button-control span {
+  min-height: 30px !important;
+}
+
+.canvas-diagnostics-strip {
+  margin-top: 8px !important;
+  grid-template-columns: repeat(6, minmax(90px, 1fr)) !important;
+}
+
+@media (max-width: 1500px) {
+  .canvas-diagnostics-strip {
+    grid-template-columns: repeat(3, minmax(90px, 1fr)) !important;
+  }
+}
+
+.palette-compare-shell {
+  flex: 1 1 auto !important;
+  display: grid !important;
+  grid-template-rows: minmax(460px, 1fr) auto !important;
+  gap: 10px !important;
+}
+
+.palette-main-canvas-stage {
+  height: min(78vh, 880px) !important;
+  min-height: 560px !important;
+}
+
+.analysis-report-hub {
+  margin-top: 6px !important;
+  padding: 8px !important;
+}
+
+.analysis-report-head {
+  padding-bottom: 6px !important;
+}
+
+.analysis-report-head span {
+  max-width: 520px;
+}
+
+.analysis-report-grid {
+  grid-template-columns: repeat(3, minmax(180px, 1fr)) !important;
+  gap: 8px !important;
+}
+
+.analysis-report-grid > details[open] {
+  grid-column: 1 / -1 !important;
+}
+
+.analysis-report-grid > details summary {
+  min-height: 38px !important;
+  padding: 8px 10px !important;
+}
+
+.analysis-report-grid > details:not([open]) summary span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+}
+
+.pipeline-manager-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.pipeline-stage-toggle {
+  min-height: 48px !important;
+  padding: 8px 9px !important;
+}
+
+.pipeline-stage-toggle em {
+  font-size: 10px !important;
+}
+
+.pipeline-stage-toggle em::after {
+  content: "" !important;
+}
+
+.pipeline-manager-head .palette-panel-subtitle::after {
+  content: " Canvas-first layout keeps preview visible while these advanced controls stay manual.";
+  color: #7da4d6;
+}
+
+.repair-tool-tabs {
+  max-height: 124px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.repair-tool-active-panel {
+  padding-bottom: 4px;
+}
+
+@media (max-width: 1179px) {
+  .palette-editor-canvas,
+  .palette-tool-dock {
+    position: static !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .analysis-report-grid {
+    grid-template-columns: 1fr !important;
+  }
+}

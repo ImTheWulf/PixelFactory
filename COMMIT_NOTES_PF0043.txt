@@ -1,0 +1,11 @@
+PF-0043 canvas-first Palette Lab refocus
+
+- Re-centered Palette Lab around the canvas instead of stacked controls.
+- Moved Analysis & Reports below the canvas preview so the image stays visible first.
+- Collapsed report panels by default to reduce visual clutter.
+- Added desktop two-column canvas-first layout: manual controls/sidebar on the left, preview on the right.
+- Kept Processing Pipeline as advanced/manual controls.
+- Removed repeated “0 px means no repair needed” text from every pipeline toggle.
+- Updated version/cache markers to PF-0043.
+
+No backend algorithm changes. No Asset Browser changes.
