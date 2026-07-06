@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0028_smart_downscale_reporting" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0031_morphology_cleanup" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.20 · PF-0028</div>
+          <div class="subtitle">by Wulf · Web v0.23 · PF-0031</div>
         </div>
       </div>
 
@@ -246,7 +246,9 @@
                   <em data-pipeline-chip="smart">Smart Downscale</em>
                   <em data-pipeline-chip="resize">Resize</em>
                   <em data-pipeline-chip="alpha">Alpha</em>
+                  <em data-pipeline-chip="alpha-cleanup">Alpha Cleanup</em>
                   <em data-pipeline-chip="edge">Edge</em>
+                  <em data-pipeline-chip="morphology">Morphology</em>
                   <em data-pipeline-chip="orphan">Orphans</em>
                 </span>
               </summary>
@@ -258,6 +260,7 @@
                 <div class="palette-operation-row muted" data-op="chroma"><strong>Transparency Cleanup</strong><em>coming</em></div>
                 <div class="palette-operation-row" data-op="edge"><strong>Edge Cleanup</strong><span id="opEdgeCleanup">Off</span></div>
                 <div class="palette-operation-row" data-op="orphan"><strong>Orphan Cleanup</strong><span id="opOrphanCleanup">Off</span></div>
+                <div class="palette-operation-row" data-op="alpha"><strong>Alpha Cleanup</strong><span id="opAlphaCleanup">Off</span></div>
               </div>
             </details>
             <details class="preview-card palette-history-card palette-workflow-details">
@@ -288,6 +291,46 @@
             </div>
           </section>
 
+
+          <section class="preview-card palette-pipeline-manager" aria-label="Processing pipeline manager">
+            <div class="palette-toolbox-head pipeline-manager-head">
+              <div>
+                <h2>Processing Pipeline</h2>
+                <p class="palette-panel-subtitle">One place to enable, disable, and inspect every cleanup stage before Update.</p>
+              </div>
+              <span id="pipelineManagerSummary" class="tool-mode-badge">Pipeline ready</span>
+            </div>
+            <div class="pipeline-manager-grid">
+              <button type="button" class="pipeline-stage-toggle" data-pipeline-toggle="smart" data-target-tab="resize">
+                <strong>Smart Downscale</strong><span>Off</span><em>Auto reduce before cleanup</em>
+              </button>
+              <button type="button" class="pipeline-stage-toggle" data-pipeline-toggle="snap" data-target-tab="snap">
+                <strong>Pixel Snap</strong><span>On</span><em>Grid snap / pixel lock</em>
+              </button>
+              <button type="button" class="pipeline-stage-toggle" data-pipeline-toggle="palette" data-target-tab="palette">
+                <strong>Color Cleanup</strong><span>On</span><em>Target palette reduction</em>
+              </button>
+              <button type="button" class="pipeline-stage-toggle" data-pipeline-toggle="normalize" data-target-tab="palette">
+                <strong>Palette Normalize</strong><span>On</span><em>Merge near colors</em>
+              </button>
+              <button type="button" class="pipeline-stage-toggle" data-pipeline-toggle="alpha" data-target-tab="alpha">
+                <strong>Alpha Cleanup</strong><span>Off</span><em>Clean transparent fringe</em>
+              </button>
+              <button type="button" class="pipeline-stage-toggle" data-pipeline-toggle="orphan" data-target-tab="orphans">
+                <strong>Orphan Cleanup</strong><span>Off</span><em>Remove isolated specks</em>
+              </button>
+              <button type="button" class="pipeline-stage-toggle" data-pipeline-toggle="edge" data-target-tab="edge">
+                <strong>Edge Cleanup</strong><span>Off</span><em>Repair jaggy edges</em>
+              </button>
+              <button type="button" class="pipeline-stage-toggle" data-pipeline-toggle="morphology" data-target-tab="morphology">
+                <strong>Morphology Cleanup</strong><span>Off</span><em>Remove specks / fill pinholes</em>
+              </button>
+              <button type="button" class="pipeline-stage-toggle" data-pipeline-toggle="resize" data-target-tab="resize">
+                <strong>Resize</strong><span>On</span><em>Final nearest export scale</em>
+              </button>
+            </div>
+          </section>
+
           <section class="preview-card palette-tool-dock pixel-snap-panel palette-toolbox-v2">
             <div class="palette-toolbox-head">
               <div>
@@ -303,8 +346,9 @@
               <button type="button" class="repair-tool-tab" data-repair-tab="resize">Resize</button>
               <button type="button" class="repair-tool-tab" data-repair-tab="orphans">Orphan Cleanup</button>
               <button type="button" class="repair-tool-tab disabled" disabled>Repair Brush</button>
-              <button type="button" class="repair-tool-tab disabled" disabled>Chroma Key</button>
+              <button type="button" class="repair-tool-tab" data-repair-tab="alpha">Alpha Cleanup</button>
               <button type="button" class="repair-tool-tab" data-repair-tab="edge">Edge Cleanup</button>
+              <button type="button" class="repair-tool-tab" data-repair-tab="morphology">Morphology Cleanup</button>
             </div>
 
             <div class="pixel-snap-layout repair-tool-active-panel">
@@ -347,6 +391,15 @@
                   <p class="pixel-tool-note">Removes tiny isolated color/noise pixels after snapping. Keep low for detailed sprites.</p>
                 </fieldset>
 
+                <fieldset class="pixel-tool-group repair-tool-pane" data-repair-pane="alpha">
+                  <legend>Alpha Cleanup</legend>
+                  <div class="repair-tool-inline repair-two-control-row">
+                    <label><span>Alpha Threshold</span><input id="alphaCleanupThreshold" type="range" min="0" max="96" step="1" value="12" /><em id="alphaCleanupThresholdValue">12</em></label>
+                    <label class="pf-toggle-button-control"><input id="alphaCleanupEnabled" type="checkbox" /><span data-on="Alpha Cleanup On" data-off="Alpha Cleanup Off">Alpha Cleanup Off</span></label>
+                  </div>
+                  <p class="pixel-tool-note">Cleans weak transparent fringes by removing near-transparent pixels and hardening nearly-opaque pixels.</p>
+                </fieldset>
+
                 <fieldset class="pixel-tool-group repair-tool-pane" data-repair-pane="edge">
                   <legend>Edge Cleanup</legend>
                   <div class="repair-tool-inline repair-two-control-row">
@@ -354,6 +407,15 @@
                     <label class="pf-toggle-button-control"><input id="edgeCleanupEnabled" type="checkbox" /><span data-on="Edge Cleanup On" data-off="Edge Cleanup Off">Edge Cleanup Off</span></label>
                   </div>
                   <p class="pixel-tool-note">Unfake-inspired jaggy cleanup: smooths isolated stair-step edge artifacts after snap/normalize without blurring the whole image.</p>
+                </fieldset>
+
+                <fieldset class="pixel-tool-group repair-tool-pane" data-repair-pane="morphology">
+                  <legend>Morphology Cleanup</legend>
+                  <div class="repair-tool-inline repair-two-control-row">
+                    <label><span>Strength</span><input id="morphologyCleanupStrength" type="range" min="0" max="1" step="0.05" value="0.35" /><em id="morphologyCleanupStrengthValue">35%</em></label>
+                    <label class="pf-toggle-button-control"><input id="morphologyCleanupEnabled" type="checkbox" /><span data-on="Morphology Cleanup On" data-off="Morphology Cleanup Off">Morphology Cleanup Off</span></label>
+                  </div>
+                  <p class="pixel-tool-note">Removes isolated specks and fills tiny transparent pinholes. Keep low for detailed sprites.</p>
                 </fieldset>
               </div>
 
@@ -656,6 +718,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0028_smart_downscale_reporting"></script>
+  <script src="/static/app.js?v=pf0031_morphology_cleanup"></script>
 </body>
 </html>

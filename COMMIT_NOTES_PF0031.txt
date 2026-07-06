@@ -1,0 +1,17 @@
+PF-0031 add morphology cleanup v1
+
+- Added Morphology Cleanup repair tab with strength control
+- Added Morphology Cleanup stage to Processing Pipeline controls
+- Added native backend morphology cleanup pass for isolated specks and tiny pinholes
+- Added diagnostics/reporting headers for morphology cleanup
+- Added Morphology Cleanup to Cleanup Diagnostics and Pixel Report
+- Updated version/cache markers to PF-0031
+
+Testing:
+- JS syntax check passed
+- Python compile passed
+- /api/process passed with morphology_cleanup=true
+
+Notes:
+- Backend changed, so restart terminal/server after installing.
+- No Asset Browser changes.

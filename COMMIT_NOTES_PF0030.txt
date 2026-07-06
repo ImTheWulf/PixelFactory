@@ -1,0 +1,9 @@
+PF-0030 add processing pipeline manager
+
+- Added a central Processing Pipeline Manager panel to Palette Lab
+- Added one-click stage toggles for existing cleanup/resize stages
+- Synced manager buttons with the existing Repair Toolbox controls
+- Added live pipeline stage count/status
+- Updated version/cache markers to PF-0030
+- No backend processing changes
+- No Asset Browser changes

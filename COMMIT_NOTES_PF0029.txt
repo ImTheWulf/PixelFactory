@@ -1,0 +1,10 @@
+PF-0029 add alpha cleanup v1
+
+- Added Alpha Cleanup repair tab in Palette Lab.
+- Added opt-in alpha threshold control for weak transparency cleanup.
+- Added native backend alpha cleanup pass.
+- Added alpha cleanup diagnostics/report headers.
+- Added alpha cleanup row to Cleanup Diagnostics and Pixel Report.
+- Updated version/cache markers to PF-0029.
+
+Restart terminal/server after installing because this patch changes backend processing code.

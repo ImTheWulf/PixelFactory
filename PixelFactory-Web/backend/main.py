@@ -41,7 +41,7 @@ asset_service = AssetService(PROJECT_ROOT)
 workspace_service = WorkspaceService(PROJECT_ROOT)
 export_service = ExportService(PROJECT_ROOT, asset_service)
 
-app = FastAPI(title="Pixel Factory by Wulf", version="0.20-pf0028-smart-downscale-reporting")
+app = FastAPI(title="Pixel Factory by Wulf", version="0.22-pf0031-morphology-cleanup-v1")
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
 
@@ -183,6 +183,33 @@ def _blend_with_matching_size(base: Image.Image, overlay: Image.Image, amount: f
         base = base.resize(overlay.size, Image.Resampling.NEAREST)
     return Image.blend(base.convert("RGBA"), overlay.convert("RGBA"), amount)
 
+
+def _alpha_cleanup_rgba(img: Image.Image, *, threshold: int = 12) -> Image.Image:
+    """Clean weak transparency fringes without changing RGB artwork.
+
+    Native Pixel Factory alpha cleanup inspired by the unfake.js cleanup
+    direction: near-transparent pixels are removed and nearly-opaque pixels are
+    hardened. Mid-alpha pixels are preserved so soft intentional transparency is
+    not destroyed.
+    """
+    threshold = max(0, min(96, int(threshold or 0)))
+    if threshold <= 0:
+        return img.copy()
+    src = img.convert("RGBA")
+    out_pixels = []
+    low = threshold
+    high = 255 - threshold
+    for r, g, b, a in src.getdata():
+        if a <= low:
+            out_pixels.append((r, g, b, 0))
+        elif a >= high:
+            out_pixels.append((r, g, b, 255))
+        else:
+            out_pixels.append((r, g, b, a))
+    out = Image.new("RGBA", src.size)
+    out.putdata(out_pixels)
+    return out
+
 def _quantize_rgba(img: Image.Image, colors: int) -> Image.Image:
     colors = int(colors or 0)
     if colors <= 0:
@@ -293,6 +320,68 @@ def _palette_normalize_rgba(img: Image.Image, *, tolerance: int = 8) -> Image.Im
 
     out = Image.new("RGBA", (w, h))
     out.putdata(out_pixels)
+    return out
+
+
+def _morphology_cleanup_rgba(img: Image.Image, *, strength: float = 0.35) -> Image.Image:
+    """Conservative pixel-art morphology cleanup.
+
+    This pass is inspired by the unfake.js cleanup direction but implemented
+    natively for PixelFactory: it removes isolated opaque specks and fills tiny
+    one-pixel transparent holes when the surrounding neighborhood clearly votes
+    for a local color. It avoids blur and only changes single-pixel defects.
+    """
+    strength = max(0.0, min(1.0, float(strength or 0.0)))
+    if strength <= 0:
+        return img.copy()
+
+    src = img.convert("RGBA")
+    w, h = src.size
+    if w < 3 or h < 3:
+        return src.copy()
+
+    out = src.copy()
+    pix = src.load()
+    outpix = out.load()
+    alpha_cutoff = 12
+    min_same = 2 if strength >= 0.70 else 1
+    fill_required = 6 if strength < 0.50 else 5
+    max_changes = int(max(250, w * h * (0.004 + strength * 0.018)))
+    changed = 0
+
+    def close_rgb(a, b, tol=28):
+        return abs(a[0] - b[0]) <= tol and abs(a[1] - b[1]) <= tol and abs(a[2] - b[2]) <= tol
+
+    for y in range(1, h - 1):
+        for x in range(1, w - 1):
+            center = pix[x, y]
+            neighbors = [
+                pix[x - 1, y - 1], pix[x, y - 1], pix[x + 1, y - 1],
+                pix[x - 1, y],                     pix[x + 1, y],
+                pix[x - 1, y + 1], pix[x, y + 1], pix[x + 1, y + 1],
+            ]
+            opaque_neighbors = [c for c in neighbors if c[3] > alpha_cutoff]
+
+            # Remove isolated visible specks surrounded by transparent/empty space.
+            if center[3] > alpha_cutoff:
+                similar = sum(1 for c in opaque_neighbors if close_rgb(c, center))
+                if len(opaque_neighbors) <= min_same and similar <= min_same:
+                    outpix[x, y] = (center[0], center[1], center[2], 0)
+                    changed += 1
+            # Fill pinholes only when a strong local color consensus exists.
+            elif len(opaque_neighbors) >= fill_required:
+                buckets: dict[tuple[int, int, int], list[tuple[int, int, int, int]]] = {}
+                for c in opaque_neighbors:
+                    key = (c[0] // 16, c[1] // 16, c[2] // 16)
+                    buckets.setdefault(key, []).append(c)
+                _key, votes = max(buckets.items(), key=lambda item: len(item[1]))
+                if len(votes) >= fill_required:
+                    avg = tuple(int(round(sum(c[i] for c in votes) / len(votes))) for i in range(4))
+                    outpix[x, y] = (avg[0], avg[1], avg[2], max(220, avg[3]))
+                    changed += 1
+
+            if changed >= max_changes:
+                return out
     return out
 
 def _orphan_cleanup_rgba(img: Image.Image, *, sensitivity: float = 0.35) -> Image.Image:
@@ -437,6 +526,10 @@ async def process_image(
     edge_cleanup: bool = Form(False),
     edge_strength: float = Form(0.30),
     smart_downscale: bool = Form(False),
+    alpha_cleanup: bool = Form(False),
+    alpha_threshold: int = Form(12),
+    morphology_cleanup: bool = Form(False),
+    morphology_strength: float = Form(0.35),
 ) -> Response:
     started_at = perf_counter()
     data = await image.read()
@@ -519,10 +612,20 @@ async def process_image(
         img = _edge_cleanup_rgba(img, strength=edge_strength)
         record_step("edge_cleanup", before_step, img)
 
+    if morphology_cleanup:
+        before_step = img.copy()
+        img = _morphology_cleanup_rgba(img, strength=morphology_strength)
+        record_step("morphology_cleanup", before_step, img)
+
     if preserve_alpha and img.mode == "RGBA":
         before_step = img.copy()
         img.putalpha(_match_alpha_size(original.getchannel("A"), img.size))
         record_step("alpha_preserve", before_step, img)
+
+    if alpha_cleanup:
+        before_step = img.copy()
+        img = _alpha_cleanup_rgba(img, threshold=alpha_threshold)
+        record_step("alpha_cleanup", before_step, img)
 
     if operation in {"resize", "resize_palette", "pixel_snap"} and resize_scale > 1:
         before_step = img.copy()
@@ -562,7 +665,13 @@ async def process_image(
         "X-PF-Step-Palette-Normalize": str(step_stats.get("palette_normalize", 0)),
         "X-PF-Step-Orphan-Cleanup": str(step_stats.get("orphan_cleanup", 0)),
         "X-PF-Step-Edge-Cleanup": str(step_stats.get("edge_cleanup", 0)),
+        "X-PF-Morphology-Cleanup": "true" if morphology_cleanup else "false",
+        "X-PF-Morphology-Strength": str(max(0, min(100, int(round(float(morphology_strength or 0) * 100))))),
+        "X-PF-Step-Morphology-Cleanup": str(step_stats.get("morphology_cleanup", 0)),
         "X-PF-Step-Alpha-Preserve": str(step_stats.get("alpha_preserve", 0)),
+        "X-PF-Alpha-Cleanup": "true" if alpha_cleanup else "false",
+        "X-PF-Alpha-Threshold": str(max(0, min(96, int(alpha_threshold or 12)))),
+        "X-PF-Step-Alpha-Cleanup": str(step_stats.get("alpha_cleanup", 0)),
         "X-PF-Step-Resize-Pixels": str(step_stats.get("resize", 0)),
         "X-PF-Source-Width": str(source_width),
         "X-PF-Source-Height": str(source_height),

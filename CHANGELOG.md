@@ -1,3 +1,18 @@
+PF-0029
+--------
+Added:
+- Alpha Cleanup repair tab in Palette Lab.
+- Opt-in alpha threshold control for cleaning weak transparent fringes.
+- Native backend alpha cleanup pass that removes near-transparent pixels and hardens nearly-opaque pixels.
+- Alpha Cleanup diagnostics in Cleanup Diagnostics and Pixel Report.
+
+Changed:
+- Version/cache markers updated to PF-0029.
+
+Safety:
+- Alpha Cleanup is off by default.
+- No Asset Browser changes.
+
 
 PF-0028
 --------
@@ -599,3 +614,33 @@ Added:
 
 Changed:
 - Palette statistics refresh when a source image loads or a processed preview updates.
+
+
+PF-0030
+-------
+Added:
+• Processing Pipeline Manager panel in Palette Lab.
+• Central stage toggles for Smart Downscale, Pixel Snap, Color Cleanup, Palette Normalize, Alpha Cleanup, Orphan Cleanup, Edge Cleanup, and Resize.
+• Live stage summary showing how many pipeline stages are enabled.
+
+Changed:
+• Version/cache markers updated to PF-0030.
+
+Safety:
+• No backend processing changes.
+• No Asset Browser changes.
+
+PF-0031
+-------
+Added:
+• Morphology Cleanup repair tab in Palette Lab.
+• Morphology Cleanup stage in the Processing Pipeline manager.
+• Native backend morphology cleanup pass for isolated specks and tiny transparent pinholes.
+• Diagnostics/reporting for morphology cleanup in Cleanup Diagnostics and Pixel Report.
+
+Changed:
+• Version/cache markers updated to PF-0031.
+
+Safety:
+• Morphology Cleanup is off by default.
+• No Asset Browser changes.
