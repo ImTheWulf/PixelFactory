@@ -1,0 +1,9 @@
+PF-0033-0036 cleanup quality and diagnostics pack
+
+- Improved cleanup diagnostics with explicit no-op explanations
+- Hid legacy lower Pipeline/History clutter in Palette Lab
+- Refined edge cleanup behavior
+- Improved morphology cleanup speck/pinhole rules
+- Tuned jaggy cleanup to avoid over-editing clean art
+- Added palette quantization v2 alpha-safe behavior
+- Updated version/cache to PF-0036

@@ -5145,3 +5145,29 @@ select option:hover {
 @media (max-width: 720px) {
   .pipeline-manager-grid { grid-template-columns: 1fr; }
 }
+
+/* PF-0033-0036 cleanup quality pack */
+.palette-workflow-strip [data-legacy-workflow][hidden] {
+  display: none !important;
+}
+.cleanup-diagnostic-row.changed {
+  border-color: rgba(68, 145, 255, 0.34);
+}
+.cleanup-diagnostic-row.noop em {
+  color: #88a6cb;
+}
+.cleanup-diagnostic-row.off {
+  opacity: 0.62;
+}
+.cleanup-diagnostic-row.off span,
+.cleanup-diagnostic-row.off em {
+  color: #6f819c;
+}
+.pipeline-stage-toggle em::after {
+  content: " · 0 px means no repair needed";
+  color: #5f7695;
+  font-weight: 600;
+}
+.pipeline-stage-toggle.active em::after {
+  color: #6da4d8;
+}

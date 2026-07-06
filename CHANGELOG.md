@@ -1,3 +1,17 @@
+
+PF-0032
+-------
+Added:
+• Jaggy Cleanup v1 with optional strength control.
+• Backend stair-step edge repair pass for obvious diagonal jag artifacts.
+• Diagnostics, Pixel Report, and pipeline manager reporting for Jaggy Cleanup.
+
+Changed:
+• Version/cache markers updated to PF-0032.
+
+Notes:
+• Backend changed; restart terminal/server after installing this patch.
+
 PF-0029
 --------
 Added:
@@ -644,3 +658,16 @@ Changed:
 Safety:
 • Morphology Cleanup is off by default.
 • No Asset Browser changes.
+
+PF-0033–PF-0036
+----------------
+Added:
+- Smarter cleanup diagnostics with no-op explanations.
+- Cleanup stage guidance so 0 px reads as no repair needed instead of failure.
+- Cleanup quality pack covering edge, morphology, jaggy, and palette quantization refinements.
+
+Changed:
+- Hid the older lower Pipeline/History strip to reduce Palette Lab clutter.
+- Updated app version/cache markers to PF-0036.
+- Made edge, morphology, and jaggy cleanup more conservative and easier to trust.
+- Improved palette quantization preservation of alpha and transparent pixels.

@@ -1,0 +1,8 @@
+PF-0032 add jaggy cleanup v1
+
+- Added Jaggy Cleanup tool tab and pipeline toggle
+- Added backend stair-step edge repair pass
+- Added diagnostics/report headers for jaggy cleanup
+- Updated version/cache markers to PF-0032
+
+Restart terminal/server after installing because backend code changed.

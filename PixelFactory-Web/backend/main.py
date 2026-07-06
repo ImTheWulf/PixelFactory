@@ -41,7 +41,7 @@ asset_service = AssetService(PROJECT_ROOT)
 workspace_service = WorkspaceService(PROJECT_ROOT)
 export_service = ExportService(PROJECT_ROOT, asset_service)
 
-app = FastAPI(title="Pixel Factory by Wulf", version="0.22-pf0031-morphology-cleanup-v1")
+app = FastAPI(title="Pixel Factory by Wulf", version="0.28-pf0036-cleanup-quality-pack")
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
 
@@ -211,15 +211,32 @@ def _alpha_cleanup_rgba(img: Image.Image, *, threshold: int = 12) -> Image.Image
     return out
 
 def _quantize_rgba(img: Image.Image, colors: int) -> Image.Image:
+    """Palette Quantization v2.
+
+    Uses an adaptive palette when available, preserves transparent pixels, and
+    keeps fully-transparent RGB stable so invisible fringe colors do not bloat
+    the palette count. This stays compatible with the existing API while giving
+    cleaner color reduction for pixel-art sources.
+    """
     colors = int(colors or 0)
     if colors <= 0:
         return img.copy()
     colors = max(2, min(256, colors))
-    alpha = img.getchannel("A")
-    rgb = img.convert("RGB")
-    quantized = rgb.quantize(colors=colors, method=Image.Quantize.MEDIANCUT)
+    src = img.convert("RGBA")
+    alpha = src.getchannel("A")
+    rgb = Image.new("RGB", src.size, (0, 0, 0))
+    rgb.paste(src.convert("RGB"), mask=alpha)
+    method = Image.Quantize.MEDIANCUT
+    try:
+        quantized = rgb.quantize(colors=colors, method=Image.Quantize.FASTOCTREE)
+    except Exception:
+        quantized = rgb.quantize(colors=colors, method=method)
     out = quantized.convert("RGBA")
     out.putalpha(alpha)
+    # Normalize invisible pixels so transparent garbage colors do not count as
+    # unique palette entries downstream.
+    pixels = [(0, 0, 0, 0) if a == 0 else (r, g, b, a) for r, g, b, a in out.getdata()]
+    out.putdata(pixels)
     return out
 
 
@@ -345,8 +362,9 @@ def _morphology_cleanup_rgba(img: Image.Image, *, strength: float = 0.35) -> Ima
     outpix = out.load()
     alpha_cutoff = 12
     min_same = 2 if strength >= 0.70 else 1
-    fill_required = 6 if strength < 0.50 else 5
-    max_changes = int(max(250, w * h * (0.004 + strength * 0.018)))
+    fill_required = 7 if strength < 0.35 else 6 if strength < 0.70 else 5
+    remove_required_empty = 6 if strength < 0.50 else 5
+    max_changes = int(max(250, w * h * (0.003 + strength * 0.014)))
     changed = 0
 
     def close_rgb(a, b, tol=28):
@@ -365,7 +383,8 @@ def _morphology_cleanup_rgba(img: Image.Image, *, strength: float = 0.35) -> Ima
             # Remove isolated visible specks surrounded by transparent/empty space.
             if center[3] > alpha_cutoff:
                 similar = sum(1 for c in opaque_neighbors if close_rgb(c, center))
-                if len(opaque_neighbors) <= min_same and similar <= min_same:
+                transparent_neighbors = 8 - len(opaque_neighbors)
+                if transparent_neighbors >= remove_required_empty and similar <= min_same:
                     outpix[x, y] = (center[0], center[1], center[2], 0)
                     changed += 1
             # Fill pinholes only when a strong local color consensus exists.
@@ -436,6 +455,102 @@ def _orphan_cleanup_rgba(img: Image.Image, *, sensitivity: float = 0.35) -> Imag
     return out
 
 
+
+def _jaggy_cleanup_rgba(img: Image.Image, *, strength: float = 0.30) -> Image.Image:
+    """Repair obvious stair-step/jaggy edge pixels without blurring.
+
+    This is a focused unfake-inspired pass for diagonal edge artifacts. It only
+    edits a pixel when the local 3x3 area shows a strong straight/diagonal vote
+    and the center pixel looks like a tiny protrusion or stair-step artifact.
+    """
+    strength = max(0.0, min(1.0, float(strength or 0.0)))
+    if strength <= 0:
+        return img.copy()
+
+    src = img.convert("RGBA")
+    w, h = src.size
+    if w < 3 or h < 3:
+        return src.copy()
+
+    out = src.copy()
+    pix = src.load()
+    outpix = out.load()
+    alpha_cutoff = 16
+    rgb_tol = 24 + int(strength * 20)
+    required = 6 if strength < 0.50 else 5 if strength < 0.85 else 4
+    max_changes = max(1, int(w * h * (0.0015 + strength * 0.012)))
+    changed = 0
+
+    def visible(c):
+        return c[3] > alpha_cutoff
+
+    def close(a, b, tol=rgb_tol):
+        if not visible(a) or not visible(b):
+            return False
+        return abs(a[0] - b[0]) <= tol and abs(a[1] - b[1]) <= tol and abs(a[2] - b[2]) <= tol
+
+    def average(colors):
+        return tuple(int(round(sum(c[i] for c in colors) / len(colors))) for i in range(4))
+
+    for y in range(1, h - 1):
+        for x in range(1, w - 1):
+            c = pix[x, y]
+            if not visible(c):
+                continue
+
+            n = pix[x, y - 1]
+            s = pix[x, y + 1]
+            e = pix[x + 1, y]
+            wv = pix[x - 1, y]
+            ne = pix[x + 1, y - 1]
+            nw = pix[x - 1, y - 1]
+            se = pix[x + 1, y + 1]
+            sw = pix[x - 1, y + 1]
+            neighbors = [n, s, e, wv, ne, nw, se, sw]
+            visible_neighbors = [p for p in neighbors if visible(p)]
+            if len(visible_neighbors) < required:
+                continue
+
+            # Skip pixels that already have enough same-color support.
+            same = sum(1 for p in visible_neighbors if close(p, c, tol=10))
+            if same >= 3 or len(visible_neighbors) >= 7:
+                continue
+
+            # Diagonal stair tests: one diagonal pair agrees, while the opposing
+            # direct neighbors make the center look like a protruding jag.
+            candidates = []
+            if close(nw, se) and (not close(n, c) or not close(wv, c)):
+                candidates.extend([nw, se])
+            if close(ne, sw) and (not close(n, c) or not close(e, c)):
+                candidates.extend([ne, sw])
+            if close(n, s) and (not close(e, c) or not close(wv, c)):
+                candidates.extend([n, s])
+            if close(e, wv) and (not close(n, c) or not close(s, c)):
+                candidates.extend([e, wv])
+
+            if len(candidates) < 2:
+                # Fallback: local majority bucket, still conservative.
+                buckets: dict[tuple[int, int, int], list[tuple[int, int, int, int]]] = {}
+                for p in visible_neighbors:
+                    key = (p[0] // 16, p[1] // 16, p[2] // 16)
+                    buckets.setdefault(key, []).append(p)
+                if not buckets:
+                    continue
+                _key, votes = max(buckets.items(), key=lambda item: len(item[1]))
+                if len(votes) < required:
+                    continue
+                candidates = votes
+
+            replacement = average(candidates)
+            contrast = abs(c[0] - replacement[0]) + abs(c[1] - replacement[1]) + abs(c[2] - replacement[2])
+            if contrast > 180 and strength < 0.70:
+                continue
+            outpix[x, y] = replacement
+            changed += 1
+            if changed >= max_changes:
+                return out
+    return out
+
 def _edge_cleanup_rgba(img: Image.Image, *, strength: float = 0.30) -> Image.Image:
     """Clean small jaggy/stair-step edge artifacts without blurring the asset.
 
@@ -458,8 +573,8 @@ def _edge_cleanup_rgba(img: Image.Image, *, strength: float = 0.30) -> Image.Ima
     outpix = out.load()
     alpha_threshold = 16
     # Conservative threshold at low strengths, stronger cleanup at higher values.
-    required = 6 if strength < 0.34 else 5 if strength < 0.67 else 4
-    max_changes = max(1, int(w * h * (0.025 + strength * 0.075)))
+    required = 7 if strength < 0.34 else 6 if strength < 0.67 else 5
+    max_changes = max(1, int(w * h * (0.012 + strength * 0.045)))
     changed = 0
 
     def close_rgb(a: tuple[int, int, int, int], b: tuple[int, int, int, int], tol: int = 10) -> bool:
@@ -488,7 +603,7 @@ def _edge_cleanup_rgba(img: Image.Image, *, strength: float = 0.30) -> Image.Ima
             for col in neighbors:
                 if col[3] <= alpha_threshold:
                     continue
-                key = (col[0] // 12, col[1] // 12, col[2] // 12)
+                key = (col[0] // 16, col[1] // 16, col[2] // 16)
                 buckets.setdefault(key, []).append(col)
             if not buckets:
                 continue
@@ -500,7 +615,7 @@ def _edge_cleanup_rgba(img: Image.Image, *, strength: float = 0.30) -> Image.Ima
             # visually close enough to the local area, not a totally unrelated color.
             avg = tuple(int(round(sum(c[i] for c in votes) / len(votes))) for i in range(4))
             contrast = abs(center[0] - avg[0]) + abs(center[1] - avg[1]) + abs(center[2] - avg[2])
-            if contrast > 150 and strength < 0.70:
+            if contrast > 120 and strength < 0.70:
                 continue
             outpix[x, y] = avg
             changed += 1
@@ -530,6 +645,8 @@ async def process_image(
     alpha_threshold: int = Form(12),
     morphology_cleanup: bool = Form(False),
     morphology_strength: float = Form(0.35),
+    jaggy_cleanup: bool = Form(False),
+    jaggy_strength: float = Form(0.30),
 ) -> Response:
     started_at = perf_counter()
     data = await image.read()
@@ -617,6 +734,11 @@ async def process_image(
         img = _morphology_cleanup_rgba(img, strength=morphology_strength)
         record_step("morphology_cleanup", before_step, img)
 
+    if jaggy_cleanup:
+        before_step = img.copy()
+        img = _jaggy_cleanup_rgba(img, strength=jaggy_strength)
+        record_step("jaggy_cleanup", before_step, img)
+
     if preserve_alpha and img.mode == "RGBA":
         before_step = img.copy()
         img.putalpha(_match_alpha_size(original.getchannel("A"), img.size))
@@ -668,6 +790,9 @@ async def process_image(
         "X-PF-Morphology-Cleanup": "true" if morphology_cleanup else "false",
         "X-PF-Morphology-Strength": str(max(0, min(100, int(round(float(morphology_strength or 0) * 100))))),
         "X-PF-Step-Morphology-Cleanup": str(step_stats.get("morphology_cleanup", 0)),
+        "X-PF-Jaggy-Cleanup": "true" if jaggy_cleanup else "false",
+        "X-PF-Jaggy-Strength": str(max(0, min(100, int(round(float(jaggy_strength or 0) * 100))))),
+        "X-PF-Step-Jaggy-Cleanup": str(step_stats.get("jaggy_cleanup", 0)),
         "X-PF-Step-Alpha-Preserve": str(step_stats.get("alpha_preserve", 0)),
         "X-PF-Alpha-Cleanup": "true" if alpha_cleanup else "false",
         "X-PF-Alpha-Threshold": str(max(0, min(96, int(alpha_threshold or 12)))),

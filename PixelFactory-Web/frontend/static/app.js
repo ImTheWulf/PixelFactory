@@ -199,6 +199,9 @@ const alphaCleanupThresholdValue = document.getElementById("alphaCleanupThreshol
 const morphologyCleanupEnabled = document.getElementById("morphologyCleanupEnabled");
 const morphologyCleanupStrength = document.getElementById("morphologyCleanupStrength");
 const morphologyCleanupStrengthValue = document.getElementById("morphologyCleanupStrengthValue");
+const jaggyCleanupEnabled = document.getElementById("jaggyCleanupEnabled");
+const jaggyCleanupStrength = document.getElementById("jaggyCleanupStrength");
+const jaggyCleanupStrengthValue = document.getElementById("jaggyCleanupStrengthValue");
 const pixelSnapDetectedGrid = document.getElementById("pixelSnapDetectedGrid");
 const pixelSnapConfidence = document.getElementById("pixelSnapConfidence");
 const pixelSnapPaletteEstimate = document.getElementById("pixelSnapPaletteEstimate");
@@ -574,6 +577,13 @@ function smartDownscaleState(result = pixelSnapLastResult || {}) {
   return { requested, applied, grid, detail };
 }
 
+function cleanupStageMessage({ name, changed, enabled, inactive = "Off", active = "Enabled", zero = "No cleanup needed", detail = "" }) {
+  const amount = Number(changed || 0);
+  if (!enabled) return inactive;
+  if (amount <= 0) return detail ? `${active} · ${zero} · ${detail}` : `${active} · ${zero}`;
+  return detail ? `${active} · ${detail}` : active;
+}
+
 function renderCleanupDiagnostics() {
   if (!cleanupDiagnosticsList) return;
   const result = pixelSnapLastResult || {};
@@ -588,29 +598,91 @@ function renderCleanupDiagnostics() {
     return Number.isFinite(parsed) ? parsed : 0;
   };
   const fmt = (value) => num(value).toLocaleString();
-  const enabledText = (on) => on ? "enabled" : "off";
   const resizePixels = num(result.stepResizePixels);
+  const smart = smartDownscaleState(result);
   const rows = [
-    ["Smart Downscale", fmt(result.stepSmartDownscale), smartDownscaleState(result).detail],
-    ["Pixel Snap", fmt(result.stepPixelSnap), `grid ${result.grid || "—"} · ${result.confidence || "—"}% confidence`],
-    ["Palette Quantize", fmt(result.stepPaletteQuantize), result.paletteTarget && Number(result.paletteTarget) > 0 ? `${result.paletteTarget} target colors` : "original color count"],
-    ["Palette Normalize", fmt(result.stepPaletteNormalize), `${enabledText(result.paletteNormalize === "true")} · tolerance ${result.normalizeTolerance || "—"}`],
-    ["Orphan Cleanup", fmt(result.stepOrphanCleanup), enabledText(orphanCleanupEnabled?.checked === true)],
-    ["Edge Cleanup", fmt(result.stepEdgeCleanup), `${enabledText(result.edgeCleanup === "true")} · strength ${result.edgeStrength || 0}%`],
-    ["Morphology Cleanup", fmt(result.stepMorphologyCleanup), `${enabledText(result.morphologyCleanup === "true")} · strength ${result.morphologyStrength || 0}%`],
-    ["Alpha Preserve", fmt(result.stepAlphaPreserve), pixelSnapAlpha?.checked === false ? "off" : "source alpha restored"],
-    ["Alpha Cleanup", fmt(result.stepAlphaCleanup), `${enabledText(result.alphaCleanup === "true")} · threshold ${result.alphaThreshold || 0}`],
-    ["Resize", resizePixels > 0 ? `+${fmt(resizePixels)}` : "0", `${result.resizeScale || 1}x nearest-neighbor`],
+    {
+      name: "Smart Downscale",
+      changed: fmt(result.stepSmartDownscale),
+      raw: num(result.stepSmartDownscale),
+      status: smart.requested ? (smart.applied ? `Applied · source ÷ ${smart.grid} grid` : "Enabled · already at detected grid") : "Off",
+      kind: smart.applied ? "changed" : smart.requested ? "noop" : "off",
+    },
+    {
+      name: "Pixel Snap",
+      changed: fmt(result.stepPixelSnap),
+      raw: num(result.stepPixelSnap),
+      status: cleanupStageMessage({ changed: result.stepPixelSnap, enabled: pixelSnapEnabled?.checked !== false, active: "Enabled", zero: "Grid already stable", detail: `grid ${result.grid || "—"} · ${result.confidence || "—"}% confidence` }),
+    },
+    {
+      name: "Palette Quantize",
+      changed: fmt(result.stepPaletteQuantize),
+      raw: num(result.stepPaletteQuantize),
+      status: cleanupStageMessage({ changed: result.stepPaletteQuantize, enabled: isColorCleanupActive(), active: "Enabled", zero: "Original colors kept", detail: result.paletteTarget && Number(result.paletteTarget) > 0 ? `${result.paletteTarget} target colors` : "original color count" }),
+    },
+    {
+      name: "Palette Normalize",
+      changed: fmt(result.stepPaletteNormalize),
+      raw: num(result.stepPaletteNormalize),
+      status: cleanupStageMessage({ changed: result.stepPaletteNormalize, enabled: result.paletteNormalize === "true", active: "Enabled", zero: "No near-duplicate colors detected", detail: `tolerance ${result.normalizeTolerance || "—"}` }),
+    },
+    {
+      name: "Orphan Cleanup",
+      changed: fmt(result.stepOrphanCleanup),
+      raw: num(result.stepOrphanCleanup),
+      status: cleanupStageMessage({ changed: result.stepOrphanCleanup, enabled: orphanCleanupEnabled?.checked === true, zero: "No isolated specks detected" }),
+    },
+    {
+      name: "Edge Cleanup",
+      changed: fmt(result.stepEdgeCleanup),
+      raw: num(result.stepEdgeCleanup),
+      status: cleanupStageMessage({ changed: result.stepEdgeCleanup, enabled: result.edgeCleanup === "true", zero: "No edge artifacts detected", detail: `strength ${result.edgeStrength || 0}%` }),
+    },
+    {
+      name: "Morphology Cleanup",
+      changed: fmt(result.stepMorphologyCleanup),
+      raw: num(result.stepMorphologyCleanup),
+      status: cleanupStageMessage({ changed: result.stepMorphologyCleanup, enabled: result.morphologyCleanup === "true", zero: "No specks or pinholes detected", detail: `strength ${result.morphologyStrength || 0}%` }),
+    },
+    {
+      name: "Jaggy Cleanup",
+      changed: fmt(result.stepJaggyCleanup),
+      raw: num(result.stepJaggyCleanup),
+      status: cleanupStageMessage({ changed: result.stepJaggyCleanup, enabled: result.jaggyCleanup === "true", zero: "No stair-step repairs needed", detail: `strength ${result.jaggyStrength || 0}%` }),
+    },
+    {
+      name: "Alpha Preserve",
+      changed: fmt(result.stepAlphaPreserve),
+      raw: num(result.stepAlphaPreserve),
+      status: pixelSnapAlpha?.checked === false ? "Off" : (num(result.stepAlphaPreserve) ? "Applied · source alpha restored" : "Enabled · alpha already matched"),
+    },
+    {
+      name: "Alpha Cleanup",
+      changed: fmt(result.stepAlphaCleanup),
+      raw: num(result.stepAlphaCleanup),
+      status: cleanupStageMessage({ changed: result.stepAlphaCleanup, enabled: result.alphaCleanup === "true", zero: "No transparent fringe detected", detail: `threshold ${result.alphaThreshold || 0}` }),
+    },
+    {
+      name: "Resize",
+      changed: resizePixels > 0 ? `+${fmt(resizePixels)}` : "0",
+      raw: resizePixels,
+      status: resizeEnabled?.checked !== false ? `${result.resizeScale || 1}x nearest-neighbor` : "Off",
+      kind: resizePixels > 0 ? "changed" : "noop",
+    },
   ];
-  cleanupDiagnosticsList.innerHTML = rows.map(([name, changed, detail]) => `
-    <div class="cleanup-diagnostic-row">
-      <strong>${escapeHtml(name)}</strong>
-      <span>${escapeHtml(changed)} px</span>
-      <em>${escapeHtml(detail)}</em>
-    </div>`).join("");
+  cleanupDiagnosticsList.innerHTML = rows.map((row) => {
+    const kind = row.kind || (row.status === "Off" ? "off" : row.raw > 0 ? "changed" : "noop");
+    return `
+    <div class="cleanup-diagnostic-row ${kind}">
+      <strong>${escapeHtml(row.name)}</strong>
+      <span>${escapeHtml(row.changed)} px</span>
+      <em>${escapeHtml(row.status)}</em>
+    </div>`;
+  }).join("");
   if (cleanupDiagnosticsSummary) {
     const changed = result.changedPercent ? `${result.changedPercent}% changed` : "0% changed";
-    cleanupDiagnosticsSummary.textContent = `${changed} · ${result.processingMs} ms`;
+    const noops = rows.filter((row) => row.kind !== "off" && row.raw <= 0).length;
+    cleanupDiagnosticsSummary.textContent = `${changed} · ${result.processingMs} ms · ${noops} no-op stages`;
   }
 }
 
@@ -647,6 +719,7 @@ function renderPixelReport() {
     ["Orphan Cleanup", orphanCleanupEnabled?.checked === true, `${fmt(result.stepOrphanCleanup)} px`],
     ["Edge Cleanup", result.edgeCleanup === "true", `${fmt(result.stepEdgeCleanup)} px`],
     ["Morphology Cleanup", result.morphologyCleanup === "true", `${fmt(result.stepMorphologyCleanup)} px`],
+    ["Jaggy Cleanup", result.jaggyCleanup === "true", `${fmt(result.stepJaggyCleanup)} px`],
     ["Alpha Preserve", pixelSnapAlpha?.checked !== false, `${fmt(result.stepAlphaPreserve)} px`],
     ["Alpha Cleanup", result.alphaCleanup === "true", `${fmt(result.stepAlphaCleanup)} px`],
     ["Resize", resizeEnabled?.checked !== false, `${result.resizeScale || 1}x`],
@@ -936,6 +1009,11 @@ function updateOperationStackLabels() {
   const edgeRow = document.querySelector('[data-op="edge"]');
   const edgeLabel = document.getElementById("opEdgeCleanup");
   if (edgeLabel) edgeLabel.textContent = edgeOn ? `${edgeStrengthPct}%` : "Off";
+  const jaggyOn = jaggyCleanupEnabled?.checked === true;
+  const jaggyStrengthPct = Math.round(Number(jaggyCleanupStrength?.value || 0) * 100);
+  const jaggyRow = document.querySelector('[data-op="jaggy"]');
+  const jaggyLabel = document.getElementById("opJaggyCleanup");
+  if (jaggyLabel) jaggyLabel.textContent = jaggyOn ? `${jaggyStrengthPct}%` : "Off";
   const alphaOn = alphaCleanupEnabled?.checked === true;
   const alphaThresholdNumber = Number(alphaCleanupThreshold?.value || 0);
   const alphaRow = document.querySelector('[data-op="alpha"]');
@@ -947,9 +1025,11 @@ function updateOperationStackLabels() {
   orphanRow?.classList.toggle("active", orphanOn);
   edgeRow?.classList.toggle("active", edgeOn);
   alphaRow?.classList.toggle("active", alphaOn);
+  jaggyRow?.classList.toggle("active", jaggyOn);
   document.querySelector('[data-pipeline-chip="orphan"]')?.classList.toggle("active", orphanOn);
   document.querySelector('[data-pipeline-chip="edge"]')?.classList.toggle("active", edgeOn);
   document.querySelector('[data-pipeline-chip="morphology"]')?.classList.toggle("active", morphologyCleanupEnabled?.checked === true);
+  document.querySelector('[data-pipeline-chip="jaggy"]')?.classList.toggle("active", jaggyOn);
   document.querySelector('[data-pipeline-chip="alpha-cleanup"]')?.classList.toggle("active", alphaOn);
   document.querySelector('[data-pipeline-chip="smart"]')?.classList.toggle("active", smartOn);
   document.querySelector('[data-pipeline-chip="palette"]')?.classList.toggle("active", paletteOn || normalizeOn);
@@ -958,6 +1038,8 @@ function updateOperationStackLabels() {
   if (pixelSnapStrengthValue) pixelSnapStrengthValue.textContent = `${Math.round(snapStrength * 100)}%`;
   if (orphanCleanupStrengthValue) orphanCleanupStrengthValue.textContent = `${orphanStrengthPct}%`;
   if (edgeCleanupStrengthValue) edgeCleanupStrengthValue.textContent = `${Math.round(Number(edgeCleanupStrength?.value || 0) * 100)}%`;
+  if (morphologyCleanupStrengthValue) morphologyCleanupStrengthValue.textContent = `${Math.round(Number(morphologyCleanupStrength?.value || 0) * 100)}%`;
+  if (jaggyCleanupStrengthValue) jaggyCleanupStrengthValue.textContent = `${jaggyStrengthPct}%`;
   if (alphaCleanupThresholdValue) alphaCleanupThresholdValue.textContent = String(alphaThresholdNumber);
   if (pixelSnapModeBadge) pixelSnapModeBadge.textContent = snapOn ? (pixelSize === "0" ? "Auto grid" : `${pixelSize}px grid`) : "Pixel Snap off";
   updateToolToggleLabels();
@@ -998,6 +1080,7 @@ function pipelineControlForStage(stage) {
     orphan: orphanCleanupEnabled,
     edge: edgeCleanupEnabled,
     morphology: morphologyCleanupEnabled,
+    jaggy: jaggyCleanupEnabled,
     resize: resizeEnabled,
   }[stage] || null;
 }
@@ -1015,6 +1098,8 @@ function pipelineStageLabel(stage) {
   if (stage === "alpha") return control.checked ? `T ${Number(alphaCleanupThreshold?.value || 0)}` : "Off";
   if (stage === "orphan") return control.checked ? `${Math.round(Number(orphanCleanupStrength?.value || 0) * 100)}%` : "Off";
   if (stage === "edge") return control.checked ? `${Math.round(Number(edgeCleanupStrength?.value || 0) * 100)}%` : "Off";
+  if (stage === "morphology") return control.checked ? `${Math.round(Number(morphologyCleanupStrength?.value || 0) * 100)}%` : "Off";
+  if (stage === "jaggy") return control.checked ? `${Math.round(Number(jaggyCleanupStrength?.value || 0) * 100)}%` : "Off";
   if (stage === "resize") return control.checked ? `${document.getElementById("resizeScale")?.value || 2}x` : "Off";
   return control.checked ? "On" : "Off";
 }
@@ -1680,7 +1765,7 @@ compareProcessBtn?.addEventListener("click", processPreviewFromCompareViewer);
   control?.addEventListener("change", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncCompareOperationFromToggles(); syncPaletteControlsFromCompare(); scheduleComparePreviewUpdate(); }));
   control?.addEventListener("input", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncCompareOperationFromToggles(); syncPaletteControlsFromCompare(); scheduleComparePreviewUpdate(); }));
 });
-[document.getElementById("resizeScale"), document.getElementById("paletteColors"), pixelSnapGridSize, document.getElementById("operation"), pixelSnapEnabled, paletteEnabled, resizeEnabled, smartDownscaleEnabled, orphanCleanupEnabled, orphanCleanupStrength, paletteNormalizeEnabled, paletteNormalizeTolerance, edgeCleanupEnabled, edgeCleanupStrength, morphologyCleanupEnabled, morphologyCleanupStrength, alphaCleanupEnabled, alphaCleanupThreshold].forEach((control) => {
+[document.getElementById("resizeScale"), document.getElementById("paletteColors"), pixelSnapGridSize, document.getElementById("operation"), pixelSnapEnabled, paletteEnabled, resizeEnabled, smartDownscaleEnabled, orphanCleanupEnabled, orphanCleanupStrength, paletteNormalizeEnabled, paletteNormalizeTolerance, edgeCleanupEnabled, edgeCleanupStrength, morphologyCleanupEnabled, morphologyCleanupStrength, jaggyCleanupEnabled, jaggyCleanupStrength, alphaCleanupEnabled, alphaCleanupThreshold].forEach((control) => {
   control?.addEventListener("change", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncOperationFromToolToggles(); updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); }));
   control?.addEventListener("input", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncOperationFromToolToggles(); updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); }));
 });
@@ -1989,6 +2074,8 @@ async function processPalettePreview({ quiet = false } = {}) {
   form.append("edge_strength", edgeCleanupStrength?.value || "0.30");
   form.append("morphology_cleanup", morphologyCleanupEnabled?.checked === true ? "true" : "false");
   form.append("morphology_strength", morphologyCleanupStrength?.value || "0.35");
+  form.append("jaggy_cleanup", jaggyCleanupEnabled?.checked === true ? "true" : "false");
+  form.append("jaggy_strength", jaggyCleanupStrength?.value || "0.30");
   form.append("alpha_cleanup", alphaCleanupEnabled?.checked === true ? "true" : "false");
   form.append("alpha_threshold", alphaCleanupThreshold?.value || "12");
   const smartDownscaleRequested = smartDownscaleEnabled?.checked === true;
@@ -2033,6 +2120,9 @@ async function processPalettePreview({ quiet = false } = {}) {
       morphologyCleanup: response.headers.get("X-PF-Morphology-Cleanup"),
       morphologyStrength: response.headers.get("X-PF-Morphology-Strength"),
       stepMorphologyCleanup: response.headers.get("X-PF-Step-Morphology-Cleanup"),
+      jaggyCleanup: response.headers.get("X-PF-Jaggy-Cleanup"),
+      jaggyStrength: response.headers.get("X-PF-Jaggy-Strength"),
+      stepJaggyCleanup: response.headers.get("X-PF-Step-Jaggy-Cleanup"),
       stepAlphaPreserve: response.headers.get("X-PF-Step-Alpha-Preserve"),
       alphaCleanup: response.headers.get("X-PF-Alpha-Cleanup"),
       alphaThreshold: response.headers.get("X-PF-Alpha-Threshold"),
@@ -2177,6 +2267,8 @@ function buildPaletteSaveForm(blob, filename, extra = {}) {
   form.append("edge_strength", edgeCleanupStrength?.value || "0.30");
   form.append("morphology_cleanup", morphologyCleanupEnabled?.checked === true ? "true" : "false");
   form.append("morphology_strength", morphologyCleanupStrength?.value || "0.35");
+  form.append("jaggy_cleanup", jaggyCleanupEnabled?.checked === true ? "true" : "false");
+  form.append("jaggy_strength", jaggyCleanupStrength?.value || "0.30");
   form.append("alpha_cleanup", alphaCleanupEnabled?.checked === true ? "true" : "false");
   form.append("alpha_threshold", alphaCleanupThreshold?.value || "12");
   form.append("smart_downscale", smartDownscaleEnabled?.checked === true ? "true" : "false");

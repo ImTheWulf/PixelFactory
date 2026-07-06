@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0031_morphology_cleanup" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0033_0036_cleanup_quality" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.23 · PF-0031</div>
+          <div class="subtitle">by Wulf · Web v0.28 · PF-0036</div>
         </div>
       </div>
 
@@ -237,7 +237,7 @@
 
         <section class="palette-workspace-layout">
           <div class="palette-workflow-inline palette-workflow-compact palette-workflow-strip">
-            <details class="preview-card palette-operation-card palette-workflow-details">
+            <details class="preview-card palette-operation-card palette-workflow-details" data-legacy-workflow hidden>
               <summary>
                 <strong>Pipeline</strong>
                 <span id="pipelineChipSummary" class="palette-pipeline-chips" aria-label="Current processing plan">
@@ -249,6 +249,7 @@
                   <em data-pipeline-chip="alpha-cleanup">Alpha Cleanup</em>
                   <em data-pipeline-chip="edge">Edge</em>
                   <em data-pipeline-chip="morphology">Morphology</em>
+                  <em data-pipeline-chip="jaggy">Jaggies</em>
                   <em data-pipeline-chip="orphan">Orphans</em>
                 </span>
               </summary>
@@ -261,9 +262,10 @@
                 <div class="palette-operation-row" data-op="edge"><strong>Edge Cleanup</strong><span id="opEdgeCleanup">Off</span></div>
                 <div class="palette-operation-row" data-op="orphan"><strong>Orphan Cleanup</strong><span id="opOrphanCleanup">Off</span></div>
                 <div class="palette-operation-row" data-op="alpha"><strong>Alpha Cleanup</strong><span id="opAlphaCleanup">Off</span></div>
+                <div class="palette-operation-row" data-op="jaggy"><strong>Jaggy Cleanup</strong><span id="opJaggyCleanup">Off</span></div>
               </div>
             </details>
-            <details class="preview-card palette-history-card palette-workflow-details">
+            <details class="preview-card palette-history-card palette-workflow-details" data-legacy-workflow hidden>
               <summary>
                 <strong>History</strong>
                 <span class="palette-panel-hint">Undo-style timeline coming</span>
@@ -296,7 +298,7 @@
             <div class="palette-toolbox-head pipeline-manager-head">
               <div>
                 <h2>Processing Pipeline</h2>
-                <p class="palette-panel-subtitle">One place to enable, disable, and inspect every cleanup stage before Update.</p>
+                <p class="palette-panel-subtitle">One place to enable/disable cleanup stages. Stages with 0 px usually ran safely but found no repair needed.</p>
               </div>
               <span id="pipelineManagerSummary" class="tool-mode-badge">Pipeline ready</span>
             </div>
@@ -325,6 +327,9 @@
               <button type="button" class="pipeline-stage-toggle" data-pipeline-toggle="morphology" data-target-tab="morphology">
                 <strong>Morphology Cleanup</strong><span>Off</span><em>Remove specks / fill pinholes</em>
               </button>
+              <button type="button" class="pipeline-stage-toggle" data-pipeline-toggle="jaggy" data-target-tab="jaggy">
+                <strong>Jaggy Cleanup</strong><span>Off</span><em>Repair stair-step edges</em>
+              </button>
               <button type="button" class="pipeline-stage-toggle" data-pipeline-toggle="resize" data-target-tab="resize">
                 <strong>Resize</strong><span>On</span><em>Final nearest export scale</em>
               </button>
@@ -349,6 +354,7 @@
               <button type="button" class="repair-tool-tab" data-repair-tab="alpha">Alpha Cleanup</button>
               <button type="button" class="repair-tool-tab" data-repair-tab="edge">Edge Cleanup</button>
               <button type="button" class="repair-tool-tab" data-repair-tab="morphology">Morphology Cleanup</button>
+              <button type="button" class="repair-tool-tab" data-repair-tab="jaggy">Jaggy Cleanup</button>
             </div>
 
             <div class="pixel-snap-layout repair-tool-active-panel">
@@ -416,6 +422,15 @@
                     <label class="pf-toggle-button-control"><input id="morphologyCleanupEnabled" type="checkbox" /><span data-on="Morphology Cleanup On" data-off="Morphology Cleanup Off">Morphology Cleanup Off</span></label>
                   </div>
                   <p class="pixel-tool-note">Removes isolated specks and fills tiny transparent pinholes. Keep low for detailed sprites.</p>
+                </fieldset>
+
+                <fieldset class="pixel-tool-group repair-tool-pane" data-repair-pane="jaggy">
+                  <legend>Jaggy Cleanup</legend>
+                  <div class="repair-tool-inline repair-two-control-row">
+                    <label><span>Strength</span><input id="jaggyCleanupStrength" type="range" min="0" max="1" step="0.05" value="0.30" /><em id="jaggyCleanupStrengthValue">30%</em></label>
+                    <label class="pf-toggle-button-control"><input id="jaggyCleanupEnabled" type="checkbox" /><span data-on="Jaggy Cleanup On" data-off="Jaggy Cleanup Off">Jaggy Cleanup Off</span></label>
+                  </div>
+                  <p class="pixel-tool-note">Repairs obvious stair-step edge artifacts. Keep low for sprites with intentional rough outlines.</p>
                 </fieldset>
               </div>
 
@@ -718,6 +733,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0031_morphology_cleanup"></script>
+  <script src="/static/app.js?v=pf0033_0036_cleanup_quality"></script>
 </body>
 </html>
