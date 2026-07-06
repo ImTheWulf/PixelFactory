@@ -1,0 +1,6 @@
+PF-0037 add target export size presets
+
+- Added Export Target dropdown in Resize tools
+- Added backend target-size nearest-neighbor export mode
+- Added diagnostics/reporting for target exports
+- Updated version/cache markers to PF-0037

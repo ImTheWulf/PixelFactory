@@ -222,6 +222,7 @@ const pixelSnapModeBadge = document.getElementById("pixelSnapModeBadge");
 const pixelSnapEnabled = document.getElementById("pixelSnapEnabled");
 const paletteEnabled = document.getElementById("paletteEnabled");
 const resizeEnabled = document.getElementById("resizeEnabled");
+const exportTargetSize = document.getElementById("exportTargetSize");
 const smartDownscaleEnabled = document.getElementById("smartDownscaleEnabled");
 const pipelineManagerSummary = document.getElementById("pipelineManagerSummary");
 const pipelineStageToggles = Array.from(document.querySelectorAll("[data-pipeline-toggle]"));
@@ -666,7 +667,7 @@ function renderCleanupDiagnostics() {
       name: "Resize",
       changed: resizePixels > 0 ? `+${fmt(resizePixels)}` : "0",
       raw: resizePixels,
-      status: resizeEnabled?.checked !== false ? `${result.resizeScale || 1}x nearest-neighbor` : "Off",
+      status: resizeEnabled?.checked !== false ? (result.exportTargetSize && result.exportTargetSize !== "scale" ? `target ${result.exportTargetSize}×${result.exportTargetSize} nearest-neighbor` : `${result.resizeScale || 1}x nearest-neighbor`) : "Off",
       kind: resizePixels > 0 ? "changed" : "noop",
     },
   ];
@@ -722,13 +723,14 @@ function renderPixelReport() {
     ["Jaggy Cleanup", result.jaggyCleanup === "true", `${fmt(result.stepJaggyCleanup)} px`],
     ["Alpha Preserve", pixelSnapAlpha?.checked !== false, `${fmt(result.stepAlphaPreserve)} px`],
     ["Alpha Cleanup", result.alphaCleanup === "true", `${fmt(result.stepAlphaCleanup)} px`],
-    ["Resize", resizeEnabled?.checked !== false, `${result.resizeScale || 1}x`],
+    ["Resize", resizeEnabled?.checked !== false, result.exportTargetSize && result.exportTargetSize !== "scale" ? `${result.exportTargetSize}×${result.exportTargetSize}` : `${result.resizeScale || 1}x`],
   ];
 
   const sections = [
     ["Image", [
       ["Source", sourceSize],
       ["Output", outputSize],
+      ["Export Mode", result.exportTargetSize && result.exportTargetSize !== "scale" ? `Target ${result.exportTargetSize}×${result.exportTargetSize}` : `Scale ${result.resizeScale || 1}x`],
       ["Sprite Estimate", spriteSize],
     ]],
     ["Detection", [
@@ -997,7 +999,10 @@ function updateOperationStackLabels() {
   const smartOn = smartDownscaleEnabled?.checked === true;
   const smartLabel = document.getElementById("opSmartDownscale");
   if (smartLabel) smartLabel.textContent = smartOn ? "Auto grid" : "Off";
-  if (opResizeScale) opResizeScale.textContent = resizeOn ? `${document.getElementById("resizeScale")?.value || 2}x` : "Off";
+  if (opResizeScale) {
+    const target = exportTargetSize?.value || "scale";
+    opResizeScale.textContent = resizeOn ? (target !== "scale" ? `${target}×${target}` : `${document.getElementById("resizeScale")?.value || 2}x`) : "Off";
+  }
   if (opPixelSize) opPixelSize.textContent = snapOn ? (pixelSize === "0" ? `Auto · ${Math.round(snapStrength * 100)}%` : `${pixelSize}px · ${Math.round(snapStrength * 100)}%`) : "Off";
   const orphanOn = orphanCleanupEnabled?.checked === true;
   const orphanStrengthPct = Math.round(Number(orphanCleanupStrength?.value || 0) * 100);
@@ -1100,7 +1105,10 @@ function pipelineStageLabel(stage) {
   if (stage === "edge") return control.checked ? `${Math.round(Number(edgeCleanupStrength?.value || 0) * 100)}%` : "Off";
   if (stage === "morphology") return control.checked ? `${Math.round(Number(morphologyCleanupStrength?.value || 0) * 100)}%` : "Off";
   if (stage === "jaggy") return control.checked ? `${Math.round(Number(jaggyCleanupStrength?.value || 0) * 100)}%` : "Off";
-  if (stage === "resize") return control.checked ? `${document.getElementById("resizeScale")?.value || 2}x` : "Off";
+  if (stage === "resize") {
+    const target = exportTargetSize?.value || "scale";
+    return control.checked ? (target !== "scale" ? `${target}×${target}` : `${document.getElementById("resizeScale")?.value || 2}x`) : "Off";
+  }
   return control.checked ? "On" : "Off";
 }
 
@@ -1765,7 +1773,7 @@ compareProcessBtn?.addEventListener("click", processPreviewFromCompareViewer);
   control?.addEventListener("change", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncCompareOperationFromToggles(); syncPaletteControlsFromCompare(); scheduleComparePreviewUpdate(); }));
   control?.addEventListener("input", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncCompareOperationFromToggles(); syncPaletteControlsFromCompare(); scheduleComparePreviewUpdate(); }));
 });
-[document.getElementById("resizeScale"), document.getElementById("paletteColors"), pixelSnapGridSize, document.getElementById("operation"), pixelSnapEnabled, paletteEnabled, resizeEnabled, smartDownscaleEnabled, orphanCleanupEnabled, orphanCleanupStrength, paletteNormalizeEnabled, paletteNormalizeTolerance, edgeCleanupEnabled, edgeCleanupStrength, morphologyCleanupEnabled, morphologyCleanupStrength, jaggyCleanupEnabled, jaggyCleanupStrength, alphaCleanupEnabled, alphaCleanupThreshold].forEach((control) => {
+[document.getElementById("resizeScale"), exportTargetSize, document.getElementById("paletteColors"), pixelSnapGridSize, document.getElementById("operation"), pixelSnapEnabled, paletteEnabled, resizeEnabled, smartDownscaleEnabled, orphanCleanupEnabled, orphanCleanupStrength, paletteNormalizeEnabled, paletteNormalizeTolerance, edgeCleanupEnabled, edgeCleanupStrength, morphologyCleanupEnabled, morphologyCleanupStrength, jaggyCleanupEnabled, jaggyCleanupStrength, alphaCleanupEnabled, alphaCleanupThreshold].forEach((control) => {
   control?.addEventListener("change", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncOperationFromToolToggles(); updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); }));
   control?.addEventListener("input", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncOperationFromToolToggles(); updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); }));
 });
@@ -1834,6 +1842,7 @@ discardPalettePreviewBtn?.addEventListener("click", resetPaletteLab);
 downloadPaletteResultBtn?.addEventListener("click", () => downloadBtn?.click());
 document.getElementById("paletteColors")?.addEventListener("change", updateOperationStackLabels);
 document.getElementById("resizeScale")?.addEventListener("change", updateOperationStackLabels);
+exportTargetSize?.addEventListener("change", updateOperationStackLabels);
 document.getElementById("pixelSize")?.addEventListener("change", updateOperationStackLabels);
 document.getElementById("operation")?.addEventListener("change", updateOperationStackLabels);
 pixelSnapGridSize?.addEventListener("change", () => preservePaletteScroll(() => {
@@ -2061,6 +2070,7 @@ async function processPalettePreview({ quiet = false } = {}) {
   const form = new FormData();
   form.append("image", selectedFile);
   form.append("resize_scale", document.getElementById("resizeScale").value);
+  form.append("export_target_size", exportTargetSize?.value || "scale");
   form.append("palette_colors", document.getElementById("paletteColors").value);
   form.append("pixel_size", pixelSnapGridSize?.value || document.getElementById("pixelSize")?.value || "0");
   form.append("pixel_strength", pixelSnapStrength?.value || "1");
@@ -2098,6 +2108,8 @@ async function processPalettePreview({ quiet = false } = {}) {
       confidence: response.headers.get("X-PF-Grid-Confidence"),
       paletteTarget: response.headers.get("X-PF-Palette-Target"),
       resizeScale: response.headers.get("X-PF-Resize-Scale"),
+      exportTargetSize: response.headers.get("X-PF-Export-Target-Size"),
+      exportMode: response.headers.get("X-PF-Export-Mode"),
       sourceColors: response.headers.get("X-PF-Source-Colors"),
       outputColors: response.headers.get("X-PF-Output-Colors"),
       changedPixels: response.headers.get("X-PF-Changed-Pixels"),
@@ -2259,6 +2271,7 @@ function buildPaletteSaveForm(blob, filename, extra = {}) {
   form.append("operation", document.getElementById("operation")?.value || "palette_lab");
   form.append("palette_colors", document.getElementById("paletteColors")?.value || "0");
   form.append("resize_scale", document.getElementById("resizeScale")?.value || "1");
+  form.append("export_target_size", exportTargetSize?.value || "scale");
   form.append("pixel_size", pixelSnapGridSize?.value || document.getElementById("pixelSize")?.value || "0");
   form.append("pixel_strength", pixelSnapStrength?.value || "1");
   form.append("palette_normalize", paletteNormalizeEnabled?.checked === true ? "true" : "false");

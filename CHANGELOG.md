@@ -671,3 +671,13 @@ Changed:
 - Updated app version/cache markers to PF-0036.
 - Made edge, morphology, and jaggy cleanup more conservative and easier to trust.
 - Improved palette quantization preservation of alpha and transparent pixels.
+
+PF-0037
+-------
+Added:
+- Export Target presets for 16×16 through 2048×2048.
+- Target-size nearest-neighbor export mode in Resize tools.
+- Resize diagnostics/reporting now shows target output sizes when used.
+
+Changed:
+- Updated app version/cache markers to PF-0037.

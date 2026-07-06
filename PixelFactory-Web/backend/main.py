@@ -628,6 +628,7 @@ def _edge_cleanup_rgba(img: Image.Image, *, strength: float = 0.30) -> Image.Ima
 async def process_image(
     image: UploadFile = File(...),
     resize_scale: int = Form(1),
+    export_target_size: str = Form("scale"),
     palette_colors: int = Form(0),
     operation: str = Form("resize_palette"),
     pixel_size: int = Form(0),
@@ -666,6 +667,16 @@ async def process_image(
         raise HTTPException(status_code=400, detail=f"Unsupported Palette Lab operation: {operation}")
 
     resize_scale = max(1, min(16, int(resize_scale or 1)))
+    export_target_raw = str(export_target_size or "scale").strip().lower()
+    export_target_px = 0
+    if export_target_raw not in {"", "scale", "use_scale", "auto"}:
+        try:
+            export_target_px = int(export_target_raw.replace("px", "").split("x")[0].strip())
+        except Exception:
+            export_target_px = 0
+        allowed_targets = {16, 32, 64, 128, 256, 512, 1024, 1536, 2048}
+        if export_target_px not in allowed_targets:
+            export_target_px = 0
     palette_colors = max(0, min(256, int(palette_colors or 0)))
     pixel_size = max(0, int(pixel_size or 0))
     pixel_strength = max(0.0, min(1.0, float(pixel_strength or 1.0)))
@@ -749,11 +760,17 @@ async def process_image(
         img = _alpha_cleanup_rgba(img, threshold=alpha_threshold)
         record_step("alpha_cleanup", before_step, img)
 
-    if operation in {"resize", "resize_palette", "pixel_snap"} and resize_scale > 1:
+    if operation in {"resize", "resize_palette", "pixel_snap"}:
         before_step = img.copy()
         w, h = img.size
-        img = img.resize((w * resize_scale, h * resize_scale), Image.Resampling.NEAREST)
-        step_stats["resize"] = (img.size[0] * img.size[1]) - (before_step.size[0] * before_step.size[1])
+        if export_target_px > 0:
+            img = img.resize((export_target_px, export_target_px), Image.Resampling.NEAREST)
+        elif resize_scale > 1:
+            img = img.resize((w * resize_scale, h * resize_scale), Image.Resampling.NEAREST)
+        if img.size != before_step.size:
+            step_stats["resize"] = abs((img.size[0] * img.size[1]) - (before_step.size[0] * before_step.size[1]))
+        else:
+            step_stats["resize"] = 0
 
     output_width, output_height = img.size
     output_color_count = _rgba_color_count(img)
@@ -768,6 +785,8 @@ async def process_image(
         "X-PF-Grid-Confidence": str(grid_confidence),
         "X-PF-Palette-Target": str(palette_colors if bool(snap_palette) and palette_colors > 0 else 0),
         "X-PF-Resize-Scale": str(resize_scale),
+        "X-PF-Export-Target-Size": str(export_target_px) if export_target_px > 0 else "scale",
+        "X-PF-Export-Mode": "target" if export_target_px > 0 else "scale",
         "X-PF-Source-Colors": str(source_color_count),
         "X-PF-Output-Colors": str(output_color_count),
         "X-PF-Changed-Pixels": str(changed_pixels),
