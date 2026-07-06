@@ -1,22 +1,70 @@
-PF-0045
--------
+
+PF-0100.2 — app.js Split Into Load-Ordered Files
+-------------------------------------------------
 Changed:
-- Polished Palette Lab v2 to stay focused on quick targets + fine tuning.
-- Reduced Palette Target presets to the common working set: Original, 8, 16, 24, 32, 48, 64, 128, and 256.
-- Slider can still fine-tune any custom target without cluttering the preset list.
-- Tightened the Palette Lab v2 pane so Resize remains reachable in the compact toolbox.
-- Updated app version/cache markers to PF-0045.
+• frontend/static/app.js (4,224 lines, one file) split into 5 files under
+  frontend/static/js/, loaded via 5 <script> tags in index.html in the same
+  order the code originally ran in:
+    00_shared-init.js          (nav, comfy status, reload UI)
+    01_palette-lab.js          (Palette Lab: pixel snap, compare, cleanup UI)
+    02_generation-studios.js   (Character Studio + Tile Studio generation UI)
+    03_asset-browser-export.js (Asset Browser, selection, export panel)
+    04_image-viewer.js         (fullscreen image viewer modal)
+• Kept the existing ?v=pf0044_palette_lab_v2 cache-busting query string on
+  all 5 tags.
 
-Fixed:
-- Removed the growing list of one-off palette values from the Palette Target dropdown.
-- Kept custom slider values as a single temporary “Custom (n)” entry instead of permanently polluting the menu.
-- Improved compact toolbox layout so resize controls fit better in the canvas-first view.
+Not changed:
+• No function, variable, or event-listener logic changed at all — this is a
+  straight cut of the original file at natural section boundaries (right
+  before each section's own const/let block), with no reordering.
+• Verified: concatenating the 5 files back together in load order reproduces
+  the original app.js byte-for-byte (same MD5). Each file individually
+  passes `node --check` (valid standalone syntax — proves no split cut
+  through the middle of a function or statement).
+• No backend changes in this pass.
 
-Safety:
-- Frontend-only polish patch.
-- No backend processing changes.
-- No Asset Browser changes.
+Why:
+• app.js had grown to 4,224 lines of global-scope functions with no way to
+  tell which section owned what. This is step 1 (safe reorganization only).
+  Actual encapsulation (ES modules, explicit dependencies) is a deliberately
+  separate future step — see PF-0100.2_REFACTOR_NOTES.md.
 
+Notes:
+• Delete or rename the old frontend/static/app.js after confirming this
+  works — index.html no longer references it, but leaving it in place is
+  harmless clutter, not a functional risk.
+• This could NOT be regression-tested the same rigorous way as PF-0100.1
+  (no headless browser/DOM available here) — please click through Palette
+  Lab, Character Studio, Tile Studio, Asset Browser, export, and the image
+  viewer once before trusting it fully.
+
+PF-0100.1 — Palette Lab ProcessingService Extraction
+-----------------------------------------------------
+Changed:
+• Moved all 18 Palette Lab pixel-processing functions out of
+  PixelFactory-Web/backend/main.py into a new
+  PixelFactory-Web/backend/services/palette_service.py (PaletteLabService).
+• main.py now calls palette_lab_service.<method>() instead of bare
+  module-level functions. main.py dropped from 1,359 to 804 lines.
+• _read_image / _png_response stayed in main.py (HTTP request/response glue,
+  not Palette Lab domain logic).
+
+Not changed:
+• No algorithm, tolerance, or default-value changes. This is a pure move —
+  verified byte-identical against the pre-refactor code on real project
+  images (Incoming/Accepted Tiles + Characters) across every moved function
+  and representative settings. See PF-0100.1_REFACTOR_NOTES.md.
+
+Why:
+• docs/03_ARCHITECTURE.md has described Asset/Workspace/Export Service +
+  Comfy Bridge as the backend shape for a while, but Palette Lab logic was
+  still living directly in the route file. This brings it in line with that
+  doc and with the AssetService/ExportService/WorkspaceService pattern
+  already used elsewhere in backend/services/.
+
+Notes:
+• Backend changed; restart the server after pulling this.
+• No frontend changes in this pass. app.js is untouched.
 
 PF-0032
 -------

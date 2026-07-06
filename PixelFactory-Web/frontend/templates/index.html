@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0045_palette_lab_polish" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0044_palette_lab_v2" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.37 · PF-0045</div>
+          <div class="subtitle">by Wulf · Web v0.36 · PF-0044</div>
         </div>
       </div>
 
@@ -371,7 +371,7 @@
                 <fieldset class="pixel-tool-group repair-tool-pane palette-lab-v2-pane" data-repair-pane="palette">
                   <legend>Palette Lab v2</legend>
                   <div class="repair-tool-inline palette-normalize-tools">
-                    <label><span>Palette Target</span><select id="paletteColors"><option value="0" selected>Original colors</option><option value="8">8</option><option value="16">16</option><option value="24">24</option><option value="32">32</option><option value="48">48</option><option value="64">64</option><option value="128">128</option><option value="256">256</option><option value="custom" hidden>Custom</option></select></label>
+                    <label><span>Palette Target</span><select id="paletteColors"><option value="0" selected>Original colors</option><option value="2">2</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="14">14</option><option value="16">16</option><option value="18">18</option><option value="20">20</option><option value="22">22</option><option value="24">24</option><option value="32">32</option><option value="48">48</option><option value="64">64</option><option value="96">96</option><option value="128">128</option><option value="256">256</option></select></label>
                     <label class="palette-target-slider"><span>Target Count</span><input id="paletteTargetSlider" type="range" min="0" max="256" step="1" value="0" /><em id="paletteTargetValue">Original</em></label>
                     <label class="pf-toggle-button-control"><input id="paletteEnabled" type="checkbox" checked /><span data-on="Color Cleanup On" data-off="Color Cleanup Off">Color Cleanup On</span></label>
                     <label><span>Normalize Tolerance</span><input id="paletteNormalizeTolerance" type="range" min="2" max="32" step="1" value="8" /><em id="paletteNormalizeToleranceValue">8</em></label>
@@ -768,6 +768,12 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0045_palette_lab_polish"></script>
+  <!-- PF-0100.2: app.js split into contiguous, load-order-preserving files.
+       These MUST stay in this exact order — see PF-0100.2_REFACTOR_NOTES.md -->
+  <script src="/static/js/00_shared-init.js?v=pf0044_palette_lab_v2"></script>
+  <script src="/static/js/01_palette-lab.js?v=pf0044_palette_lab_v2"></script>
+  <script src="/static/js/02_generation-studios.js?v=pf0044_palette_lab_v2"></script>
+  <script src="/static/js/03_asset-browser-export.js?v=pf0044_palette_lab_v2"></script>
+  <script src="/static/js/04_image-viewer.js?v=pf0044_palette_lab_v2"></script>
 </body>
 </html>

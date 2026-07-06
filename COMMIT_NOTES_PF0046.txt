@@ -1,0 +1,12 @@
+PF-0046 polish Repair Toolbox overflow
+
+Changed:
+- Fixed cut-off sliders/options in the compact Repair Toolbox panes.
+- Pixel Snap and cleanup panes now stack controls in the narrow side panel instead of overflowing horizontally.
+- Kept Palette Lab v2 preset/slider behavior from PF-0045.
+- Updated version/cache markers to PF-0046.
+
+Test:
+- Check Pixel Snap, Alpha Cleanup, Edge Cleanup, Morphology Cleanup, Jaggy Cleanup, Orphan Cleanup, Palette, and Resize panes.
+- Make sure no sliders or controls are cut off.
+- Confirm canvas preview and palette reduction still work.
