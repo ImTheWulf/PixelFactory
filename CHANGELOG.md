@@ -692,3 +692,18 @@ Added:
 Changed:
 - Updated app version/cache markers to PF-0038.
 - Diagnostics/reporting now uses clearer export-size labels.
+
+PF-0039
+-------
+Added:
+- Analysis & Reports hub to group diagnostics, pixel report, metadata, history, and palette statistics.
+- Clearer manual-control language for the Processing Pipeline panel.
+
+Changed:
+- Updated app version/cache markers to PF-0039.
+- Collapsed secondary detail panels by default to reduce lower-page clutter.
+- Renamed the pipeline Resize stage label to Export Size for consistency with Output Scale / Target Resolution.
+
+Safety:
+- No backend processing changes.
+- No Asset Browser changes.

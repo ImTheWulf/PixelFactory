@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0038_export_size_clarity" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0039_ui_refactor_prep" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.30 · PF-0038</div>
+          <div class="subtitle">by Wulf · Web v0.31 · PF-0039</div>
         </div>
       </div>
 
@@ -298,9 +298,9 @@
             <div class="palette-toolbox-head pipeline-manager-head">
               <div>
                 <h2>Processing Pipeline</h2>
-                <p class="palette-panel-subtitle">One place to enable/disable cleanup stages. Stages with 0 px usually ran safely but found no repair needed.</p>
+                <p class="palette-panel-subtitle">Advanced stage controls. Use these when you want full manual control, or leave them alone for the normal guided workflow.</p>
               </div>
-              <span id="pipelineManagerSummary" class="tool-mode-badge">Pipeline ready</span>
+              <span id="pipelineManagerSummary" class="tool-mode-badge">Advanced controls</span>
             </div>
             <div class="pipeline-manager-grid">
               <button type="button" class="pipeline-stage-toggle" data-pipeline-toggle="smart" data-target-tab="resize">
@@ -331,7 +331,7 @@
                 <strong>Jaggy Cleanup</strong><span>Off</span><em>Repair stair-step edges</em>
               </button>
               <button type="button" class="pipeline-stage-toggle" data-pipeline-toggle="resize" data-target-tab="resize">
-                <strong>Resize</strong><span>On</span><em>Final nearest export scale</em>
+                <strong>Export Size</strong><span>On</span><em>Final output scale / target</em>
               </button>
             </div>
           </section>
@@ -455,36 +455,44 @@
                   <span><em>Changed</em><strong id="pixelSnapChangeAmount">—</strong></span>
                   <span><em>Resize</em><strong id="pixelSnapResizeReadout">—</strong></span>
                 </div>
-                <details class="cleanup-diagnostics-panel" id="cleanupDiagnosticsPanel" open>
-                  <summary><strong>Cleanup Diagnostics</strong><span id="cleanupDiagnosticsSummary">Waiting for first update</span></summary>
-                  <div id="cleanupDiagnosticsList" class="cleanup-diagnostics-list">
-                    <div class="cleanup-diagnostic-empty">Process an image to see exact cleanup results.</div>
+                <section class="analysis-report-hub" aria-label="Analysis and reports">
+                  <div class="analysis-report-head">
+                    <strong>Analysis & Reports</strong>
+                    <span>Core results stay open. Extra detail is collapsible to reduce clutter.</span>
                   </div>
-                </details>
-                <details class="pixel-report-panel" id="pixelReportPanel" open>
-                  <summary><strong>Pixel Report</strong><span id="pixelReportSummary">Waiting for process</span></summary>
-                  <div id="pixelReportList" class="pixel-report-list">
-                    <div class="cleanup-diagnostic-empty">Process an image to generate a unified report.</div>
+                  <div class="analysis-report-grid">
+                    <details class="cleanup-diagnostics-panel" id="cleanupDiagnosticsPanel" open>
+                      <summary><strong>Cleanup Diagnostics</strong><span id="cleanupDiagnosticsSummary">Waiting for first update</span></summary>
+                      <div id="cleanupDiagnosticsList" class="cleanup-diagnostics-list">
+                        <div class="cleanup-diagnostic-empty">Process an image to see exact cleanup results.</div>
+                      </div>
+                    </details>
+                    <details class="pixel-report-panel" id="pixelReportPanel" open>
+                      <summary><strong>Pixel Report</strong><span id="pixelReportSummary">Waiting for process</span></summary>
+                      <div id="pixelReportList" class="pixel-report-list">
+                        <div class="cleanup-diagnostic-empty">Process an image to generate a unified report.</div>
+                      </div>
+                    </details>
+                    <details class="image-metadata-panel" id="imageMetadataPanel">
+                      <summary><strong>Image Metadata</strong><span id="imageMetadataSummary">Waiting for image</span></summary>
+                      <div id="imageMetadataList" class="image-metadata-list">
+                        <div class="cleanup-diagnostic-empty">Load or process an image to inspect size, palette, alpha, and estimated sprite resolution.</div>
+                      </div>
+                    </details>
+                    <details class="processing-history-panel" id="processingHistoryPanel">
+                      <summary><strong>Processing History</strong><span id="processingHistorySummary">Waiting for first process</span></summary>
+                      <div id="processingHistoryList" class="processing-history-list">
+                        <div class="cleanup-diagnostic-empty">Process an image to build a local session history.</div>
+                      </div>
+                    </details>
+                    <details class="palette-statistics-panel" id="paletteStatisticsPanel">
+                      <summary><strong>Palette Statistics</strong><span id="paletteStatisticsSummary">Waiting for image</span></summary>
+                      <div id="paletteStatisticsList" class="palette-statistics-list">
+                        <div class="cleanup-diagnostic-empty">Load an image to inspect palette usage, dominant colors, transparency, and estimated bit depth.</div>
+                      </div>
+                    </details>
                   </div>
-                </details>
-                <details class="image-metadata-panel" id="imageMetadataPanel" open>
-                  <summary><strong>Image Metadata</strong><span id="imageMetadataSummary">Waiting for image</span></summary>
-                  <div id="imageMetadataList" class="image-metadata-list">
-                    <div class="cleanup-diagnostic-empty">Load or process an image to inspect size, palette, alpha, and estimated sprite resolution.</div>
-                  </div>
-                </details>
-                <details class="processing-history-panel" id="processingHistoryPanel">
-                  <summary><strong>Processing History</strong><span id="processingHistorySummary">Waiting for first process</span></summary>
-                  <div id="processingHistoryList" class="processing-history-list">
-                    <div class="cleanup-diagnostic-empty">Process an image to build a local session history.</div>
-                  </div>
-                </details>
-                <details class="palette-statistics-panel" id="paletteStatisticsPanel" open>
-                  <summary><strong>Palette Statistics</strong><span id="paletteStatisticsSummary">Waiting for image</span></summary>
-                  <div id="paletteStatisticsList" class="palette-statistics-list">
-                    <div class="cleanup-diagnostic-empty">Load an image to inspect palette usage, dominant colors, transparency, and estimated bit depth.</div>
-                  </div>
-                </details>
+                </section>
               </div>
               <div class="palette-compare-actions palette-canvas-actions">
                 <button id="mainCanvasFitBtn" type="button" class="pf-view-toggle">Fit</button>
@@ -735,6 +743,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0038_export_size_clarity"></script>
+  <script src="/static/app.js?v=pf0039_ui_refactor_prep"></script>
 </body>
 </html>

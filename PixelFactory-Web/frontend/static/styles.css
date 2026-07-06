@@ -5171,3 +5171,72 @@ select option:hover {
 .pipeline-stage-toggle.active em::after {
   color: #6da4d8;
 }
+
+
+/* PF-0039 UI panel refactor / analysis prep */
+.analysis-report-hub {
+  margin-top: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 18px;
+  padding: 10px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.54), rgba(2, 6, 23, 0.34));
+}
+.analysis-report-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 2px 2px 8px;
+}
+.analysis-report-head strong {
+  color: #f8fafc;
+  font-size: 0.86rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.analysis-report-head span {
+  color: #94a3b8;
+  font-size: 0.78rem;
+  text-align: right;
+}
+.analysis-report-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  gap: 10px;
+}
+.analysis-report-grid > details {
+  margin-top: 0 !important;
+}
+.analysis-report-grid > details[open] {
+  grid-column: span 2;
+}
+.palette-pipeline-manager::before {
+  content: "Manual Control";
+  display: inline-flex;
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  border: 1px solid rgba(96, 165, 250, 0.28);
+  border-radius: 999px;
+  color: #bfdbfe;
+  background: rgba(30, 64, 175, 0.16);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.pipeline-manager-head .palette-panel-subtitle {
+  max-width: 760px;
+}
+@media (max-width: 1050px) {
+  .analysis-report-grid,
+  .analysis-report-grid > details[open] {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-column: auto;
+  }
+  .analysis-report-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .analysis-report-head span { text-align: left; }
+}

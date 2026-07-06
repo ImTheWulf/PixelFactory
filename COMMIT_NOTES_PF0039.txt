@@ -1,0 +1,9 @@
+PF-0039 refactor UI panels and prep analysis engine
+
+- Grouped diagnostics, pixel report, metadata, history, and palette statistics into an Analysis & Reports hub
+- Reduced lower-page clutter by collapsing secondary reports by default
+- Clarified Processing Pipeline as manual/advanced stage controls
+- Renamed pipeline Resize stage label to Export Size
+- Updated version/cache markers to PF-0039
+- No backend processing changes
+- No Asset Browser changes
