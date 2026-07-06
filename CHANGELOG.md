@@ -722,3 +722,19 @@ Safety:
 - Read-only recommendation engine only.
 - No backend processing changes.
 - No Asset Browser changes.
+
+PF-0041
+-------
+Added:
+- Apply Recommended Pipeline button in Image Analysis.
+- Auto Pipeline Preview explaining the safe recommended stage changes.
+- Conservative recommendation application for Smart Downscale, Pixel Snap, Palette Normalize, Alpha Cleanup, Edge Cleanup, and Export Size.
+
+Changed:
+- Updated app version/cache markers to PF-0041.
+
+Safety:
+- Manual controls remain fully available after applying recommendations.
+- Morphology, Jaggy, and Orphan Cleanup stay manual by default to avoid over-cleaning detailed sprites.
+- No backend processing changes.
+- No Asset Browser changes.

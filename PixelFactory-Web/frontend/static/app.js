@@ -214,6 +214,8 @@ const pixelReportSummary = document.getElementById("pixelReportSummary");
 const pixelReportList = document.getElementById("pixelReportList");
 const imageAnalysisSummary = document.getElementById("imageAnalysisSummary");
 const imageAnalysisList = document.getElementById("imageAnalysisList");
+const applyRecommendedPipelineBtn = document.getElementById("applyRecommendedPipelineBtn");
+const applyRecommendedPipelineHint = document.getElementById("applyRecommendedPipelineHint");
 const imageMetadataSummary = document.getElementById("imageMetadataSummary");
 const imageMetadataList = document.getElementById("imageMetadataList");
 const processingHistorySummary = document.getElementById("processingHistorySummary");
@@ -650,10 +652,87 @@ function buildImageAnalysis(result = pixelSnapLastResult || {}) {
   if (likelyUpscaled || highPalette) addRec("Edge Cleanup", "Useful for upscaled or noisy AI pixel edges.");
   else addSkip("Edge Cleanup", "No obvious edge repair signal from metadata.");
 
-  if (sourceColors > 1000 && confidence >= 60) addRec("Morphology / Jaggy", "Optional pass; use low strength and compare.");
+  if (sourceColors > 1000 && confidence >= 60) addSkip("Morphology / Jaggy", "Optional manual pass; use low strength and compare if specks or stair steps are visible.");
   else addSkip("Morphology / Jaggy", "Only needed when specks, pinholes, or stair steps are visible.");
 
   return { detected, recommendations, skips, qualityScore, likelyPixelArt, likelyUpscaled, highPalette, transparent };
+}
+
+function buildAutoPipelinePlan(result = pixelSnapLastResult || {}) {
+  const num = (value) => {
+    const parsed = Number(value || 0);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+  const grid = num(result.grid);
+  const confidence = num(result.confidence);
+  const sourceColors = num(result.sourceColors);
+  const sourceAlpha = num(result.sourceTransparentPercent);
+  const sourceWidth = num(result.sourceWidth);
+  const sourceHeight = num(result.sourceHeight);
+  const largeSource = Math.max(sourceWidth, sourceHeight) >= 512;
+  const highPalette = sourceColors > 256;
+  const clearGrid = grid >= 2 && confidence >= 65;
+  const likelyUpscaled = clearGrid && largeSource;
+  const transparent = sourceAlpha > 0;
+
+  return {
+    smart: clearGrid,
+    snap: grid >= 2,
+    palette: true,
+    normalize: highPalette,
+    alpha: transparent,
+    orphan: false,
+    edge: likelyUpscaled || highPalette,
+    morphology: false,
+    jaggy: false,
+    resize: true,
+    notes: [
+      clearGrid ? `Smart Downscale: detected ${grid}px grid at ${confidence || 0}% confidence.` : "Smart Downscale: skipped until grid confidence is stronger.",
+      highPalette ? `Palette Normalize: ${sourceColors.toLocaleString()} source colors suggests AI color noise.` : "Palette Normalize: skipped because palette count looks controlled.",
+      transparent ? "Alpha Cleanup: enabled because transparent pixels were detected." : "Alpha Cleanup: skipped because no transparent fringe was detected.",
+      (likelyUpscaled || highPalette) ? "Edge Cleanup: enabled as a conservative upscaled/noisy-edge repair." : "Edge Cleanup: skipped until visible edge artifacts are detected.",
+      "Morphology, Jaggy, and Orphan Cleanup stay manual by default to avoid over-cleaning detailed art.",
+    ],
+  };
+}
+
+function setCheckboxValue(control, checked) {
+  if (!control) return;
+  control.checked = Boolean(checked);
+}
+
+function applyRecommendedPipeline() {
+  const result = pixelSnapLastResult || {};
+  if (!result.processingMs) {
+    setStatus("Process an image first so PixelFactory can recommend a pipeline.");
+    return;
+  }
+  const plan = buildAutoPipelinePlan(result);
+
+  setCheckboxValue(smartDownscaleEnabled, plan.smart);
+  setCheckboxValue(pixelSnapEnabled, plan.snap);
+  setCheckboxValue(paletteEnabled, plan.palette);
+  setCheckboxValue(paletteNormalizeEnabled, plan.normalize);
+  setCheckboxValue(alphaCleanupEnabled, plan.alpha);
+  setCheckboxValue(orphanCleanupEnabled, plan.orphan);
+  setCheckboxValue(edgeCleanupEnabled, plan.edge);
+  setCheckboxValue(morphologyCleanupEnabled, plan.morphology);
+  setCheckboxValue(jaggyCleanupEnabled, plan.jaggy);
+  setCheckboxValue(resizeEnabled, plan.resize);
+
+  if (pixelSnapGridSize) pixelSnapGridSize.value = "0";
+  if (paletteNormalizeTolerance && plan.normalize && Number(paletteNormalizeTolerance.value || 0) < 8) paletteNormalizeTolerance.value = "8";
+  if (edgeCleanupStrength && plan.edge && Number(edgeCleanupStrength.value || 0) <= 0) edgeCleanupStrength.value = "0.30";
+  if (alphaCleanupThreshold && plan.alpha && Number(alphaCleanupThreshold.value || 0) <= 0) alphaCleanupThreshold.value = "12";
+
+  updateToolToggleLabels();
+  updateOperationStackLabels();
+  syncOperationFromToolToggles();
+  renderImageAnalysis();
+  renderCleanupDiagnostics();
+  renderPixelReport();
+  setStatus("Recommended pipeline applied. Manual controls are still available.");
+  schedulePalettePreviewUpdate();
 }
 
 function renderImageAnalysis() {
@@ -661,10 +740,16 @@ function renderImageAnalysis() {
   const result = pixelSnapLastResult || {};
   if (!result.processingMs) {
     if (imageAnalysisSummary) imageAnalysisSummary.textContent = "Waiting for process";
+    if (applyRecommendedPipelineBtn) applyRecommendedPipelineBtn.disabled = true;
+    if (applyRecommendedPipelineHint) applyRecommendedPipelineHint.textContent = "Process an image first.";
     imageAnalysisList.innerHTML = '<div class="cleanup-diagnostic-empty">Process an image to get pipeline recommendations.</div>';
     return;
   }
   const analysis = buildImageAnalysis(result);
+  const autoPlan = buildAutoPipelinePlan(result);
+  const plannedStages = [autoPlan.smart, autoPlan.snap, autoPlan.palette, autoPlan.normalize, autoPlan.alpha, autoPlan.edge, autoPlan.resize].filter(Boolean).length;
+  if (applyRecommendedPipelineBtn) applyRecommendedPipelineBtn.disabled = false;
+  if (applyRecommendedPipelineHint) applyRecommendedPipelineHint.textContent = `${plannedStages} safe stages recommended · manual stages stay under your control`;
   const badges = [];
   if (analysis.likelyPixelArt) badges.push("Pixel art");
   if (analysis.likelyUpscaled) badges.push("Upscaled source");
@@ -676,6 +761,10 @@ function renderImageAnalysis() {
     <div class="image-analysis-score-card">
       <div><span>Readiness Score</span><strong>${analysis.qualityScore}%</strong></div>
       <p>${escapeHtml(badges.join(" · "))}</p>
+    </div>
+    <div class="auto-pipeline-preview">
+      <strong>Auto Pipeline Preview</strong>
+      <span>${escapeHtml(autoPlan.notes.join(" "))}</span>
     </div>
     <div class="image-analysis-columns">
       <div class="image-analysis-section">
@@ -1932,6 +2021,10 @@ function resetPaletteLab({ keepDirty = false } = {}) {
   setStatus("Palette Lab reset.");
 }
 
+
+applyRecommendedPipelineBtn?.addEventListener("click", () => preservePaletteScroll(() => {
+  applyRecommendedPipeline();
+}));
 
 pipelineStageToggles.forEach((button) => {
   button.addEventListener("click", () => preservePaletteScroll(() => {

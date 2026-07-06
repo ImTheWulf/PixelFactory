@@ -1,0 +1,10 @@
+PF-0041 add apply recommendations auto pipeline
+
+- Added Apply Recommended Pipeline button to Image Analysis
+- Added Auto Pipeline Preview with recommendation notes
+- Applies conservative safe stage settings from image analysis
+- Keeps Morphology, Jaggy, and Orphan Cleanup manual by default
+- Keeps all manual controls available after applying recommendations
+- Updated version/cache markers to PF-0041
+- No backend processing changes
+- No Asset Browser changes

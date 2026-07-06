@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0040_image_analysis" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0041_auto_pipeline" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.32 · PF-0040</div>
+          <div class="subtitle">by Wulf · Web v0.33 · PF-0041</div>
         </div>
       </div>
 
@@ -463,6 +463,10 @@
                   <div class="analysis-report-grid">
                     <details class="image-analysis-panel" id="imageAnalysisPanel" open>
                       <summary><strong>Image Analysis</strong><span id="imageAnalysisSummary">Waiting for process</span></summary>
+                      <div class="image-analysis-actions">
+                        <button type="button" id="applyRecommendedPipelineBtn" class="secondary-action" disabled>Apply Recommended Pipeline</button>
+                        <span id="applyRecommendedPipelineHint">Process an image first.</span>
+                      </div>
                       <div id="imageAnalysisList" class="image-analysis-list">
                         <div class="cleanup-diagnostic-empty">Process an image to get pipeline recommendations.</div>
                       </div>
@@ -749,6 +753,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=pf0040_image_analysis"></script>
+  <script src="/static/app.js?v=pf0041_auto_pipeline"></script>
 </body>
 </html>
