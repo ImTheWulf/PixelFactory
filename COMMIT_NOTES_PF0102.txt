@@ -1,0 +1,25 @@
+PF-0102 fix Palette Lock overflow + stale version footer
+
+Changed:
+- Palette Lock pane's two toggle buttons (Palette Lock / Dither) were
+  overflowing the Repair Toolbox panel — same root cause PF-0046 already
+  fixed for the other panes (Pixel Snap, Alpha, Edge, Morphology, Jaggy,
+  Orphan, Resize), just never applied here since Palette Lock shipped
+  after PF-0046. Added the identical per-pane CSS override
+  ([data-repair-pane="lock"] .repair-tool-inline -> 2 flexible columns
+  instead of the base 3-column, 220px-minimum grid) that Resize already
+  uses.
+- Version footer was stuck on "Web v0.36 · PF-0044" through PF-0045 and
+  PF-0046 as well — it's a hardcoded string, not auto-synced with the
+  changelog. Bumped to "Web v0.37 · PF-0102" and bumped the ?v= cache-
+  busting query string on styles.css and all 5 split JS files so browsers
+  actually fetch the fixed CSS instead of a stale cached copy.
+
+Test:
+- Hard refresh (or the cache-bust bump should force it) and open Palette
+  Lab -> Palette Lock tab. Both toggle buttons should sit side by side,
+  fully visible, no clipping.
+- Confirm the footer under "Pixel Factory" now reads "Web v0.37 · PF-0102".
+- Spot check Pixel Snap, Alpha, Edge, Morphology, Jaggy, Orphan, Resize,
+  and Palette panes still look correct (unchanged, but worth a glance
+  since this touches the same shared .repair-tool-inline grid mechanism).

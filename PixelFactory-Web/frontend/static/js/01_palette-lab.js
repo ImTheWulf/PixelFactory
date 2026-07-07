@@ -92,6 +92,13 @@ const morphologyCleanupStrengthValue = document.getElementById("morphologyCleanu
 const jaggyCleanupEnabled = document.getElementById("jaggyCleanupEnabled");
 const jaggyCleanupStrength = document.getElementById("jaggyCleanupStrength");
 const jaggyCleanupStrengthValue = document.getElementById("jaggyCleanupStrengthValue");
+const gridOffsetX = document.getElementById("gridOffsetX");
+const gridOffsetY = document.getElementById("gridOffsetY");
+const gridOffsetResetBtn = document.getElementById("gridOffsetResetBtn");
+const paletteLockEnabled = document.getElementById("paletteLockEnabled");
+const paletteLockColors = document.getElementById("paletteLockColors");
+const paletteLockDither = document.getElementById("paletteLockDither");
+const paletteLockSummary = document.getElementById("paletteLockSummary");
 const pixelSnapDetectedGrid = document.getElementById("pixelSnapDetectedGrid");
 const pixelSnapConfidence = document.getElementById("pixelSnapConfidence");
 const pixelSnapPaletteEstimate = document.getElementById("pixelSnapPaletteEstimate");
@@ -170,6 +177,40 @@ function isColorCleanupActive() {
 
 function isPaletteNormalizeActive() {
   return paletteNormalizeEnabled?.checked === true;
+}
+
+// PF-0101 Palette Lock/Import: mirrors backend/services/palette_service.py's
+// parse_hex_palette so the UI can show a live color count without a round trip.
+// Accepts '#RRGGBB', 'RRGGBB', and 3-digit shorthand, separated by commas,
+// whitespace, semicolons, or newlines. Invalid tokens are skipped, not errored.
+function parsePaletteLockColors() {
+  const raw = paletteLockColors?.value || "";
+  if (!raw.trim()) return [];
+  const tokens = raw.trim().split(/[\s,;]+/);
+  const seen = new Set();
+  const out = [];
+  for (let tok of tokens) {
+    tok = tok.trim().replace(/^#/, "");
+    if (tok.length === 3) tok = tok.split("").map((ch) => ch + ch).join("");
+    if (!/^[0-9a-fA-F]{6}$/.test(tok)) continue;
+    const key = tok.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(key);
+    if (out.length >= 256) break;
+  }
+  return out;
+}
+
+function updatePaletteLockSummary() {
+  if (!paletteLockSummary) return;
+  const colors = parsePaletteLockColors();
+  if (!colors.length) {
+    paletteLockSummary.textContent = "Paste or import a fixed palette to force output onto exactly those colors.";
+    return;
+  }
+  const swatches = colors.slice(0, 24).map((hex) => `<span class="palette-lock-swatch" style="background:#${hex}" title="#${hex}"></span>`).join("");
+  paletteLockSummary.innerHTML = `${colors.length} color${colors.length === 1 ? "" : "s"} parsed ${swatches ? `<span class="palette-lock-swatch-row">${swatches}</span>` : ""}`;
 }
 
 function paletteTargetLabel(value = getPaletteTargetValue()) {
@@ -1340,6 +1381,7 @@ function pipelineControlForStage(stage) {
     morphology: morphologyCleanupEnabled,
     jaggy: jaggyCleanupEnabled,
     resize: resizeEnabled,
+    lock: paletteLockEnabled,
   }[stage] || null;
 }
 
@@ -1358,6 +1400,11 @@ function pipelineStageLabel(stage) {
   if (stage === "edge") return control.checked ? `${Math.round(Number(edgeCleanupStrength?.value || 0) * 100)}%` : "Off";
   if (stage === "morphology") return control.checked ? `${Math.round(Number(morphologyCleanupStrength?.value || 0) * 100)}%` : "Off";
   if (stage === "jaggy") return control.checked ? `${Math.round(Number(jaggyCleanupStrength?.value || 0) * 100)}%` : "Off";
+  if (stage === "lock") {
+    if (!control.checked) return "Off";
+    const n = parsePaletteLockColors().length;
+    return `${n} color${n === 1 ? "" : "s"}${paletteLockDither?.checked ? " · dither" : ""}`;
+  }
   if (stage === "resize") {
     const target = exportTargetSize?.value || "scale";
     return control.checked ? (target !== "scale" ? `${target}×${target}` : `${document.getElementById("resizeScale")?.value || 2}x`) : "Off";
@@ -2026,14 +2073,21 @@ compareProcessBtn?.addEventListener("click", processPreviewFromCompareViewer);
   control?.addEventListener("change", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncCompareOperationFromToggles(); syncPaletteControlsFromCompare(); scheduleComparePreviewUpdate(); }));
   control?.addEventListener("input", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncCompareOperationFromToggles(); syncPaletteControlsFromCompare(); scheduleComparePreviewUpdate(); }));
 });
-[document.getElementById("resizeScale"), exportTargetSize, document.getElementById("paletteColors"), paletteTargetSlider, palettePreserveTransparency, pixelSnapGridSize, document.getElementById("operation"), pixelSnapEnabled, paletteEnabled, resizeEnabled, smartDownscaleEnabled, orphanCleanupEnabled, orphanCleanupStrength, paletteNormalizeEnabled, paletteNormalizeTolerance, edgeCleanupEnabled, edgeCleanupStrength, morphologyCleanupEnabled, morphologyCleanupStrength, jaggyCleanupEnabled, jaggyCleanupStrength, alphaCleanupEnabled, alphaCleanupThreshold].forEach((control) => {
-  control?.addEventListener("change", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncOperationFromToolToggles(); updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); }));
-  control?.addEventListener("input", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncOperationFromToolToggles(); updateOperationStackLabels(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); }));
+[document.getElementById("resizeScale"), exportTargetSize, document.getElementById("paletteColors"), paletteTargetSlider, palettePreserveTransparency, pixelSnapGridSize, document.getElementById("operation"), pixelSnapEnabled, paletteEnabled, resizeEnabled, smartDownscaleEnabled, orphanCleanupEnabled, orphanCleanupStrength, paletteNormalizeEnabled, paletteNormalizeTolerance, edgeCleanupEnabled, edgeCleanupStrength, morphologyCleanupEnabled, morphologyCleanupStrength, jaggyCleanupEnabled, jaggyCleanupStrength, alphaCleanupEnabled, alphaCleanupThreshold, gridOffsetX, gridOffsetY, paletteLockEnabled, paletteLockColors, paletteLockDither].forEach((control) => {
+  control?.addEventListener("change", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncOperationFromToolToggles(); updateOperationStackLabels(); updatePaletteLockSummary(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); }));
+  control?.addEventListener("input", () => preservePaletteScroll(() => { clearPixelSnapProcessedReadout(); syncOperationFromToolToggles(); updateOperationStackLabels(); updatePaletteLockSummary(); syncOpenCompareControlsFromPalette(); schedulePalettePreviewUpdate(); }));
 });
 document.querySelectorAll(".pf-toggle-button-control input[type='checkbox']").forEach((input) => {
   input.addEventListener("change", () => preservePaletteScroll(updateToolToggleLabels));
   input.addEventListener("input", () => preservePaletteScroll(updateToolToggleLabels));
 });
+gridOffsetResetBtn?.addEventListener("click", () => preservePaletteScroll(() => {
+  if (gridOffsetX) gridOffsetX.value = "0";
+  if (gridOffsetY) gridOffsetY.value = "0";
+  clearPixelSnapProcessedReadout();
+  schedulePalettePreviewUpdate();
+}));
+updatePaletteLockSummary();
 
 function resetPaletteLab({ keepDirty = false } = {}) {
   window.clearTimeout(paletteAutoProcessTimer);
@@ -2360,6 +2414,11 @@ async function processPalettePreview({ quiet = false } = {}) {
   form.append("morphology_strength", morphologyCleanupStrength?.value || "0.35");
   form.append("jaggy_cleanup", jaggyCleanupEnabled?.checked === true ? "true" : "false");
   form.append("jaggy_strength", jaggyCleanupStrength?.value || "0.30");
+  form.append("grid_offset_x", gridOffsetX?.value || "0");
+  form.append("grid_offset_y", gridOffsetY?.value || "0");
+  form.append("palette_lock_enabled", paletteLockEnabled?.checked === true ? "true" : "false");
+  form.append("palette_lock_colors", paletteLockColors?.value || "");
+  form.append("palette_lock_dither", paletteLockDither?.checked === true ? "true" : "false");
   form.append("alpha_cleanup", alphaCleanupEnabled?.checked === true ? "true" : "false");
   form.append("alpha_threshold", alphaCleanupThreshold?.value || "12");
   const smartDownscaleRequested = smartDownscaleEnabled?.checked === true;
@@ -2401,6 +2460,12 @@ async function processPalettePreview({ quiet = false } = {}) {
       stepPixelSnap: response.headers.get("X-PF-Step-Pixel-Snap"),
       stepPaletteQuantize: response.headers.get("X-PF-Step-Palette-Quantize"),
       stepPaletteNormalize: response.headers.get("X-PF-Step-Palette-Normalize"),
+      gridOffsetX: response.headers.get("X-PF-Grid-Offset-X"),
+      gridOffsetY: response.headers.get("X-PF-Grid-Offset-Y"),
+      paletteLock: response.headers.get("X-PF-Palette-Lock"),
+      paletteLockColors: response.headers.get("X-PF-Palette-Lock-Colors"),
+      paletteLockDither: response.headers.get("X-PF-Palette-Lock-Dither"),
+      stepPaletteLock: response.headers.get("X-PF-Step-Palette-Lock"),
       stepOrphanCleanup: response.headers.get("X-PF-Step-Orphan-Cleanup"),
       stepEdgeCleanup: response.headers.get("X-PF-Step-Edge-Cleanup"),
       morphologyCleanup: response.headers.get("X-PF-Morphology-Cleanup"),
@@ -2557,6 +2622,11 @@ function buildPaletteSaveForm(blob, filename, extra = {}) {
   form.append("morphology_strength", morphologyCleanupStrength?.value || "0.35");
   form.append("jaggy_cleanup", jaggyCleanupEnabled?.checked === true ? "true" : "false");
   form.append("jaggy_strength", jaggyCleanupStrength?.value || "0.30");
+  form.append("grid_offset_x", gridOffsetX?.value || "0");
+  form.append("grid_offset_y", gridOffsetY?.value || "0");
+  form.append("palette_lock_enabled", paletteLockEnabled?.checked === true ? "true" : "false");
+  form.append("palette_lock_colors", paletteLockColors?.value || "");
+  form.append("palette_lock_dither", paletteLockDither?.checked === true ? "true" : "false");
   form.append("alpha_cleanup", alphaCleanupEnabled?.checked === true ? "true" : "false");
   form.append("alpha_threshold", alphaCleanupThreshold?.value || "12");
   form.append("smart_downscale", smartDownscaleEnabled?.checked === true ? "true" : "false");

@@ -1,0 +1,42 @@
+PF-0103 fix Repair Toolbox overflow at the root (not pane-by-pane)
+
+Changed:
+- Found the actual cause of the recurring Repair Toolbox cutoff: a generic
+  `.repair-tool-inline { ... !important }` rule (added in the PF-0045 polish
+  pass) sets 3 columns with hard minimums totaling ~550px
+  (minmax(200px,1.2fr) minmax(180px,.8fr) minmax(170px,.7fr)). The actual
+  Repair Toolbox panel renders at roughly 380-400px wide, so this rule
+  guarantees overflow on every pane that doesn't have its own more specific
+  override — which turned out to be Alpha Cleanup, Orphan Cleanup, Edge
+  Cleanup, Morphology Cleanup, Jaggy Cleanup, and the Pixel Snap pane's top
+  row and new Grid Offset row.
+- The PF-0046 "fix" for Orphan Cleanup never actually took effect: it set
+  `grid-template-columns` without `!important`, so the generic `!important`
+  rule always won regardless of the orphans selector being more specific
+  (important beats specificity in the CSS cascade, full stop). Removed
+  that dead rule with a comment explaining why, instead of leaving it as
+  a confusing no-op.
+- Fixed the generic rule itself: `minmax(200px/180px/170px, ...)` fixed
+  floors -> `repeat(3, minmax(0, 1fr))`, plus `min-width: 0` on
+  `.repair-tool-inline > label` so children can actually shrink into their
+  column instead of forcing overflow. This matches the pattern Resize,
+  Palette Lock, and the Palette (Color Cleanup) pane already use
+  successfully with their own per-pane !important overrides — this change
+  makes that the DEFAULT instead of something every new pane has to
+  remember to opt into.
+
+Why this approach instead of another per-pane patch:
+- Patching pane-by-pane is exactly how we got here — Resize and Palette got
+  fixed, Orphan got a fix that silently didn't work, and Alpha/Edge/
+  Morphology/Jaggy never got touched at all. Fixing the shared base rule
+  means every current AND future Repair Toolbox pane gets a container that
+  actually fits, with no per-pane opt-in step to forget.
+
+Test:
+- Open Palette Lab -> Repair Toolbox and click through every tab: Pixel
+  Snap (including Grid Offset X/Y + Reset), Palette, Palette Lock, Resize,
+  Orphan Cleanup, Alpha Cleanup, Edge Cleanup, Morphology Cleanup, Jaggy
+  Cleanup. Every toggle button, slider, and input should be fully visible,
+  no clipping.
+- Hard refresh first (or the bumped ?v= cache-bust should force it).
+- Confirm footer now reads "Web v0.38 · PF-0103".

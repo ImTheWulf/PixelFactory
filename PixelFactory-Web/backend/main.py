@@ -93,6 +93,11 @@ async def process_image(
     morphology_strength: float = Form(0.35),
     jaggy_cleanup: bool = Form(False),
     jaggy_strength: float = Form(0.30),
+    grid_offset_x: int = Form(0),
+    grid_offset_y: int = Form(0),
+    palette_lock_enabled: bool = Form(False),
+    palette_lock_colors: str = Form(""),
+    palette_lock_dither: bool = Form(False),
 ) -> Response:
     started_at = perf_counter()
     data = await image.read()
@@ -125,6 +130,10 @@ async def process_image(
     palette_colors = max(0, min(256, int(palette_colors or 0)))
     pixel_size = max(0, int(pixel_size or 0))
     pixel_strength = max(0.0, min(1.0, float(pixel_strength or 1.0)))
+    grid_offset_x = max(0, int(grid_offset_x or 0))
+    grid_offset_y = max(0, int(grid_offset_y or 0))
+    palette_lock_parsed = palette_lab_service.parse_hex_palette(palette_lock_colors) if palette_lock_enabled else []
+    palette_lock_active = bool(palette_lock_enabled and palette_lock_parsed)
 
     original = img.copy()
     source_width, source_height = original.size
@@ -149,19 +158,21 @@ async def process_image(
             pixel_size=smart_downscale_grid,
             palette_colors=palette_colors,
             quantize=bool(snap_palette) and palette_colors > 0,
+            grid_offset_x=grid_offset_x,
+            grid_offset_y=grid_offset_y,
         )
         smart_downscale_applied = img.size != before_step.size
         record_step("smart_downscale", before_step, img)
 
     if operation == "pixel_snap":
         before_step = img.copy()
-        img = palette_lab_service.pixel_snap_rgba(img, pixel_size=pixel_size, palette_colors=palette_colors, quantize=bool(snap_palette) and palette_colors > 0)
+        img = palette_lab_service.pixel_snap_rgba(img, pixel_size=pixel_size, palette_colors=palette_colors, quantize=bool(snap_palette) and palette_colors > 0, grid_offset_x=grid_offset_x, grid_offset_y=grid_offset_y)
         if pixel_strength < 0.999:
             img = palette_lab_service.blend_with_matching_size(original, img, pixel_strength)
         record_step("pixel_snap", before_step, img)
     elif operation == "pixel_snap_only":
         before_step = img.copy()
-        img = palette_lab_service.pixel_snap_rgba(img, pixel_size=pixel_size, palette_colors=palette_colors, quantize=False)
+        img = palette_lab_service.pixel_snap_rgba(img, pixel_size=pixel_size, palette_colors=palette_colors, quantize=False, grid_offset_x=grid_offset_x, grid_offset_y=grid_offset_y)
         if pixel_strength < 0.999:
             img = palette_lab_service.blend_with_matching_size(original, img, pixel_strength)
         record_step("pixel_snap", before_step, img)
@@ -174,6 +185,11 @@ async def process_image(
         before_step = img.copy()
         img = palette_lab_service.palette_normalize_rgba(img, tolerance=normalize_tolerance)
         record_step("palette_normalize", before_step, img)
+
+    if palette_lock_active:
+        before_step = img.copy()
+        img = palette_lab_service.quantize_to_fixed_palette_rgba(img, palette_lock_parsed, dither=bool(palette_lock_dither))
+        record_step("palette_lock", before_step, img)
 
     if orphan_cleanup:
         before_step = img.copy()
@@ -249,6 +265,12 @@ async def process_image(
         "X-PF-Step-Pixel-Snap": str(step_stats.get("pixel_snap", 0)),
         "X-PF-Step-Palette-Quantize": str(step_stats.get("palette_quantize", 0)),
         "X-PF-Step-Palette-Normalize": str(step_stats.get("palette_normalize", 0)),
+        "X-PF-Grid-Offset-X": str(grid_offset_x),
+        "X-PF-Grid-Offset-Y": str(grid_offset_y),
+        "X-PF-Palette-Lock": "true" if palette_lock_active else "false",
+        "X-PF-Palette-Lock-Colors": str(len(palette_lock_parsed)),
+        "X-PF-Palette-Lock-Dither": "true" if (palette_lock_active and palette_lock_dither) else "false",
+        "X-PF-Step-Palette-Lock": str(step_stats.get("palette_lock", 0)),
         "X-PF-Step-Orphan-Cleanup": str(step_stats.get("orphan_cleanup", 0)),
         "X-PF-Step-Edge-Cleanup": str(step_stats.get("edge_cleanup", 0)),
         "X-PF-Morphology-Cleanup": "true" if morphology_cleanup else "false",

@@ -1,4 +1,125 @@
 
+PF-0103 — Repair Toolbox Overflow Fixed At The Root
+-------------------------------------------------------
+Changed:
+• Found and fixed the actual cause of the recurring Repair Toolbox cutoff
+  (Alpha, Orphan, Edge, Morphology, Jaggy Cleanup, plus Pixel Snap's top
+  row and the new Grid Offset row): a generic .repair-tool-inline rule
+  added in PF-0045 sets 3 columns with ~550px of combined hard minimums,
+  guaranteed to overflow the ~380-400px Repair Toolbox panel. Changed it to
+  repeat(3, minmax(0, 1fr)) plus min-width:0 on child labels — the same
+  flexible-column pattern Resize/Palette/Palette Lock already used
+  successfully via their own per-pane overrides, now the shared default.
+• Discovered and removed a dead rule along the way: PF-0046's Orphan
+  Cleanup fix set grid-template-columns without !important, so the later
+  generic !important rule always silently overrode it — the "fix" never
+  actually took effect. Replaced with a comment explaining why, since the
+  root-cause fix above makes it unnecessary.
+• Bumped version footer to "Web v0.38 · PF-0103" and the ?v= cache-bust on
+  styles.css + all 5 split JS files.
+
+Not changed:
+• Resize, Palette, and Palette Lock panes' own per-pane overrides left in
+  place (now redundant with the generic fix, but harmless — same values).
+• CSS brace count verified balanced before/after.
+
+Why this approach:
+• Pane-by-pane patching is how this happened in the first place — some
+  panes got fixed, one got a fix that silently didn't work, several never
+  got touched. Fixing the shared base rule covers every current and future
+  Repair Toolbox pane with no per-pane step to remember.
+
+PF-0102 — Palette Lock Overflow Fix + Version Footer Bump
+------------------------------------------------------------
+Changed:
+• Palette Lock pane's two toggle buttons were overflowing the Repair
+  Toolbox panel (base .repair-tool-inline grid assumes ~220px-minimum
+  columns, too wide for 2 toggles in the narrow sidebar). Applied the same
+  per-pane CSS override pattern PF-0046 already used for Resize/Orphan/etc:
+  [data-repair-pane="lock"] .repair-tool-inline now uses 2 flexible
+  (minmax(0,1fr)) columns instead of the base 3-column fixed-minimum grid.
+• Version footer ("Web v0.36 · PF-0044") had been stale since before
+  PF-0045 — it's a hardcoded string in index.html, not auto-synced with
+  this changelog. Bumped to "Web v0.37 · PF-0102" and bumped the ?v=
+  cache-busting query string on styles.css and all 5 split JS files so the
+  browser actually fetches the fixed CSS instead of a stale cached copy.
+
+Not changed:
+• No other pane's layout touched — verified CSS brace count balanced and
+  HTML fieldset/script tag counts unchanged (9/9 fieldsets, 5/5 scripts)
+  before and after.
+
+PF-0101 — Palette Lock/Import, Dithering, Manual Grid-Offset Nudge
+--------------------------------------------------------------------
+Added:
+• Palette Lock / Import (new Repair Toolbox tab): paste or import a fixed
+  list of hex colors (any mix of "#RRGGBB", "RRGGBB", 3-digit shorthand,
+  separated by commas/spaces/newlines) and every visible pixel snaps to the
+  nearest color in that exact list — for matching a game's existing palette
+  or a classic system palette, rather than letting auto-quantize pick its
+  own N colors. Transparent pixels pass through untouched, same as the
+  existing Color Cleanup quantize.
+• Dither toggle, only meaningful (and only enabled in the backend) while
+  Palette Lock is on: applies Floyd-Steinberg dithering across the locked
+  palette to simulate in-between tones from a fixed, limited color set.
+  Verified empirically that Pillow's dither flag has zero effect on the
+  existing auto-quantize path in this Pillow build — dithering only ever
+  does something against a fixed palette, so it lives here, not as a
+  separate toggle on Color Cleanup.
+• Grid Offset X / Y nudge (added to the existing Pixel Snap tab): 0..w-1 /
+  0..h-1 pixel shift applied to the sampling window before Pixel Snap's and
+  Smart Downscale's BOX downsample, for sprites where the detected or
+  manually-chosen grid size is correct but starts a pixel or two off from
+  the art's real cell boundaries. Canvas size is unchanged — the shift only
+  affects which source pixels get grouped into which output cell.
+
+Backend (PixelFactory-Web/backend/services/palette_service.py):
+• New: apply_grid_offset_rgba, parse_hex_palette, quantize_to_fixed_palette_rgba.
+• smart_downscale_rgba and pixel_snap_rgba gained optional grid_offset_x /
+  grid_offset_y keyword args (default 0 — see "Not changed" below).
+
+Backend (PixelFactory-Web/backend/main.py):
+• /api/process gained 5 new optional Form fields: grid_offset_x,
+  grid_offset_y, palette_lock_enabled, palette_lock_colors,
+  palette_lock_dither.
+• New Palette Lock pipeline stage runs right after Palette Normalize (same
+  slot logic as the other opt-in cleanup stages).
+• New response headers: X-PF-Grid-Offset-X/Y, X-PF-Palette-Lock,
+  X-PF-Palette-Lock-Colors, X-PF-Palette-Lock-Dither, X-PF-Step-Palette-Lock.
+
+Frontend:
+• New "Palette Lock" tab/pane in the Repair Toolbox (frontend/templates/index.html),
+  new "Palette Lock" card in the Processing Pipeline manager grid, and Grid
+  Offset X/Y number inputs + Reset button added to the Pixel Snap pane.
+• frontend/static/js/01_palette-lab.js: new DOM refs, parsePaletteLockColors()
+  (client-side mirror of the backend's tolerant hex parser, for a live swatch
+  preview with no round trip), pipeline stage wiring for "lock", and the 5 new
+  form fields added to both /api/process call sites (live preview + save/export).
+• frontend/static/styles.css: small addition for the palette-lock textarea and
+  swatch preview row. Nothing else touched.
+
+Not changed:
+• Every existing function's behavior at default parameters (grid_offset=0,
+  palette lock off) — reverified against the full 18-function/60-check
+  regression suite from PF-0100.1, still 60/60 identical after these
+  additions.
+• No existing UI element, tab, or route field removed or renamed.
+
+How this was verified:
+• Palette Lock: confirmed output uses ONLY colors from the supplied list
+  (plus untouched transparency) on a real project image; caught and fixed a
+  padding bug during testing where unused palette slots could out-compete
+  real colors for near-black pixels — padding now repeats the last real
+  color instead of defaulting to black.
+• Dither: confirmed dithered output differs from flat output and still
+  stays within the locked palette.
+• Grid offset: confirmed output changes vs. offset=0 and canvas size never
+  changes, including at out-of-range offsets (clamped, not crashed).
+• All 5 split JS files still pass node --check after edits; index.html
+  fieldset/button tag counts balanced before and after (9/9, 100/100).
+• Full regression suite (18 functions × real project images) still 60/60
+  identical — this feature work did not disturb the PF-0100.1 refactor.
+
 PF-0100.2 — app.js Split Into Load-Ordered Files
 -------------------------------------------------
 Changed:

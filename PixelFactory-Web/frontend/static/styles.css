@@ -4639,7 +4639,10 @@ select option:hover {
 /* PF-0019.8: keep auto-update with the canvas update control and make Orphan Cleanup compact. */
 .canvas-auto-update { min-width: 128px; }
 .repair-tool-tab[data-repair-tab="orphans"] { border-color: rgba(64, 143, 255, 0.35); }
-.repair-tool-pane[data-repair-pane="orphans"] .repair-tool-inline { grid-template-columns: minmax(220px, 1fr) minmax(160px, 220px); }
+/* PF-0103: removed — this rule never actually applied (a later, generic
+   `.repair-tool-inline { ... !important }` rule always won regardless of
+   this being more specific, since !important beats specificity). The
+   generic rule is now fixed directly instead of patching pane-by-pane. */
 @media (max-width: 1200px) { .canvas-auto-update { min-width: 110px; } }
 
 /* PF-0019.8 Palette Normalize */
@@ -4651,6 +4654,38 @@ select option:hover {
 }
 .repair-tool-tab[data-repair-tab="palette"]::after {
   content: "";
+}
+
+/* PF-0101 Palette Lock/Import + swatch preview */
+.palette-lock-textarea-label {
+  display: block;
+  margin: 8px 0;
+}
+.palette-lock-textarea-label span {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  opacity: 0.75;
+}
+#paletteLockColors {
+  width: 100%;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 12px;
+  resize: vertical;
+}
+.palette-lock-swatch-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.palette-lock-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 /* PF-0019.9 Palette Lab compact toolbox + edge cleanup */
@@ -4688,9 +4723,12 @@ select option:hover {
   padding: 0 6px !important;
 }
 .repair-tool-inline {
-  grid-template-columns: minmax(200px, 1.2fr) minmax(180px, .8fr) minmax(170px, .7fr) !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   gap: 8px !important;
   align-items: end !important;
+}
+.repair-tool-inline > label {
+  min-width: 0 !important;
 }
 .repair-tool-inline select,
 .repair-tool-inline input[type="range"],
@@ -5847,6 +5885,27 @@ select option:hover {
 
 @media (max-width: 1480px) {
   .repair-tool-pane[data-repair-pane="resize"] .repair-tool-inline {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* PF-0102: same Repair Toolbox overflow fix PF-0046 applied to the other panes,
+   applied here to the Palette Lock pane's two toggle buttons (Palette Lock /
+   Dither), which shipped after PF-0046 and never got it. */
+.repair-tool-pane[data-repair-pane="lock"] .repair-tool-inline {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.repair-tool-pane[data-repair-pane="lock"] .pf-toggle-button-control {
+  align-self: stretch;
+}
+
+.repair-tool-pane[data-repair-pane="lock"] .pf-toggle-button-control span {
+  height: 100%;
+}
+
+@media (max-width: 1480px) {
+  .repair-tool-pane[data-repair-pane="lock"] .repair-tool-inline {
     grid-template-columns: 1fr !important;
   }
 }

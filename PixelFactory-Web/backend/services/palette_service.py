@@ -15,6 +15,7 @@ processing" layer described in docs/08_PALETTE_LAB.md.
 from __future__ import annotations
 
 import math
+import re
 
 from PIL import Image, ImageChops, ImageStat
 
@@ -211,6 +212,118 @@ class PaletteLabService:
         out.putdata(pixels)
         return out
 
+    @staticmethod
+    def apply_grid_offset_rgba(img: Image.Image, offset_x: int = 0, offset_y: int = 0) -> Image.Image:
+        """Shift the sampling grid by (offset_x, offset_y) pixels before a downscale.
+
+        PF-0101 (manual grid-offset nudge): when the detected/chosen pixel-size grid
+        is close but starts a pixel or two early/late relative to the source art's
+        real cell boundaries, this crops that many pixels off the top-left and pads
+        the freed space back on the bottom-right by replicating the edge, so the
+        canvas size never changes and BOX downsampling in pixel_snap_rgba /
+        smart_downscale_rgba samples the correctly-aligned cells instead.
+        """
+        w, h = img.size
+        offset_x = max(0, min(int(offset_x or 0), w - 1))
+        offset_y = max(0, min(int(offset_y or 0), h - 1))
+        if offset_x == 0 and offset_y == 0:
+            return img.copy()
+        src = img.convert("RGBA")
+        cropped = src.crop((offset_x, offset_y, w, h))
+        canvas = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+        canvas.paste(cropped, (0, 0))
+        if offset_x > 0:
+            edge_col = src.crop((w - 1, offset_y, w, h)).resize((offset_x, h - offset_y), Image.Resampling.NEAREST)
+            canvas.paste(edge_col, (w - offset_x, 0))
+        if offset_y > 0:
+            edge_row = src.crop((offset_x, h - 1, w, h)).resize((w - offset_x, offset_y), Image.Resampling.NEAREST)
+            canvas.paste(edge_row, (0, h - offset_y))
+        if offset_x > 0 and offset_y > 0:
+            corner = src.getpixel((w - 1, h - 1))
+            canvas.paste(Image.new("RGBA", (offset_x, offset_y), corner), (w - offset_x, h - offset_y))
+        return canvas
+
+    @staticmethod
+    def parse_hex_palette(text: str, limit: int = 256) -> list[tuple[int, int, int]]:
+        """Parse a comma/whitespace/newline-separated list of hex colors.
+
+        PF-0101 (Palette Lock/Import): accepts '#RRGGBB', 'RRGGBB', and 3-digit
+        shorthand ('#fff'), in any mix, separated by commas, spaces, semicolons, or
+        newlines. Invalid tokens are silently skipped rather than raising, since this
+        is meant to tolerate a pasted palette file with stray text in it. Duplicate
+        colors are dropped, preserving first-seen order.
+        """
+        if not text:
+            return []
+        tokens = re.split(r"[\s,;]+", str(text).strip())
+        seen: list[tuple[int, int, int]] = []
+        seen_set: set[tuple[int, int, int]] = set()
+        for tok in tokens:
+            tok = tok.strip().lstrip("#")
+            if len(tok) == 3:
+                tok = "".join(ch * 2 for ch in tok)
+            if len(tok) != 6:
+                continue
+            try:
+                r = int(tok[0:2], 16)
+                g = int(tok[2:4], 16)
+                b = int(tok[4:6], 16)
+            except ValueError:
+                continue
+            color = (r, g, b)
+            if color in seen_set:
+                continue
+            seen_set.add(color)
+            seen.append(color)
+            if len(seen) >= limit:
+                break
+        return seen
+
+    @staticmethod
+    def quantize_to_fixed_palette_rgba(
+        img: Image.Image,
+        colors: list[tuple[int, int, int]],
+        *,
+        dither: bool = False,
+    ) -> Image.Image:
+        """Force every visible pixel to the nearest color in a fixed, caller-supplied
+        palette (Palette Lock/Import), with an optional Floyd-Steinberg dither.
+
+        PF-0101: unlike quantize_rgba (which picks its own N-color palette from the
+        image), this locks output to EXACTLY the given colors — e.g. a game's
+        existing palette, or a classic system palette pasted in by the user.
+        Transparent pixels are preserved untouched, matching quantize_rgba's
+        behavior. Dithering only has a visible effect with a fixed palette (Pillow's
+        auto-palette quantize methods used here ignore the dither flag entirely),
+        which is also the only context where dithering is meaningful for pixel art:
+        simulating in-between tones out of a fixed, limited color set.
+        """
+        if not colors:
+            return img.copy()
+        colors = colors[:256]
+        src = img.convert("RGBA")
+        alpha = src.getchannel("A")
+        rgb = Image.new("RGB", src.size, (0, 0, 0))
+        rgb.paste(src.convert("RGB"), mask=alpha)
+
+        palette_img = Image.new("P", (1, 1))
+        flat: list[int] = []
+        for r, g, b in colors:
+            flat.extend((r, g, b))
+        pad_color = colors[-1]
+        remaining_slots = 256 - len(colors)
+        if remaining_slots > 0:
+            flat.extend(list(pad_color) * remaining_slots)
+        palette_img.putpalette(flat[:768])
+
+        dither_mode = Image.Dither.FLOYDSTEINBERG if dither else Image.Dither.NONE
+        quantized = rgb.quantize(colors=len(colors), palette=palette_img, dither=dither_mode)
+        out = quantized.convert("RGBA")
+        out.putalpha(alpha)
+        pixels = [(0, 0, 0, 0) if a == 0 else (r, g, b, a) for r, g, b, a in out.getdata()]
+        out.putdata(pixels)
+        return out
+
 
     @staticmethod
     def smart_downscale_rgba(
@@ -219,6 +332,8 @@ class PaletteLabService:
         pixel_size: int = 0,
         palette_colors: int = 0,
         quantize: bool = False,
+        grid_offset_x: int = 0,
+        grid_offset_y: int = 0,
     ) -> Image.Image:
         """Normalize oversized pixel-art sources down to the detected sprite grid.
 
@@ -226,15 +341,22 @@ class PaletteLabService:
         divisor, BOX sampling chooses a stable representative color per cell, and
         optional palette quantize can be applied to the normalized sprite. The normal
         resize control can then upscale the clean sprite back out with NEAREST.
+
+        PF-0101 adds an optional grid_offset_x/y nudge (0..pixel_size-1): when the
+        detected/selected grid is a pixel or two off from the source art's real
+        boundaries, this shifts the sampling window before the BOX downsample so
+        each cell lines up with the sprite's actual pixel blocks instead of the
+        canvas's top-left corner.
         """
         w, h = img.size
         px, _confidence = PaletteLabService.detect_pixel_size(img, int(pixel_size or 0))
         px = max(1, min(px, max(1, min(w, h) // 2)))
         if px <= 1:
             return img.copy()
+        working = PaletteLabService.apply_grid_offset_rgba(img, grid_offset_x, grid_offset_y)
         down_w = max(1, round(w / px))
         down_h = max(1, round(h / px))
-        out = img.resize((down_w, down_h), Image.Resampling.BOX)
+        out = working.resize((down_w, down_h), Image.Resampling.BOX)
         if quantize and int(palette_colors or 0) > 0:
             out = PaletteLabService.quantize_rgba(out, palette_colors)
         return out
@@ -247,20 +369,27 @@ class PaletteLabService:
         pixel_size: int = 0,
         palette_colors: int = 64,
         quantize: bool = True,
+        grid_offset_x: int = 0,
+        grid_offset_y: int = 0,
     ) -> Image.Image:
         """Snap uneven AI pixels to a coarse grid, then restore with NEAREST.
 
         Conceptually follows the Pixel Snapper goal: consistent pixel grid + optional
         strict palette. It downsamples to grid cells, optionally quantizes, then
         nearest-neighbor upscales back to the original size.
+
+        PF-0101 adds an optional grid_offset_x/y nudge (0..pixel_size-1) for cases
+        where auto-detection (or a manually chosen grid size) is a pixel or two off
+        from where the source art's real cell boundaries sit.
         """
         w, h = img.size
         px, _confidence = PaletteLabService.detect_pixel_size(img, int(pixel_size or 0))
         px = max(1, min(px, max(1, min(w, h) // 2)))
 
+        working = PaletteLabService.apply_grid_offset_rgba(img, grid_offset_x, grid_offset_y)
         snapped_w = max(1, round(w / px))
         snapped_h = max(1, round(h / px))
-        small = img.resize((snapped_w, snapped_h), Image.Resampling.BOX)
+        small = working.resize((snapped_w, snapped_h), Image.Resampling.BOX)
         if quantize:
             small = PaletteLabService.quantize_rgba(small, palette_colors)
         return small.resize((w, h), Image.Resampling.NEAREST)

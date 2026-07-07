@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pixel Factory by Wulf</title>
-  <link rel="stylesheet" href="/static/styles.css?v=pf0044_palette_lab_v2" />
+  <link rel="stylesheet" href="/static/styles.css?v=pf0103_repair_toolbox_overflow_fix" />
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true">▧</div>
         <div>
           <div class="brand">Pixel Factory</div>
-          <div class="subtitle">by Wulf · Web v0.36 · PF-0044</div>
+          <div class="subtitle">by Wulf · Web v0.38 · PF-0103</div>
         </div>
       </div>
 
@@ -315,6 +315,9 @@
               <button type="button" class="pipeline-stage-toggle" data-pipeline-toggle="normalize" data-target-tab="palette">
                 <strong>Palette Normalize</strong><span>On</span><em>Merge near colors</em>
               </button>
+              <button type="button" class="pipeline-stage-toggle" data-pipeline-toggle="lock" data-target-tab="lock">
+                <strong>Palette Lock</strong><span>Off</span><em>Force fixed palette / dither</em>
+              </button>
               <button type="button" class="pipeline-stage-toggle" data-pipeline-toggle="alpha" data-target-tab="alpha">
                 <strong>Alpha Cleanup</strong><span>Off</span><em>Clean transparent fringe</em>
               </button>
@@ -348,6 +351,7 @@
             <div class="repair-tool-tabs" role="tablist" aria-label="Palette Lab repair tools">
               <button type="button" class="repair-tool-tab active" data-repair-tab="snap">Pixel Snap</button>
               <button type="button" class="repair-tool-tab" data-repair-tab="palette">Palette</button>
+              <button type="button" class="repair-tool-tab" data-repair-tab="lock">Palette Lock</button>
               <button type="button" class="repair-tool-tab" data-repair-tab="resize">Resize</button>
               <button type="button" class="repair-tool-tab" data-repair-tab="orphans">Orphan Cleanup</button>
               <button type="button" class="repair-tool-tab disabled" disabled>Repair Brush</button>
@@ -366,6 +370,12 @@
                     <label><span>Strength</span><input id="pixelSnapStrength" type="range" min="0.25" max="1" step="0.05" value="1" /><em id="pixelSnapStrengthValue">100%</em></label>
                     <label class="pf-toggle-button-control"><input id="pixelSnapEnabled" type="checkbox" checked /><span data-on="Pixel Snap On" data-off="Pixel Snap Off">Pixel Snap On</span></label>
                   </div>
+                  <div class="repair-tool-inline">
+                    <label><span>Grid Offset X</span><input id="gridOffsetX" type="number" min="0" max="63" step="1" value="0" /></label>
+                    <label><span>Grid Offset Y</span><input id="gridOffsetY" type="number" min="0" max="63" step="1" value="0" /></label>
+                    <button type="button" id="gridOffsetResetBtn">Reset Offset</button>
+                  </div>
+                  <p class="pixel-tool-note">If Auto detect (or a manual Grid Size) looks a pixel or two off from the sprite's real cell boundaries, nudge Grid Offset X/Y until the Canvas preview lines up cleanly.</p>
                 </fieldset>
 
                 <fieldset class="pixel-tool-group repair-tool-pane palette-lab-v2-pane" data-repair-pane="palette">
@@ -391,6 +401,19 @@
                   </div>
                   <div id="paletteReductionSummary" class="palette-reduction-summary">Load or process an image to preview palette reduction.</div>
                   <p class="pixel-tool-note palette-note-visible">Color Cleanup reduces to a target count. Normalize merges near-identical AI color noise while preserving transparency and the original palette feel.</p>
+                </fieldset>
+
+                <fieldset class="pixel-tool-group repair-tool-pane" data-repair-pane="lock">
+                  <legend>Palette Lock / Import</legend>
+                  <div class="repair-tool-inline">
+                    <label class="pf-toggle-button-control"><input id="paletteLockEnabled" type="checkbox" /><span data-on="Palette Lock On" data-off="Palette Lock Off">Palette Lock Off</span></label>
+                    <label class="pf-toggle-button-control"><input id="paletteLockDither" type="checkbox" /><span data-on="Dither On" data-off="Dither Off">Dither Off</span></label>
+                  </div>
+                  <label class="palette-lock-textarea-label"><span>Locked Colors (hex, comma or newline separated)</span>
+                    <textarea id="paletteLockColors" rows="4" spellcheck="false" placeholder="#1a1a1e, #c83232, #f0f0f0, #3a6e3c..."></textarea>
+                  </label>
+                  <div id="paletteLockSummary" class="palette-reduction-summary">Paste or import a fixed palette to force output onto exactly those colors.</div>
+                  <p class="pixel-tool-note">Every visible pixel snaps to the nearest color in this list — use this for a game's existing palette or a classic system palette. Dither simulates in-between tones using only these colors; it only has an effect while Palette Lock is on.</p>
                 </fieldset>
 
                 <fieldset class="pixel-tool-group repair-tool-pane" data-repair-pane="resize">
@@ -770,10 +793,10 @@
 
   <!-- PF-0100.2: app.js split into contiguous, load-order-preserving files.
        These MUST stay in this exact order — see PF-0100.2_REFACTOR_NOTES.md -->
-  <script src="/static/js/00_shared-init.js?v=pf0044_palette_lab_v2"></script>
-  <script src="/static/js/01_palette-lab.js?v=pf0044_palette_lab_v2"></script>
-  <script src="/static/js/02_generation-studios.js?v=pf0044_palette_lab_v2"></script>
-  <script src="/static/js/03_asset-browser-export.js?v=pf0044_palette_lab_v2"></script>
-  <script src="/static/js/04_image-viewer.js?v=pf0044_palette_lab_v2"></script>
+  <script src="/static/js/00_shared-init.js?v=pf0103_repair_toolbox_overflow_fix"></script>
+  <script src="/static/js/01_palette-lab.js?v=pf0103_repair_toolbox_overflow_fix"></script>
+  <script src="/static/js/02_generation-studios.js?v=pf0103_repair_toolbox_overflow_fix"></script>
+  <script src="/static/js/03_asset-browser-export.js?v=pf0103_repair_toolbox_overflow_fix"></script>
+  <script src="/static/js/04_image-viewer.js?v=pf0103_repair_toolbox_overflow_fix"></script>
 </body>
 </html>
