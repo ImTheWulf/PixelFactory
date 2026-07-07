@@ -4478,6 +4478,8 @@ select option:hover {
 .repair-tool-inline select,
 .repair-tool-inline input[type="range"] {
   min-height: 34px !important;
+  width: 100%;
+  min-width: 0;
 }
 .repair-tool-inline .pf-toggle-button-control {
   align-self: end;
@@ -4736,6 +4738,9 @@ select option:hover {
   min-height: 30px !important;
   height: 30px !important;
   font-size: 11px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
 }
 .repair-tool-inline label span,
 .repair-tool-inline label > span:first-child {
@@ -4751,7 +4756,7 @@ select option:hover {
   min-width: 0 !important;
 }
 .repair-two-control-row {
-  grid-template-columns: minmax(220px, 1fr) minmax(170px, 240px) !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
 }
 .palette-toolbox-v2 .pixel-tool-note {
   margin-top: 5px !important;

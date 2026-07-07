@@ -1,4 +1,22 @@
 
+PF-0104 — Repair Toolbox Overflow, Actually Verified This Time
+-------------------------------------------------------------------
+Changed:
+• PF-0103 missed a third layer: Alpha/Orphan/Edge/Morphology/Jaggy Cleanup's
+  rows carry an extra .repair-two-control-row class with its own later,
+  !important, ~390px-minimum override that beat the PF-0103 fix. Changed
+  it to repeat(2, minmax(0, 1fr)) !important, same pattern as everywhere
+  else.
+• This time verified with a real headless-Chromium render (Playwright) of
+  the actual index.html/styles.css/JS — clicked through all 9 Repair
+  Toolbox tabs and measured real DOM bounding boxes against the container
+  edge, rather than reasoning from CSS alone. Before: 5 panes measured a
+  real 32px overflow. After: 0px overflow on all 9 tabs at the viewport
+  width the reported screenshots were taken at. A ~2-4px rounding artifact
+  remains at narrower (1300-1440px) viewports — confirmed via screenshot
+  it doesn't visibly clip anything.
+• Bumped version footer to "Web v0.39 · PF-0104" and cache-bust markers.
+
 PF-0103 — Repair Toolbox Overflow Fixed At The Root
 -------------------------------------------------------
 Changed:

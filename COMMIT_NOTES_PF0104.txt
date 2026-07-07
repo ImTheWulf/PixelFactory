@@ -1,0 +1,33 @@
+PF-0104 fix Repair Toolbox overflow — actually verified this time in a real browser
+
+Changed:
+- PF-0103 fixed the generic .repair-tool-inline rule but missed a THIRD
+  layer: Alpha, Orphan, Edge, Morphology, and Jaggy Cleanup's two-control
+  rows carry an extra `.repair-two-control-row` class with its own
+  `!important` override (`minmax(220px,1fr) minmax(170px,240px)`, ~390px
+  minimum) that sits later in the stylesheet than the PF-0103 fix, so it
+  won regardless. That's why those 5 panes were still cut off after
+  PF-0103 even though Resize/Palette/Palette Lock/Pixel Snap were fine.
+- Changed .repair-two-control-row to `repeat(2, minmax(0, 1fr)) !important`
+  — same flexible pattern as everything else now uses.
+
+How this was actually verified (not just reasoned about):
+- Rendered the real index.html + styles.css + JS in a headless Chromium
+  (Playwright), clicked into Palette Lab, clicked through all 9 Repair
+  Toolbox tabs, and measured actual DOM bounding boxes against the
+  container's right edge — not a visual guess.
+- Before this fix: orphans/alpha/edge/morphology/jaggy all measured a real
+  32px overflow on the visible toggle button. snap/lock/palette/resize
+  measured zero.
+- After this fix: all 9 tabs measure zero overflow at the viewport width
+  your screenshots were taken at (tested 2500px and 1920px). At narrower
+  widths (1300-1440px) there's a ~2-4px sub-pixel rounding artifact from
+  the grid algorithm dividing available space — confirmed via screenshot
+  that it does NOT visibly clip any text or button, well within the
+  border-radius tolerance. Not chasing that further unless it turns out to
+  matter on your actual monitor.
+
+Test:
+- Hard refresh (cache-bust bumped again).
+- Click through all 9 Repair Toolbox tabs. Every toggle button, slider,
+  and input should be fully visible with no clipping.
